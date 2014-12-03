@@ -107,7 +107,7 @@ function scrape_batoto() {
 
 	# Lines are reverse order. tac.
 	# If whatever we're using has no tac, you're stuck with reverse order.
-	tac batch.txtr >> batch.txt || cat batch.txtr >> batc.txt
+	tac batch.txtr >> batch.txt || cat batch.txtr >> batch.txt
 
 	# We've scraped a batch file from the URL list. Clean up.
 	rm scrape.htm batch.txtr
