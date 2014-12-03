@@ -5,6 +5,11 @@
 if [ "$1" == "auto" ]; then # Common operation - Automatic Module Select.
 	for module in ${MODS[@]}; do
 		eval auto_$module $2
+		RETCHECK=$?
+		if [ $RETCHECK == 1 ]; then
+			eval dl_$module $2
+			exit 0
+		fi
 	done
 elif [ "$1" == "batch" ]; then # Common operation - typed batch.
 	# $2 is a file. Read it in line by line as $1 and $2.
@@ -22,6 +27,15 @@ elif [ "$1" == "autobatch" ]; then # Common operation - auto batch.
 		NEW="$NEW$0 auto $chunk ;"
 	done
 	eval $NEW
+elif [ "$1" == "scrape" ]; then # Link scraper.
+	for module in ${MODS[@]}; do
+		eval auto_$module $2
+		RETCHECK=$?
+		if [ $RETCHECK == 1 ]; then
+			eval scrape_$module $2
+			exit 0
+		fi
+	done
 else # Not a common operation - either invalid or a module-op.
 
 	# Detect whether it is a module operation.
@@ -41,6 +55,7 @@ else # Not a common operation - either invalid or a module-op.
 		echo "	(*) auto chooses based on URL"
 		echo "	(*) batch is a file with a list of types and URLs"
 		echo "	(*) autobatch is a file with URLs which will be run thru auto"
+		echo "	(*) scrape will take a manga's page and scrape chapters to batch.txt"
 		echo "Download Modules: ${MODS[@]}"
 		echo "	If you see an emote in the output, it means we had to deal"
 		echo "	with a retrieval quirk."

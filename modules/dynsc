@@ -3,8 +3,10 @@
 function auto_dynsc() {
 	if [ -n "`echo $1 | grep 'dynasty-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Dynasty Scans.
-		dl_dynsc "$1"
+		return 1
 	fi
+
+	return 0
 }
 
 function dl_dynsc() {
@@ -43,4 +45,8 @@ function dl_dynsc() {
 	cd ..
 
 	cbz_make $folder
+}
+
+function scrape_dynsc() {
+	echo "[DynastyScans] NYI, sorry."
 }

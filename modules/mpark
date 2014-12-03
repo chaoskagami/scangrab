@@ -3,8 +3,10 @@
 function auto_mpark() {
 	if [ -n "`echo $1 | grep 'mangapark.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Mangareader
-		dl_mpark "$1"
+		return 1
 	fi
+
+	return 0
 }
 
 function dl_mpark() {
@@ -35,4 +37,8 @@ function dl_mpark() {
 	cd ..
 
 	cbz_make $folder
+}
+
+function scrape_mpark() {
+	echo "[Mangapark] NYI, sorry."
 }

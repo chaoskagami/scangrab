@@ -3,8 +3,10 @@
 function auto_mread() {
 	if [ -n "`echo $1 | grep 'mangareader.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Mangareader
-		dl_mread "$1"
+		return 1
 	fi
+
+	return 0
 }
 
 function dl_mread() {
@@ -52,4 +54,8 @@ function dl_mread() {
 
 	cbz_make $folder
 
+}
+
+function scrape_mread() {
+	echo "[MangaReader] NYI, sorry."
 }

@@ -6,8 +6,10 @@
 function auto_fakku() {
 	if [ -n "`echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Fakku
-		dl_fakku "$1"
+		return 1
 	fi
+
+	return 0
 }
 
 function dl_fakku() {
@@ -55,4 +57,9 @@ function dl_fakku() {
 	cd ..
 	
 	cbz_make $folder
+}
+
+function scrape_fakku() {
+	echo "[Fakku] Fakku probably won't ever support scraping functionality."
+	echo "[Fakku] Everything on there is organized in a strictly one-shot manner."
 }
