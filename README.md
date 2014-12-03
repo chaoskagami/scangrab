@@ -21,7 +21,7 @@ This is open source software relased under the terms of GPLv3. Read COPYING.
 
 To be honest, the reason I originally coded this was Dynasty Scans' nonsense "five zips a day" limit. By viewing the images standalone, I'm already downloading more data than the zip. Also, disatisfaction in general with hakuneko - Adding more sources is impossible, because it consists of far too much GUI code.
 
-To add a new source to download from, make a shell script in modules/, say, arandom. There should be two functions - auto_arandom and dl_arandom. auto_arandom should determine from $1, the url, whether it is the right plugin, and call dl_arandom if so. dl_arandom would do the bulk of work.
+To add a new source to download from, make a shell script in modules/, say, arandom. There should be two functions - auto_arandom and dl_arandom. auto_arandom should determine from $1, the url, whether it is the right plugin, returning 1 if so. dl_arandom would do the bulk of work by downloading $1. You must provide a scrape_arandom even if it's a stub.
 
 The 'merge' script will merge all of the shell scripts into a more permanent and standalone scangrab-merge. This can be dropped anywhere, say, /usr/local/bin.
 
