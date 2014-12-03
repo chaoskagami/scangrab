@@ -16,3 +16,6 @@ done
 
 # Actual code.
 cat core >> scangrab-merge
+
+# Life needs to be easier.
+chmod +x scangrab-merge
