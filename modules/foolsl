@@ -42,14 +42,20 @@ function scrape_foolsl() {
 
 	echo -n "[Foolslide] Scraping Chapters..."
 
-	wget --no-cache -nc -t 0 -w 30 "$1" -O tmp.htm
+	wget --no-cache -nc -t 0 -w 30 "$1" -O tmp.htm > /dev/null 2>&1
 
-	grep '<div class="title"><a href=' tmp.htm > batch.txt
+	grep '<div class="title"><a href=' tmp.htm > batch.txtr
 	
-	sed -i 's|<div class="title"><a href="||g' batch.txt
-	sed -i 's|" title=.*||g' batch.txt
-	sed -i "s/^[[:space:]]*//" batch.txt
-	sed -i "s/[[:space:]]*$//" batch.txt
+	sed -i 's|<div class="title"><a href="||g' batch.txtr
+	sed -i 's|" title=.*||g' batch.txtr
+	sed -i "s/^[[:space:]]*//" batch.txtr
+	sed -i "s/[[:space:]]*$//" batch.txtr
+
+	# Lines are reverse order. tac.
+	# If whatever we're using has no tac, you're stuck with reverse order.
+	tac batch.txtr >> batch.txt || cat batch.txtr >> batc.txt
+
+	rm tmp.htm batch.txtr
 	
 	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

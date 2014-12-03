@@ -98,15 +98,19 @@ function scrape_batoto() {
 		gunzip scrape.htm.gz
 	fi
 
-	grep '<img src="http://bato.to/book_open.png" style="vertical-align:middle;"' scrape.htm >> batch.txt
+	grep '<img src="http://bato.to/book_open.png" style="vertical-align:middle;"' scrape.htm >> batch.txtr
 
-	sed -i "s|<a href=\"||g" batch.txt
-	sed -i "s|\"><img src=.*||g" batch.txt
-	sed -i "s/^[[:space:]]*//" batch.txt
-	sed -i "s/[[:space:]]*$//" batch.txt
+	sed -i "s|<a href=\"||g" batch.txtr
+	sed -i "s|\"><img src=.*||g" batch.txtr
+	sed -i "s/^[[:space:]]*//" batch.txtr
+	sed -i "s/[[:space:]]*$//" batch.txtr
+
+	# Lines are reverse order. tac.
+	# If whatever we're using has no tac, you're stuck with reverse order.
+	tac batch.txtr >> batch.txt || cat batch.txtr >> batc.txt
 
 	# We've scraped a batch file from the URL list. Clean up.
-	rm scrape.htm
+	rm scrape.htm batch.txtr
 
 	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Batoto] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
