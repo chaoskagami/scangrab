@@ -51,7 +51,7 @@ function scrape_mpark() {
 	sed -i "s/^[[:space:]]*//" batch.txtr
 	sed -i "s/[[:space:]]*$//" batch.txtr
 
-	sed -i "s|^|http://http://mangapark.com|g"
+	sed -i "s|^|http://mangapark.com|g" batch.txtr
 
 	# Lines are reverse order. tac.
 	# If whatever we're using has no tac, you're stuck with reverse order.
