@@ -1,0 +1,12 @@
+#!/bin/bash
+
+function cbz_make() {
+	echo -n "[Post] Zipping to cbz..."
+	zip -r "$1.zip" "$1" > /dev/null 2>&1
+	mv "$1.zip" "$1.cbz"
+	echo "OK."
+	
+	echo -n "[Post] Cleanup..."
+	rm -rf $1
+	echo "Done!"
+}

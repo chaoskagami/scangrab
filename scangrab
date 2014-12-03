@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Why is this file separated? Because of minification.
+# It allows merging files together.
+
+# Load support code. A few common functions.
+
+source "support"
+
+# Load modules and index them.
+
+MODS=(`ls modules/`)
+
+for module in ${MODS[@]}; do
+	source modules/$module
+done
+
+# Run main code.
+
+source "core"

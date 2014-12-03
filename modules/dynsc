@@ -1,0 +1,60 @@
+#!/bin/bash
+
+function auto_dynsc() {
+	if [ -n "`echo $1 | grep 'dynasty-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Dynasty Scans.
+		dl_dynsc "$1"
+	fi
+}
+
+function dl_dynsc() {
+	
+	# Now loop-de-loop. First, make a decent name. Dynasty always has
+	# a short-title at the end of the URL.
+
+	folder="`echo $1 | sed -re 's/^.+\///'`"
+	mkdir -p $folder
+	cd $folder
+
+	echo -n "[DynastyScans] Preparing..."
+	wget $1 -O page.htm > /dev/null 2>&1
+	echo `grep "var pages" page.htm` > tmp.1
+
+	# This set of seds cuts up the pagelist in a manner
+	# that makes it identical to a bash array.
+	# So we're essentially modifying the webpage into a dl-script.
+	# Cool, eh?
+	sed -i "s/\"image\"\://g" tmp.1
+	sed -i "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" tmp.1
+	sed -i "s/\}\]/\)/g" tmp.1
+	sed -i "s/{//g" tmp.1
+	sed -i "s/}//g" tmp.1
+	sed -i "s/;//g" tmp.1
+	sed -i "s/ //g" tmp.1
+	sed -i "s/varpages=\[/pages=\(/g" tmp.1
+	sed -i "s/,/ /g" tmp.1
+
+	echo "OK"
+
+	# One possible nasty. Spaces.
+	# sed -i "s/\%20/ /g" tmp.1
+
+	# Load in the array.
+	source tmp.1
+
+	echo -n "[DynastyScans] Downloading '$folder'"
+
+	for image in "${pages[@]}"; do
+		wget --no-cache -nc -t 0 -w 30 "http://dynasty-scans.com$image" > /dev/null 2>&1
+		echo -n '.'
+	done
+
+	echo "DL'd."
+
+	rm tmp.1
+	rm page.htm
+	
+	cd ..
+
+	cbz_make $folder
+}

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+function auto_fakku() {
+	if [ -n "`echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Fakku
+		dl_fakku "$1"
+	fi
+}
+
+function dl_fakku() {
+	folder="`echo $1 | sed -re 's/^.+\///'`"
+	mkdir -p $folder
+	cd $folder
+
+	echo -n "[Fakku] Preparing..."
+	wget "$1/read" -O page.htm > /dev/null 2>&1
+	echo `grep "window.params.thumbs =" page.htm` > tmp.1
+
+	# First. Escape fixups. Nuke escaped forward slashes
+	sed -i 's/\\\//\//g' tmp.1
+	# Next. Reformat decl.
+	sed -i 's/\];/)/g' tmp.1
+	sed -i 's/window.params.thumbs = \[/pages=(/g' tmp.1
+	# Next. Nuke '.thumb'
+	sed -i 's/\.thumb//g' tmp.1
+	# Next. Nuke commas. Still, they can occur in names so we'll carefully filter.
+	sed -i 's/","/" "/g' tmp.1
+	# Last transform. '/thumbs/' to '/images/'
+	sed -i 's/\/thumbs\//\/images\//g' tmp.1
+
+	# Because some pages have unicode escapes (javascript thing ugh) we have to echo the contents of the file
+	# to itself to escape them. UGHHHHH
+
+	echo -e `cat tmp.1` > tmp.1
+
+	echo "OK."
+
+	# Load in the array.
+	source tmp.1
+
+	# Download loop-de-loop.
+
+	echo -n "[Fakku] Downloading '$folder'"
+
+	for image in "${pages[@]}"; do
+		wget --no-cache -nc -t 0 -w 30 "https:$image" > /dev/null 2>&1
+		echo -n '.'
+	done
+
+	echo "DL'd."
+
+	rm tmp.1
+	rm page.htm
+	
+	cd ..
+	
+	cbz_make $folder
+}

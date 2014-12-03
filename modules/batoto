@@ -1,0 +1,70 @@
+#!/bin/bash
+
+function auto_batoto() {
+	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Batoto
+		dl_batoto "$1"
+	fi
+}
+
+function dl_batoto() {
+	# Batoto requires a different strategy.
+	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
+	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
+	
+	folder="`echo $1 | sed -re 's/^.+\///'`"
+	mkdir -p $folder
+	cd $folder
+
+	IS_404=0
+
+	CUR=0
+	PAGES=0
+	
+	while [ $PAGES == 0 ]; do # Fuckup T1; 0 pages returned.
+	
+		echo -n "[Batoto] Blindly Downloading '$folder'"
+
+		while [ $IS_404 == 0 ]; do
+			# Increment CUR.
+			CUR=$(( CUR + 1 ))
+	
+			wget --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm > /dev/null 2>&1
+			grep -A 1 'z-index: 1002' $CUR.htm | tail -n1 > $CUR.tmp
+	
+			# Edit magic.
+			sed -i "s/[[:space:]]*<img //g" $CUR.tmp
+			sed -i "s/ style=.*//g" $CUR.tmp
+
+			# Load 'src'
+			source $CUR.tmp
+	
+			# Get extension of src.
+			EXT="${src##*.}"
+
+			# If this 404's, wget will return non-zero. Thus, loop breaks.
+			wget --no-cache -nc -t 0 -w 30 "$src" -O $CUR.$EXT > /dev/null 2>&1
+			IS_404=$?
+	
+			echo -n "."
+		done
+
+		PAGES=$(( CUR - 1 ))
+
+		if [ $PAGES == 0 ]; then
+			echo "Got zero pages. Redo!"
+		else
+			echo "$CUR Pages."
+		fi
+
+		# Clean.
+
+		rm *.htm
+		rm *.tmp
+
+	done
+
+	cd ..
+
+	cbz_make $folder
+}

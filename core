@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Determine operation.
+
+if [ "$1" == "auto" ]; then # Common operation - Automatic Module Select.
+	for module in ${MODS[@]}; do
+		eval auto_$module $2
+	done
+elif [ "$1" == "batch" ]; then # Common operation - typed batch.
+	# $2 is a file. Read it in line by line as $1 and $2.
+	IFS=$'\n' read -d '' -r -a LINES < $2
+	NEW=""
+	for chunk in "${LINES[@]}"; do
+		NEW="$NEW$0 $chunk ;"
+	done
+	eval $NEW
+elif [ "$1" == "autobatch" ]; then # Common operation - auto batch.
+	# $2 is a file. Read it in line by line as $1 and $2.
+	IFS=$'\n' read -d '' -r -a LINES < $2
+	NEW=""
+	for chunk in "${LINES[@]}"; do
+		NEW="$NEW$0 auto $chunk ;"
+	done
+	eval $NEW
+else # Not a common operation - either invalid or a module-op.
+
+	# Detect whether it is a module operation.
+
+	MATCH=""
+
+	for module in ${MODS[@]}; do
+		if [ "$1" == "$module" ]; then
+			MATCH="dl_$module $2"
+		fi
+	done
+
+	if [ "$MATCH" == "" ]; then # All checks failed. Usage~
+		echo "Usage:"
+		echo "	$0 [type] [param]"
+		echo "Special Types: auto batch autobatch"
+		echo "	(*) auto chooses based on URL"
+		echo "	(*) batch is a file with a list of types and URLs"
+		echo "	(*) autobatch is a file with URLs which will be run thru auto"
+		echo "Download Modules: ${MODS[@]}"
+	else # Module operation.
+		eval $MATCH
+	fi
+fi

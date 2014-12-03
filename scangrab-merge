@@ -1,0 +1,249 @@
+#!/bin/bash
+
+function cbz_make() {
+	echo -n "[Post] Zipping to cbz..."
+	zip -r "$1.zip" "$1" > /dev/null 2>&1
+	mv "$1.zip" "$1.cbz"
+	echo "OK."
+	
+	echo -n "[Post] Cleanup..."
+	rm -rf $1
+	echo "Done!"
+}
+MODS=(`ls modules/`)
+#!/bin/bash
+
+function auto_batoto() {
+	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Batoto
+		dl_batoto "$1"
+	fi
+}
+
+function dl_batoto() {
+	# Batoto requires a different strategy.
+	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
+	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
+	
+	folder="`echo $1 | sed -re 's/^.+\///'`"
+	mkdir -p $folder
+	cd $folder
+
+	IS_404=0
+
+	CUR=0
+	PAGES=0
+	
+	while [ $PAGES == 0 ]; do # Fuckup T1; 0 pages returned.
+	
+		echo -n "[Batoto] Blindly Downloading '$folder'"
+
+		while [ $IS_404 == 0 ]; do
+			# Increment CUR.
+			CUR=$(( CUR + 1 ))
+	
+			wget --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm > /dev/null 2>&1
+			grep -A 1 'z-index: 1002' $CUR.htm | tail -n1 > $CUR.tmp
+	
+			# Edit magic.
+			sed -i "s/[[:space:]]*<img //g" $CUR.tmp
+			sed -i "s/ style=.*//g" $CUR.tmp
+
+			# Load 'src'
+			source $CUR.tmp
+	
+			# Get extension of src.
+			EXT="${src##*.}"
+
+			# If this 404's, wget will return non-zero. Thus, loop breaks.
+			wget --no-cache -nc -t 0 -w 30 "$src" -O $CUR.$EXT > /dev/null 2>&1
+			IS_404=$?
+	
+			echo -n "."
+		done
+
+		PAGES=$(( CUR - 1 ))
+
+		if [ $PAGES == 0 ]; then
+			echo "Got zero pages. Redo!"
+		else
+			echo "$CUR Pages."
+		fi
+
+		# Clean.
+
+		rm *.htm
+		rm *.tmp
+
+	done
+
+	cd ..
+
+	cbz_make $folder
+}
+#!/bin/bash
+
+function auto_dynsc() {
+	if [ -n "`echo $1 | grep 'dynasty-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Dynasty Scans.
+		dl_dynsc "$1"
+	fi
+}
+
+function dl_dynsc() {
+	
+	# Now loop-de-loop. First, make a decent name. Dynasty always has
+	# a short-title at the end of the URL.
+
+	folder="`echo $1 | sed -re 's/^.+\///'`"
+	mkdir -p $folder
+	cd $folder
+
+	echo -n "[DynastyScans] Preparing..."
+	wget $1 -O page.htm > /dev/null 2>&1
+	echo `grep "var pages" page.htm` > tmp.1
+
+	# This set of seds cuts up the pagelist in a manner
+	# that makes it identical to a bash array.
+	# So we're essentially modifying the webpage into a dl-script.
+	# Cool, eh?
+	sed -i "s/\"image\"\://g" tmp.1
+	sed -i "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" tmp.1
+	sed -i "s/\}\]/\)/g" tmp.1
+	sed -i "s/{//g" tmp.1
+	sed -i "s/}//g" tmp.1
+	sed -i "s/;//g" tmp.1
+	sed -i "s/ //g" tmp.1
+	sed -i "s/varpages=\[/pages=\(/g" tmp.1
+	sed -i "s/,/ /g" tmp.1
+
+	echo "OK"
+
+	# One possible nasty. Spaces.
+	# sed -i "s/\%20/ /g" tmp.1
+
+	# Load in the array.
+	source tmp.1
+
+	echo -n "[DynastyScans] Downloading '$folder'"
+
+	for image in "${pages[@]}"; do
+		wget --no-cache -nc -t 0 -w 30 "http://dynasty-scans.com$image" > /dev/null 2>&1
+		echo -n '.'
+	done
+
+	echo "DL'd."
+
+	rm tmp.1
+	rm page.htm
+	
+	cd ..
+
+	cbz_make $folder
+}
+#!/bin/bash
+
+function auto_fakku() {
+	if [ -n "`echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Fakku
+		dl_fakku "$1"
+	fi
+}
+
+function dl_fakku() {
+	folder="`echo $1 | sed -re 's/^.+\///'`"
+	mkdir -p $folder
+	cd $folder
+
+	echo -n "[Fakku] Preparing..."
+	wget "$1/read" -O page.htm > /dev/null 2>&1
+	echo `grep "window.params.thumbs =" page.htm` > tmp.1
+
+	# First. Escape fixups. Nuke escaped forward slashes
+	sed -i 's/\\\//\//g' tmp.1
+	# Next. Reformat decl.
+	sed -i 's/\];/)/g' tmp.1
+	sed -i 's/window.params.thumbs = \[/pages=(/g' tmp.1
+	# Next. Nuke '.thumb'
+	sed -i 's/\.thumb//g' tmp.1
+	# Next. Nuke commas. Still, they can occur in names so we'll carefully filter.
+	sed -i 's/","/" "/g' tmp.1
+	# Last transform. '/thumbs/' to '/images/'
+	sed -i 's/\/thumbs\//\/images\//g' tmp.1
+
+	# Because some pages have unicode escapes (javascript thing ugh) we have to echo the contents of the file
+	# to itself to escape them. UGHHHHH
+
+	echo -e `cat tmp.1` > tmp.1
+
+	echo "OK."
+
+	# Load in the array.
+	source tmp.1
+
+	# Download loop-de-loop.
+
+	echo -n "[Fakku] Downloading '$folder'"
+
+	for image in "${pages[@]}"; do
+		wget --no-cache -nc -t 0 -w 30 "https:$image" > /dev/null 2>&1
+		echo -n '.'
+	done
+
+	echo "DL'd."
+
+	rm tmp.1
+	rm page.htm
+	
+	cd ..
+	
+	cbz_make $folder
+}
+#!/bin/bash
+
+# Determine operation.
+
+if [ "$1" == "auto" ]; then # Common operation - Automatic Module Select.
+	for module in ${MODS[@]}; do
+		eval auto_$module $2
+	done
+elif [ "$1" == "batch" ]; then # Common operation - typed batch.
+	# $2 is a file. Read it in line by line as $1 and $2.
+	IFS=$'\n' read -d '' -r -a LINES < $2
+	NEW=""
+	for chunk in "${LINES[@]}"; do
+		NEW="$NEW$0 $chunk ;"
+	done
+	eval $NEW
+elif [ "$1" == "autobatch" ]; then # Common operation - auto batch.
+	# $2 is a file. Read it in line by line as $1 and $2.
+	IFS=$'\n' read -d '' -r -a LINES < $2
+	NEW=""
+	for chunk in "${LINES[@]}"; do
+		NEW="$NEW$0 auto $chunk ;"
+	done
+	eval $NEW
+else # Not a common operation - either invalid or a module-op.
+
+	# Detect whether it is a module operation.
+
+	MATCH=""
+
+	for module in ${MODS[@]}; do
+		if [ "$1" == "$module" ]; then
+			MATCH="dl_$module $2"
+		fi
+	done
+
+	if [ "$MATCH" == "" ]; then # All checks failed. Usage~
+		echo "Usage:"
+		echo "	$0 [type] [param]"
+		echo "Special Types: auto batch autobatch"
+		echo "	(*) auto chooses based on URL"
+		echo "	(*) batch is a file with a list of types and URLs"
+		echo "	(*) autobatch is a file with URLs which will be run thru auto"
+		echo "Download Modules: ${MODS[@]}"
+	else # Module operation.
+		eval $MATCH
+	fi
+fi

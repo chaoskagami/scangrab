@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Spit support first.
+cat support > scangrab-merge
+
+# Module list.
+echo 'MODS=(`ls modules/`)' >> scangrab-merge
+
+# Module code.
+MODS=(`ls modules/`)
+for module in ${MODS[@]}; do
+	cat modules/$module >> scangrab-merge
+done
+
+# Actual code.
+cat core >> scangrab-merge
