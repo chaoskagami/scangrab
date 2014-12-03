@@ -10,13 +10,19 @@ function auto_mpark() {
 }
 
 function dl_mpark() {
+
+	sitepage=$1
+
+	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
+	sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
+
 	# Folder edit works different. URLs are consistent with mangapark, e.g. manga/s1/v1/c1
 	# I'm using pipes for clarity.
-	folder="`echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.com\/manga\/||g" | sed -e "s|\/|-|g"`"
+	folder="`echo $sitepage | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.com\/manga\/||g" | sed -e "s|\/|-|g"`"
 	mkdir -p $folder
 	cd $folder
 	
-	DATA=`wget --quiet $1 -O - | grep 'a target="_blank"' - | sed 's|<em><a target="_blank" href=||g'`
+	DATA=`wget --quiet $sitepage -O - | grep 'a target="_blank"' - | sed 's|<em><a target="_blank" href=||g'`
 	
 	echo "$DATA" > tmp.1
 
@@ -51,7 +57,14 @@ function scrape_mpark() {
 	sed -i "s/^[[:space:]]*//" batch.txtr
 	sed -i "s/[[:space:]]*$//" batch.txtr
 
+	# URLS are local.
 	sed -i "s|^|http://mangapark.com|g" batch.txtr
+
+	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
+	sed -i "s|/1$||g" batch.txtr
+	sed -i "s|/3-1$||g" batch.txtr
+	sed -i "s|/6-1$||g" batch.txtr
+	sed -i "s|/10-1$||g" batch.txtr
 
 	# Lines are reverse order. tac.
 	# If whatever we're using has no tac, you're stuck with reverse order.
