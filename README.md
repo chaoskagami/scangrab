@@ -18,6 +18,7 @@ Here's the list of sites it currently handles:
 Here's a list of the above which support the scraper functionality right now:
  * Batoto
  * FoolSlide
+ * Mangapark
 
 This is open source software relased under the terms of GPLv3. Read COPYING.
 
