@@ -9,6 +9,7 @@ Scangrab is incredibly simplistic, unlike a number of alternatives. It consists 
 
 Here's the list of sites it currently handles:
  * Mangareader
+ * Mangapark
  * Batoto
  * Dynasty Scans
  * Fakku

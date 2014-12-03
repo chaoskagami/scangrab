@@ -1,0 +1,38 @@
+#!/bin/bash
+
+function auto_mpark() {
+	if [ -n "`echo $1 | grep 'mangapark.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Mangareader
+		dl_mpark "$1"
+	fi
+}
+
+function dl_mpark() {
+	# Folder edit works different. URLs are consistent with mangapark, e.g. manga/s1/v1/c1
+	# I'm using pipes for clarity.
+	folder="`echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.com\/manga\/||g" | sed -e "s|\/|-|g"`"
+	mkdir -p $folder
+	cd $folder
+	
+	DATA=`wget --quiet $1 -O - | grep 'a target="_blank"' - | sed 's|<em><a target="_blank" href=||g'`
+	
+	echo "$DATA" > tmp.1
+
+	sed -i "s/ title=.*//" tmp.1
+	eval "pages=(`cat tmp.1 | tr '\n' ' '`)"
+
+	echo -n "[Mangapark] Downloading '$folder' "
+
+	for image in "${pages[@]}"; do
+		wget --no-cache -nc -t 0 -w 30 "$image" > /dev/null 2>&1
+		spinner
+	done
+
+	rm tmp.1
+	
+	done_spin
+
+	cd ..
+
+	cbz_make $folder
+}
