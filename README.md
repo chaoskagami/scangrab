@@ -13,9 +13,11 @@ Here's the list of sites it currently handles:
  * Batoto
  * Dynasty Scans
  * Fakku
+ * Most FoolSlide Sites (foolrulez, vortex-scans, etc)
 
 Here's a list of the above which support the scraper functionality right now:
  * Batoto
+ * FoolSlide
 
 This is open source software relased under the terms of GPLv3. Read COPYING.
 

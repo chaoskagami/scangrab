@@ -102,8 +102,8 @@ function scrape_batoto() {
 
 	sed -i "s|<a href=\"||g" batch.txt
 	sed -i "s|\"><img src=.*||g" batch.txt
-	sed -ie "s/^[[:space:]]*//" batch.txt
-	sed -ie "s/[[:space:]]*$//" batch.txt
+	sed -i "s/^[[:space:]]*//" batch.txt
+	sed -i "s/[[:space:]]*$//" batch.txt
 
 	# We've scraped a batch file from the URL list. Clean up.
 	rm scrape.htm
