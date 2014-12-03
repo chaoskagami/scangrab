@@ -3,11 +3,13 @@
 # Spit support first.
 cat support > scangrab-merge
 
-# Module list.
-echo 'MODS=(`ls modules/`)' >> scangrab-merge
-
 # Module code.
 MODS=(`ls modules/`)
+
+# Module list.
+echo "MODS=(${MODS[@]})" >> scangrab-merge
+
+# Module content
 for module in ${MODS[@]}; do
 	cat modules/$module >> scangrab-merge
 done
