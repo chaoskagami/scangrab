@@ -14,7 +14,10 @@ Here's the list of sites it currently handles:
  * Dynasty Scans
  * Fakku
 
-I'm licensing it under GPLv3. Read copying.
+Here's a list of the above which support the scraper functionality right now:
+ * Batoto
+
+This is open source software relased under the terms of GPLv3. Read COPYING.
 
 To be honest, the reason I originally coded this was Dynasty Scans' nonsense "five zips a day" limit. By viewing the images standalone, I'm already downloading more data than the zip. Also, disatisfaction in general with hakuneko - Adding more sources is impossible, because it consists of far too much GUI code.
 
