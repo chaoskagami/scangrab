@@ -1,0 +1,63 @@
+#!/bin/bash
+
+function auto_mread() {
+	if [ -n "`echo $1 | grep 'mangareader.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Mangareader
+		dl_mread "$1"
+	fi
+}
+
+function dl_mread() {
+
+	# Folder edit works different. URLs are consistent with mangareader. e.g aho-girl/1
+	# I'm using pipes for clarity.
+	folder="`echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|www\.mangareader\.net\/||g" | sed -e "s|\/|-|g"`"
+	mkdir -p $folder
+	cd $folder
+
+	echo -n "[Mangareader] Blindly Downloading '$folder'"
+
+	IS_404=0
+	CUR=0
+	PAGES=0
+
+	while [ $IS_404 == 0 ]; do
+		# Increment CUR.
+		CUR=$(( CUR + 1 ))
+	
+		wget --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm > /dev/null 2>&1
+		IS_404=$?
+
+		if [ $IS_404 == 0 ]; then
+			grep '<div id="imgholder">' $CUR.htm > $CUR.tmp
+	
+			# Edit magic.
+			sed -i "s/^.*src=\"//g" $CUR.tmp
+			sed -i "s/\" alt=.*//g" $CUR.tmp
+
+			# Load src directly.
+			src="`cat $CUR.tmp`"
+	
+			# Get extension of src.
+			EXT="${src##*.}"
+
+			wget --no-cache -nc -t 0 -w 30 "$src" -O $CUR.$EXT > /dev/null 2>&1
+	
+			echo -n "."
+		fi
+	done
+
+	PAGES=$(( CUR - 1 ))
+
+	echo "$CUR Pages."
+
+	# Clean.
+
+	rm *.htm
+	rm *.tmp
+
+	cd ..
+
+	cbz_make $folder
+
+}
