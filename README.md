@@ -3,6 +3,8 @@ scangrab
 
 Eventually, I became sick of the lack of manga downloading tools that were simple and well documented.
 
+To use this, you'll need the following incredibly common tools: grep, sed, bash, wget, and zip. If you don't have these...well, try not running it on android or a netgear router. :P
+
 Scangrab is incredibly simplistic, unlike a number of alternatives. It consists of multiple shell scripts (which can be merged using the 'merge' tool).
 
 Here's the list of sites it currently handles:
