@@ -58,5 +58,5 @@ function scrape_mpark() {
 	# We've scraped a batch file from the URL list. Clean up.
 	rm scrape.htm batch.txtr
 
-	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
