@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Preface - code does not discriminate. Plus, if you read manga, let's be honest;
+# you've made the mistake of ending up here accidentally once.
+
 function auto_fakku() {
 	if [ -n "`echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Fakku
@@ -12,7 +15,6 @@ function dl_fakku() {
 	mkdir -p $folder
 	cd $folder
 
-	echo -n "[Fakku] Preparing..."
 	wget "$1/read" -O page.htm > /dev/null 2>&1
 	echo `grep "window.params.thumbs =" page.htm` > tmp.1
 
@@ -33,21 +35,19 @@ function dl_fakku() {
 
 	echo -e `cat tmp.1` > tmp.1
 
-	echo "OK."
-
 	# Load in the array.
 	source tmp.1
 
 	# Download loop-de-loop.
 
-	echo -n "[Fakku] Downloading '$folder'"
+	echo -n "[Fakku] Downloading '$folder' "
 
 	for image in "${pages[@]}"; do
 		wget --no-cache -nc -t 0 -w 30 "https:$image" > /dev/null 2>&1
-		echo -n '.'
+		spinner
 	done
 
-	echo "DL'd."
+	done_spin
 
 	rm tmp.1
 	rm page.htm

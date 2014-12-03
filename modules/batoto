@@ -17,52 +17,59 @@ function dl_batoto() {
 	cd $folder
 
 	IS_404=0
-
 	CUR=0
 	PAGES=0
 	
-	while [ $PAGES == 0 ]; do # Fuckup T1; 0 pages returned.
-	
-		echo -n "[Batoto] Blindly Downloading '$folder'"
+	echo -n "[Batoto] Downloading '$folder' "
 
-		while [ $IS_404 == 0 ]; do
-			# Increment CUR.
-			CUR=$(( CUR + 1 ))
+	while [ $IS_404 == 0 ]; do
+		# Increment CUR.
+		CUR=$(( CUR + 1 ))
 	
-			wget --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm > /dev/null 2>&1
-			grep -A 1 'z-index: 1002' $CUR.htm | tail -n1 > $CUR.tmp
-	
-			# Edit magic.
-			sed -i "s/[[:space:]]*<img //g" $CUR.tmp
-			sed -i "s/ style=.*//g" $CUR.tmp
+		wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm > /dev/null 2>&1
+		
+		# Batoto sometimes gives out gunzips. We need to account for that... =_=
 
-			# Load 'src'
-			source $CUR.tmp
-	
-			# Get extension of src.
-			EXT="${src##*.}"
+		echo `file $CUR.htm` | grep 'gzip' - > /dev/null 2>&1
 
-			# If this 404's, wget will return non-zero. Thus, loop breaks.
-			wget --no-cache -nc -t 0 -w 30 "$src" -O $CUR.$EXT > /dev/null 2>&1
-			IS_404=$?
-	
-			echo -n "."
-		done
+		RET=$?
 
-		PAGES=$(( CUR - 1 ))
 
-		if [ $PAGES == 0 ]; then
-			echo "Got zero pages. Redo!"
-		else
-			echo "$CUR Pages."
+		# Quirk: GZip. The server ignores our request for non-gz sometimes.
+		if [ $RET == 0 ]; then # Yeah, got a gz.
+			echo -ne "  :/\b\b\b\b"
+
+			mv $CUR.htm $CUR.htm.gz
+			gunzip $CUR.htm.gz
 		fi
 
-		# Clean.
+		grep -A 1 'z-index: 1002' $CUR.htm | tail -n1 > $CUR.tmp
+	
+		# Edit magic.
+		sed -i "s/[[:space:]]*<img //g" $CUR.tmp
+		sed -i "s/ style=.*//g" $CUR.tmp
 
-		rm *.htm
-		rm *.tmp
+		# Load 'src'
+		source $CUR.tmp
+	
+		# Get extension of src.
+		EXT="${src##*.}"
 
+		# If this 404's, wget will return non-zero. Thus, loop breaks.
+		wget --no-cache -nc -t 0 -w 30 "$src" -O $CUR.$EXT > /dev/null 2>&1
+		IS_404=$?
+	
+		spinner
 	done
+
+	PAGES=$(( CUR - 1 ))
+
+	done_spin
+
+	# Clean.
+
+	rm *.htm
+	rm *.tmp
 
 	cd ..
 

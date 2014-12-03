@@ -1,12 +1,38 @@
 #!/bin/bash
 
 function cbz_make() {
-	echo -n "[Post] Zipping to cbz..."
+	echo -ne "[Post] Making CBZ..."
 	zip -r "$1.zip" "$1" > /dev/null 2>&1
-	mv "$1.zip" "$1.cbz"
-	echo "OK."
+	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
 	
-	echo -n "[Post] Cleanup..."
+	echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Post] Cleanup..."
 	rm -rf $1
-	echo "Done!"
+	echo -e "\b\b\b\b\b\b\b\b\b\bFinished.    "
+}
+
+
+_SPINNER_CHAR="|"
+_FIRST=1
+function spinner() {
+	if [ $_FIRST == 1 ]; then
+		echo -ne "[$_SPINNER_CHAR]"
+		_FIRST=0
+	else
+		echo -ne "\b\b\b"
+		if [ "$_SPINNER_CHAR" == "|" ]; then
+			_SPINNER_CHAR="/"
+		elif [ "$_SPINNER_CHAR" == "/" ]; then
+			_SPINNER_CHAR="-"
+		elif [ "$_SPINNER_CHAR" == "-" ]; then
+			_SPINNER_CHAR="\\"
+		elif [ "$_SPINNER_CHAR" == "\\" ]; then
+			_SPINNER_CHAR="|"
+		fi
+
+		echo -ne "[$_SPINNER_CHAR]"
+	fi
+}
+
+function done_spin() {
+	echo -e "\b\b\b[OK]"
 }

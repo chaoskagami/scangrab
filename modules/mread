@@ -15,7 +15,7 @@ function dl_mread() {
 	mkdir -p $folder
 	cd $folder
 
-	echo -n "[Mangareader] Blindly Downloading '$folder'"
+	echo -n "[Mangareader] Blindly Downloading '$folder' "
 
 	IS_404=0
 	CUR=0
@@ -25,36 +25,28 @@ function dl_mread() {
 		# Increment CUR.
 		CUR=$(( CUR + 1 ))
 	
-		wget --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm > /dev/null 2>&1
+		PAGEDATA=`wget --quiet --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm`
 		IS_404=$?
 
 		if [ $IS_404 == 0 ]; then
-			grep '<div id="imgholder">' $CUR.htm > $CUR.tmp
+			src=`grep '<div id="imgholder">' $CUR.htm | sed "s/^.*src=\"//g" | sed "s/\" alt=.*//g"`
 	
-			# Edit magic.
-			sed -i "s/^.*src=\"//g" $CUR.tmp
-			sed -i "s/\" alt=.*//g" $CUR.tmp
+			echo $src
 
-			# Load src directly.
-			src="`cat $CUR.tmp`"
-	
 			# Get extension of src.
 			EXT="${src##*.}"
 
 			wget --no-cache -nc -t 0 -w 30 "$src" -O $CUR.$EXT > /dev/null 2>&1
 	
-			echo -n "."
+			spinner
 		fi
 	done
 
 	PAGES=$(( CUR - 1 ))
 
-	echo "$CUR Pages."
-
-	# Clean.
+	done_spin
 
 	rm *.htm
-	rm *.tmp
 
 	cd ..
 

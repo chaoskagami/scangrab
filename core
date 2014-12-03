@@ -42,6 +42,8 @@ else # Not a common operation - either invalid or a module-op.
 		echo "	(*) batch is a file with a list of types and URLs"
 		echo "	(*) autobatch is a file with URLs which will be run thru auto"
 		echo "Download Modules: ${MODS[@]}"
+		echo "	If you see an emote in the output, it means we had to deal"
+		echo "	with a retrieval quirk."
 	else # Module operation.
 		eval $MATCH
 	fi

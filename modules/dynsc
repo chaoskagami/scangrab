@@ -16,43 +16,29 @@ function dl_dynsc() {
 	mkdir -p $folder
 	cd $folder
 
-	echo -n "[DynastyScans] Preparing..."
-	wget $1 -O page.htm > /dev/null 2>&1
-	echo `grep "var pages" page.htm` > tmp.1
+	PAGEDATA=`wget --quiet $1 -O - | grep "var pages" -`
 
 	# This set of seds cuts up the pagelist in a manner
 	# that makes it identical to a bash array.
 	# So we're essentially modifying the webpage into a dl-script.
 	# Cool, eh?
-	sed -i "s/\"image\"\://g" tmp.1
-	sed -i "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" tmp.1
-	sed -i "s/\}\]/\)/g" tmp.1
-	sed -i "s/{//g" tmp.1
-	sed -i "s/}//g" tmp.1
-	sed -i "s/;//g" tmp.1
-	sed -i "s/ //g" tmp.1
-	sed -i "s/varpages=\[/pages=\(/g" tmp.1
-	sed -i "s/,/ /g" tmp.1
 
-	echo "OK"
+	PAGETMP=`echo $PAGEDATA | sed -e "s/\"image\"\://g" | sed -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" | sed -e "s/\}\]/\)/g" | sed -e "s/{//g" | sed -e "s/}//g" | sed -e "s/;//g" | sed -e "s/ //g" | sed -e "s/varpages=\[/pages=\(/g" | sed -e "s/,/ /g"`
 
 	# One possible nasty. Spaces.
 	# sed -i "s/\%20/ /g" tmp.1
 
 	# Load in the array.
-	source tmp.1
+	eval $PAGETMP
 
-	echo -n "[DynastyScans] Downloading '$folder'"
+	echo -n "[DynastyScans] Downloading '$folder' "
 
 	for image in "${pages[@]}"; do
 		wget --no-cache -nc -t 0 -w 30 "http://dynasty-scans.com$image" > /dev/null 2>&1
-		echo -n '.'
+		spinner
 	done
 
-	echo "DL'd."
-
-	rm tmp.1
-	rm page.htm
+	done_spin
 	
 	cd ..
 
