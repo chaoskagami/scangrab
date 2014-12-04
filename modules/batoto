@@ -98,19 +98,65 @@ function scrape_batoto() {
 		gunzip scrape.htm.gz
 	fi
 
-	grep '<img src="http://bato.to/book_open.png" style="vertical-align:middle;"' scrape.htm >> batch.txtr
+	grep -A 2 '<img src="http://bato.to/book_open.png" style="vertical-align:middle;"' scrape.htm >> batch.txtr
 
+	# Delete the useless lines.
+	sed -i "s|^[[:space:]]*</td>[[:space:]]*||g" batch.txtr
+
+	# Remove Language lines.
+	sed -i 's|^[[:space:]]*<td style="border-top:0;"><div title="||g' batch.txtr
+	sed -i 's|" style="display: inline-block; width:16px; height: 12px;.*$||g' batch.txtr
+
+	# Edit up URL.
 	sed -i "s|<a href=\"||g" batch.txtr
 	sed -i "s|\"><img src=.*||g" batch.txtr
+
+	# Delete blank lines/space lines
+	sed -i '/^[[:space:]]*$/d' batch.txtr
+
+	# Strip.
 	sed -i "s/^[[:space:]]*//" batch.txtr
 	sed -i "s/[[:space:]]*$//" batch.txtr
 
+	sed -i 's|^--$||g' batch.txtr
+
+	# Delete Blank lines.
+	sed -i '/^$/d' batch.txtr
+
 	# Lines are reverse order. tac.
 	# If whatever we're using has no tac, you're stuck with reverse order.
-	tac batch.txtr >> batch.txt || cat batch.txtr >> batch.txt
+	tac batch.txtr > batch.txtf || tail -r batch.txtr > batch.txtf
+
+	if [ "$2" == "" ]; then
+		# Delete Language text, leaving urls
+		sed -ni '0~2p' batch.txtf
+		
+		cat batch.txtf >> batch.txt
+	else
+		echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b Applying Language Filter '$2'..."
+
+		grep -A 1 "$2" batch.txtf > batch.txtf2
+		
+		# Delete '--' lines
+		sed -i '/^[[:space:]]*--[[:space:]]*$/d' batch.txtf2
+
+		# Delete Blank lines.
+		sed -i '/^$/d' batch.txtf2
+
+		# Delete Language text, leaving urls
+		sed -ni '0~2p' batch.txtf2
+
+		cat batch.txtf2 >> batch.txt
+	fi
 
 	# We've scraped a batch file from the URL list. Clean up.
-	rm scrape.htm batch.txtr
+	rm scrape.htm batch.txtr batch.txtf*
+	
+	echo -en "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
 
-	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Batoto] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+	for ((n=0;n < ${#2}; n++)); do
+		echo -en '\b'
+	done
+
+	echo -e " Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

@@ -32,7 +32,7 @@ elif [ "$1" == "scrape" ]; then # Link scraper.
 		eval auto_$module $2
 		RETCHECK=$?
 		if [ $RETCHECK == 1 ]; then
-			eval scrape_$module $2
+			eval scrape_$module $2 $3
 			exit 0
 		fi
 	done
@@ -50,15 +50,16 @@ else # Not a common operation - either invalid or a module-op.
 
 	if [ "$MATCH" == "" ]; then # All checks failed. Usage~
 		echo "Usage:"
-		echo "	$0 [type] [param]"
+		echo "	$0 TYPE PARAM [EXTRA]"
 		echo "Special Types: auto batch autobatch"
 		echo "	(*) auto chooses based on URL"
 		echo "	(*) batch is a file with a list of types and URLs"
 		echo "	(*) autobatch is a file with URLs which will be run thru auto"
 		echo "	(*) scrape will take a manga's page and scrape chapters to batch.txt"
 		echo "Download Modules: ${MODS[@]}"
-		echo "	If you see an emote in the output, it means we had to deal"
-		echo "	with a retrieval quirk."
+		echo "	- If you see an emote in the output, it means we had to deal"
+		echo "	  with a retrieval quirk."
+		echo "	- Some modules accept an extra parameter. In scrape, it is a filter."
 	else # Module operation.
 		eval $MATCH
 	fi
