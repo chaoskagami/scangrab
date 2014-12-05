@@ -5,20 +5,15 @@ Eventually, I became sick of the lack of manga downloading tools that were simpl
 
 To use this, you'll need the following incredibly common tools: grep, sed, bash, wget, file, gunzip, and zip. If you don't have these...well, try not running it on android or a netgear router. :P
 
-Scangrab is incredibly simplistic, unlike a number of alternatives. It consists of multiple shell scripts (which can be merged using the 'merge' tool).
+Scangrab is incredibly simplistic, unlike a number of alternatives. It consists of multiple shell scripts, and that's it. Want one script? I've coded up the multiple scripts so they can all be clunked together into one script.
 
-Here's the list of sites it currently handles:
+Here's the list of sites it currently handles (with scraper indicating it can generate a series batch file):
  * Mangareader
- * Mangapark
- * Batoto
- * Dynasty Scans
+ * [scraper] Mangapark
+ * [scraper] Batoto
+ * [scraper] Dynasty Scans
  * Fakku
- * Most FoolSlide Sites (foolrulez, vortex-scans, etc)
-
-Here's a list of the above which support the scraper functionality right now:
- * Batoto
- * FoolSlide
- * Mangapark
+ * [scraper] Most FoolSlide Sites (foolrulez, vortex-scans, etc)
 
 Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
  * Batoto (Extra: Language)
