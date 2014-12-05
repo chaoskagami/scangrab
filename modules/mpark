@@ -50,7 +50,7 @@ function scrape_mpark() {
 
 	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
 
-	grep 'class="ch sts sts_1"' scrape.htm > batch.txtr
+	grep 'class="ch sts"' scrape.htm > batch.txtr
 
 	sed -i 's|^.*href="||g' batch.txtr
 	sed -i 's|">.*||g' batch.txtr

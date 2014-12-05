@@ -48,5 +48,25 @@ function dl_dynsc() {
 }
 
 function scrape_dynsc() {
-	echo "[DynastyScans] NYI, sorry."
+	echo -n "[DynastyScans] Scraping Chapters..."
+
+	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
+
+	grep 'class="name"' scrape.htm > batch.txtf
+
+	sed -i 's|^.*href="||g' batch.txtf
+	sed -i 's|" class=.*||g' batch.txtf
+	sed -i "s/^[[:space:]]*//" batch.txtf
+	sed -i "s/[[:space:]]*$//" batch.txtf
+
+	# URLS are local.
+	sed -i "s|^|http://dynasty-scans.com|g" batch.txtf
+
+	# Luckily, dynasty is one of the few sites that does ascending rather than descending order (txtf = forward, txtr = reversed)
+	cat batch.txtf >> batch.txt
+
+	# We've scraped a batch file from the URL list. Clean up.
+	rm scrape.htm batch.txtf
+
+	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[DynastyScans] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
