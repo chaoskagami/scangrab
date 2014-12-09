@@ -1,6 +1,4 @@
-#!/bin/bash
-
-function auto_mpark() {
+auto_mpark() {
 	if [ -n "`echo $1 | grep 'mangapark.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Mangareader
 		return 1
@@ -9,7 +7,7 @@ function auto_mpark() {
 	return 0
 }
 
-function dl_mpark() {
+dl_mpark() {
 
 	sitepage=$1
 
@@ -45,7 +43,7 @@ function dl_mpark() {
 	cbz_make $folder
 }
 
-function scrape_mpark() {
+scrape_mpark() {
 	echo -n "[Mangapark] Scraping Chapters..."
 
 	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1

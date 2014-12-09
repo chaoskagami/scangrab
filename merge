@@ -3,9 +3,9 @@
 MINIFY=1
 
 TARGET="$1"
-if [ "$TARGET" == "" ]; then
+if [ "$TARGET" = "" ]; then
 	TARGET="./scangrab-merge"
-elif [ "$TARGET" == "-h" ]; then
+elif [ "$TARGET" = "-h" ]; then
 	echo "This script merges the modules and the core to make"
 	echo "a standalone script. By default, the output is"
 	echo "	./scangrab-merge"
@@ -42,7 +42,7 @@ done
 # Actual code.
 cat core >> $TARGET
 
-if [ $MINIFY == 1 ]; then
+if [ $MINIFY = 1 ]; then
 	# Remove leading and trailing WS.
 	sed -i "s/^[[:space:]]*//" $TARGET
 	sed -i "s/[[:space:]]*$//" $TARGET

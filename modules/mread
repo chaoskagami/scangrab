@@ -1,6 +1,4 @@
-#!/bin/bash
-
-function auto_mread() {
+auto_mread() {
 	if [ -n "`echo $1 | grep 'mangareader.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Mangareader
 		return 1
@@ -9,7 +7,7 @@ function auto_mread() {
 	return 0
 }
 
-function dl_mread() {
+dl_mread() {
 
 	# Folder edit works different. URLs are consistent with mangareader. e.g aho-girl/1
 	# I'm using pipes for clarity.
@@ -23,14 +21,14 @@ function dl_mread() {
 	CUR=0
 	PAGES=0
 
-	while [ $IS_404 == 0 ]; do
+	while [ $IS_404 = 0 ]; do
 		# Increment CUR.
 		CUR=$(( CUR + 1 ))
 	
 		PAGEDATA=`wget --quiet --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm`
 		IS_404=$?
 
-		if [ $IS_404 == 0 ]; then
+		if [ $IS_404 = 0 ]; then
 			src=`grep '<div id="imgholder">' $CUR.htm | sed "s/^.*src=\"//g" | sed "s/\" alt=.*//g"`
 	
 			echo $src
@@ -56,6 +54,6 @@ function dl_mread() {
 
 }
 
-function scrape_mread() {
+scrape_mread() {
 	echo "[MangaReader] NYI, sorry."
 }

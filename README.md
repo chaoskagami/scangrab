@@ -3,7 +3,9 @@ scangrab
 
 Eventually, I became sick of the lack of manga downloading tools that were simple and well documented.
 
-To use this, you'll need the following incredibly common tools: grep, sed, bash, wget, file, gunzip, and zip. Additionally, you need either tac or tail -r. If you don't have these...well, try not running it on android or a netgear router. :P
+To use this, you'll need the following incredibly common tools: grep, sed, wget, file, gunzip, and zip. Additionally, you need either tac or tail -r. If you don't have these...well, try not running it on android or a netgear router. :P
+
+I removed 'bash' from the tools list since the scripts are bash and zsh compatible. If you want to use zsh, just change the shebang. However, it's still not POSIX, so dash probably will not work.
 
 Scangrab is incredibly simplistic, unlike a number of alternatives. It consists of multiple shell scripts, and that's it. Want one script? I've coded up the multiple scripts so they can all be clunked together into one script.
 

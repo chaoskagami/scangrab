@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Unlike all of the other plugins, this is a generic downloader for foolslide based sites.
 # Therefore, instead of keeping it a generic and needing to specifically ask for this plugin,
 # I use a compatibility list.
@@ -7,7 +5,7 @@
 #   reader.vortex-scans.com
 #   foolrulez.org
 
-function auto_foolsl() {
+auto_foolsl() {
 	if [ -n "`echo $1 | grep 'foolrulez.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# FoolRulez
 		return 1
@@ -19,7 +17,7 @@ function auto_foolsl() {
 	return 0
 }
 
-function dl_foolsl() {
+dl_foolsl() {
 	# Attempt a lazy download first. Only image scrape if rejected.
 
 	LAZYURL=`echo $1 | sed "s|/read/|/download/|g"`
@@ -30,7 +28,7 @@ function dl_foolsl() {
 
 	wget --content-disposition --no-cache -nc -t 0 -w 30 "$LAZYURL" > /dev/null 2>&1 || export FAILED=1
 
-	if [ $FAILED == 1 ]; then
+	if [ $FAILED = 1 ]; then
 		echo "[FAIL]"
 		echo "[Foolslide] Downloading via alternate method "
 	else
@@ -38,7 +36,7 @@ function dl_foolsl() {
 	fi
 }
 
-function scrape_foolsl() {
+scrape_foolsl() {
 
 	echo -n "[Foolslide] Scraping Chapters..."
 

@@ -1,6 +1,4 @@
-#!/bin/bash
-
-function auto_batoto() {
+auto_batoto() {
 	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Batoto
 		return 1
@@ -9,7 +7,7 @@ function auto_batoto() {
 	return 0
 }
 
-function dl_batoto() {
+dl_batoto() {
 	# Batoto requires a different strategy.
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
@@ -24,7 +22,7 @@ function dl_batoto() {
 	
 	echo -n "[Batoto] Downloading '$folder' "
 
-	while [ $IS_404 == 0 ]; do
+	while [ $IS_404 = 0 ]; do
 		# Increment CUR.
 		CUR=$(( CUR + 1 ))
 	
@@ -38,7 +36,7 @@ function dl_batoto() {
 
 
 		# Quirk: GZip. The server ignores our request for non-gz sometimes.
-		if [ $RET == 0 ]; then # Yeah, got a gz.
+		if [ $RET = 0 ]; then # Yeah, got a gz.
 			echo -ne "  :/\b\b\b\b"
 
 			mv $CUR.htm $CUR.htm.gz
@@ -52,7 +50,7 @@ function dl_batoto() {
 		sed -i "s/ style=.*//g" $CUR.tmp
 
 		# Load 'src'
-		source $CUR.tmp
+		. $CUR.tmp
 	
 		# Get extension of src.
 		EXT="${src##*.}"
@@ -78,7 +76,7 @@ function dl_batoto() {
 	cbz_make $folder
 }
 
-function scrape_batoto() {
+scrape_batoto() {
 
 	echo -n "[Batoto] Scraping Chapters..."
 
@@ -91,7 +89,7 @@ function scrape_batoto() {
 	RET=$?
 
 	# Quirk: GZip. The server ignores our request for non-gz sometimes.
-	if [ $RET == 0 ]; then # Yeah, got a gz.
+	if [ $RET = 0 ]; then # Yeah, got a gz.
 		echo -ne "  :/\b\b\b\b"
 
 		mv scrape.htm scrape.htm.gz
@@ -127,7 +125,7 @@ function scrape_batoto() {
 	# If whatever we're using has no tac, you're stuck with reverse order.
 	tac batch.txtr > batch.txtf || tail -r batch.txtr > batch.txtf
 
-	if [ "$2" == "" ]; then
+	if [ "$2" = "" ]; then
 		# Delete Language text, leaving urls
 		sed -ni '0~2p' batch.txtf
 		

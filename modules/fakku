@@ -1,9 +1,7 @@
-#!/bin/bash
-
 # Preface - code does not discriminate. Plus, if you read manga, let's be honest;
 # you've made the mistake of ending up here accidentally once.
 
-function auto_fakku() {
+auto_fakku() {
 	if [ -n "`echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Fakku
 		return 1
@@ -12,7 +10,7 @@ function auto_fakku() {
 	return 0
 }
 
-function dl_fakku() {
+dl_fakku() {
 	folder="`echo $1 | sed -re 's/^.+\///'`"
 	mkdir -p $folder
 	cd $folder
@@ -38,7 +36,7 @@ function dl_fakku() {
 	echo -e `cat tmp.1` > tmp.1
 
 	# Load in the array.
-	source tmp.1
+	. tmp.1
 
 	# Download loop-de-loop.
 
@@ -59,7 +57,7 @@ function dl_fakku() {
 	cbz_make $folder
 }
 
-function scrape_fakku() {
+scrape_fakku() {
 	echo -n "[Fakku] Scraping Chapters..."
 	
 	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
