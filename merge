@@ -1,21 +1,61 @@
 #!/bin/bash
 
+MINIFY=1
+
+TARGET="$1"
+if [ "$TARGET" == "" ]; then
+	TARGET="./scangrab-merge"
+elif [ "$TARGET" == "-h" ]; then
+	echo "This script merges the modules and the core to make"
+	echo "a standalone script. By default, the output is"
+	echo "	./scangrab-merge"
+	echo "but you can also pass where you would like as the"
+	echo "first parameter, like so:"
+	echo "	./merge /usr/local/bin/scangrab"
+	echo "This script DOES check to see if you passed it a"
+	echo "folder, and will refuse to work."
+	echo "It also optimizes the output for size; e.g. minify."
+	echo "If you don't want minified output, open this script"
+	echo "and change MINIFY=1 to MINIFY=0 at the top."
+	exit 0
+fi
+
+if [ -d "$1" ]; then
+	echo "Was told to overwrite a folder. Cowardly refusing."
+	exit 1
+fi
+
 # Spit support first.
-cat support > scangrab-merge
+cat support > $TARGET
 
 # Module code.
 MODS=(`ls modules/`)
 
 # Module list.
-echo "MODS=(${MODS[@]})" >> scangrab-merge
+echo "MODS=(${MODS[@]})" >> $TARGET
 
 # Module content
 for module in ${MODS[@]}; do
-	cat modules/$module >> scangrab-merge
+	cat modules/$module >> $TARGET
 done
 
 # Actual code.
-cat core >> scangrab-merge
+cat core >> $TARGET
+
+if [ $MINIFY == 1 ]; then
+	# Remove leading and trailing WS.
+	sed -i "s/^[[:space:]]*//" $TARGET
+	sed -i "s/[[:space:]]*$//" $TARGET
+
+	# Remove lines consisting of a comment.
+	sed -i "/^[[:space:]]*#.*/d" $TARGET
+	
+	# Remove lines consisting of WS.
+	sed -i "/^[[:space:]]*$/d" $TARGET
+
+	# We just nuked the shebang, so fix that.
+	echo "#!/bin/bash"|cat - $TARGET > $TARGET.min && mv $TARGET.min $TARGET
+fi
 
 # Life needs to be easier.
-chmod +x scangrab-merge
+chmod +x $TARGET
