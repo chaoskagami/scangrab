@@ -1,3 +1,6 @@
+batoto_longname="Batoto"
+batoto_url="http://bato.to/"
+
 auto_batoto() {
 	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Batoto

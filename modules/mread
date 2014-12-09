@@ -1,3 +1,6 @@
+mread_longname="Mangareader"
+mread_url="http://www.mangareader.net/"
+
 auto_mread() {
 	if [ -n "`echo $1 | grep 'mangareader.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Mangareader

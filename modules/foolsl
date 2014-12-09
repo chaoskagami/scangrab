@@ -5,6 +5,9 @@
 #   reader.vortex-scans.com
 #   foolrulez.org
 
+foolsl_longname="FoolSlide"
+foolsl_url="Generic, n/a."
+
 auto_foolsl() {
 	if [ -n "`echo $1 | grep 'foolrulez.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# FoolRulez

@@ -1,6 +1,7 @@
+
 # Determine operation.
 
-if [ "$1" = "auto" ]; then # Common operation - Automatic Module Select.
+if [ "$1" = "auto" || "$1" == "a" ]; then # Common operation - Automatic Module Select.
 	for module in ${MODS[@]}; do
 		eval auto_$module $2
 		RETCHECK=$?
@@ -9,7 +10,7 @@ if [ "$1" = "auto" ]; then # Common operation - Automatic Module Select.
 			exit 0
 		fi
 	done
-elif [ "$1" = "batch" ]; then # Common operation - typed batch.
+elif [ "$1" = "batch" || "$1" == "l" ]; then # Common operation - typed batch.
 	# $2 is a file. Read it in line by line as $1 and $2.
 	IFS=$'\n' read -d '' -r -a LINES < $2
 	NEW=""
@@ -17,7 +18,7 @@ elif [ "$1" = "batch" ]; then # Common operation - typed batch.
 		NEW="$NEW$0 $chunk ;"
 	done
 	eval $NEW
-elif [ "$1" = "autobatch" ]; then # Common operation - auto batch.
+elif [ "$1" = "autobatch" || "$1" == "b" ]; then # Common operation - auto batch.
 	# $2 is a file. Read it in line by line as $1 and $2.
 	IFS=$'\n' read -d '' -r -a LINES < $2
 	NEW=""
@@ -25,7 +26,7 @@ elif [ "$1" = "autobatch" ]; then # Common operation - auto batch.
 		NEW="$NEW$0 auto $chunk ;"
 	done
 	eval $NEW
-elif [ "$1" = "scrape" ]; then # Link scraper.
+elif [ "$1" = "scrape" || "$1" == "s" ]; then # Link scraper.
 	for module in ${MODS[@]}; do
 		eval auto_$module $2
 		RETCHECK=$?
@@ -50,14 +51,24 @@ else # Not a common operation - either invalid or a module-op.
 		echo "Usage:"
 		echo "	$0 TYPE PARAM [EXTRA]"
 		echo "Special Types: auto batch autobatch"
-		echo "	(*) auto chooses based on URL"
-		echo "	(*) batch is a file with a list of types and URLs"
-		echo "	(*) autobatch is a file with URLs which will be run thru auto"
-		echo "	(*) scrape will take a manga's page and scrape chapters to batch.txt"
-		echo "Download Modules: ${MODS[@]}"
-		echo "	- If you see an emote in the output, it means we had to deal"
-		echo "	  with a retrieval quirk."
-		echo "	- Some modules accept an extra parameter. In scrape, it is a filter."
+		echo "  (*) auto (a) chooses based on URL"
+		echo "  (*) batch (l) is a file with a list of types and URLs"
+		echo "  (*) autobatch (b) is a file with URLs which will be run thru auto"
+		echo "  (*) scrape (s) will take a manga's page and scrape chapters to batch.txt"
+		echo "Download Modules:"
+		for mod in "${MODS[@]}"; do
+			longname=$(temp=\$${mod}_longname && eval echo $temp)
+			url=$(temp=\$${mod}_url && eval echo $temp)
+			echo -n "  [$mod]	$longname	"
+			if [ ${#longname} -lt 8 ]; then
+				echo -n "	"
+			fi
+			echo "$url"
+		done
+		echo "Info:"
+		echo "  - If you see an emote in the output, it means we had to deal"
+		echo "    with a retrieval quirk."
+		echo "  - Some modules accept an extra parameter. In scrape, it is a filter."
 	else # Module operation.
 		eval $MATCH
 	fi

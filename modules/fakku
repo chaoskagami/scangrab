@@ -1,6 +1,9 @@
 # Preface - code does not discriminate. Plus, if you read manga, let's be honest;
 # you've made the mistake of ending up here accidentally once.
 
+fakku_longname="FAKKU"
+fakku_url="https://fakku.net/"
+
 auto_fakku() {
 	if [ -n "`echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Fakku
