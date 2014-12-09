@@ -60,6 +60,25 @@ function dl_fakku() {
 }
 
 function scrape_fakku() {
-	echo "[Fakku] Fakku probably won't ever support scraping functionality."
-	echo "[Fakku] Everything on there is organized in a strictly one-shot manner."
+	echo -n "[Fakku] Scraping Chapters..."
+	
+	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
+
+	grep 'class="content-title"' scrape.htm > batch.txtf
+
+	sed -i 's|^.*href="||g' batch.txtf
+	sed -i 's|" title=.*||g' batch.txtf
+	sed -i "s/^[[:space:]]*//" batch.txtf
+	sed -i "s/[[:space:]]*$//" batch.txtf
+
+	# Links are local.
+	sed -i "s|^|https://fakku.net|g" batch.txtf
+
+	# Don't bother doing any re-ordering here, since orders are chaotic.
+	cat batch.txtf >> batch.txt
+
+	# Clean up.
+	rm scrape.htm batch.txtf
+
+	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Fakku] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
