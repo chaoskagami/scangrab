@@ -1,8 +1,7 @@
 
 # Determine operation.
 
-if [ "$1" = "auto" -o "$1" = "a" ]; then # Common operation - Automatic Module 
-Select.
+if [ "$1" = "auto" -o "$1" = "a" ]; then # Common operation - Automatic Module Select.
 	for module in ${MODS[@]}; do
 		eval auto_$module $2
 		RETCHECK=$?
