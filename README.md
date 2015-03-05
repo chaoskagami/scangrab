@@ -18,7 +18,7 @@ Here's the list of sites it currently handles (with scraper indicating it can ge
  * [scraper] Most FoolSlide Sites (foolrulez, vortex-scans, etc)
 
 Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
- * Batoto (Extra: Language)
+ * Batoto (Extra: Language. Try 'English', 'Chinese', 'Russian', 'French', etc.)
 
 This is open source software relased under the terms of GPLv3. Read COPYING.
 
