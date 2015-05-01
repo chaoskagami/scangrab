@@ -99,7 +99,7 @@ scrape_batoto() {
 		gunzip scrape.htm.gz
 	fi
 
-	grep -A 2 '<img src="http://bato.to/book_open.png" style="vertical-align:middle;"' scrape.htm >> batch.txtr
+	grep -A 2 'Sort:' scrape.htm >> batch.txtr
 
 	# Delete the useless lines.
 	sed -i "s|^[[:space:]]*</td>[[:space:]]*||g" batch.txtr
@@ -110,7 +110,7 @@ scrape_batoto() {
 
 	# Edit up URL.
 	sed -i "s|<a href=\"||g" batch.txtr
-	sed -i "s|\"><img src=.*||g" batch.txtr
+	sed -i "s|\" title=.*||g" batch.txtr
 
 	# Delete blank lines/space lines
 	sed -i '/^[[:space:]]*$/d' batch.txtr
