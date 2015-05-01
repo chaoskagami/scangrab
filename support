@@ -4,7 +4,7 @@ cbz_make() {
 	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
 	
 	echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Post] Cleanup..."
-	rm -rf $1
+	rm -rf "$1"
 	echo -e "\b\b\b\b\b\b\b\b\b\bFinished.    "
 }
 

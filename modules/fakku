@@ -36,7 +36,7 @@ dl_fakku() {
 	# Because some pages have unicode escapes (javascript thing ugh) we have to echo the contents of the file
 	# to itself to escape them. UGHHHHH
 
-	echo -e `cat tmp.1` > tmp.1
+	printf "`cat tmp.1`" > tmp.1
 
 	# Load in the array.
 	. tmp.1
@@ -46,7 +46,7 @@ dl_fakku() {
 	echo -n "[Fakku] Downloading '$folder' "
 
 	for image in "${pages[@]}"; do
-		wget --no-cache -nc -t 0 -w 30 "https:$image" > /dev/null 2>&1
+		wget --no-cache -nc -t 0 -w 30 "https:$image"
 		spinner
 	done
 
