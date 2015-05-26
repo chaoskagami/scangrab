@@ -68,6 +68,8 @@ else # Not a common operation - either invalid or a module-op.
 		echo "Info:"
 		echo "  - If you see an emote in the output, it means we had to deal"
 		echo "    with a retrieval quirk."
+		echo "     [ :/ ] Given GZip'd data even though we said it wasn't supported in the GET."
+		echo "            This happens frequently with batoto."
 		echo "  - Some modules accept an extra parameter. In scrape, it is a filter."
 	else # Module operation.
 		eval $MATCH
