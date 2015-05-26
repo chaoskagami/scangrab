@@ -11,6 +11,11 @@ auto_eh() {
 }
 
 dl_eh() {
+	echo -e "[e-h] Warning, this is experimental and subject to random"
+	echo -e "[e-h] failures. I think some of the 'nodes' don't respond"
+	echo -e "[e-h] properly, so if an image fails; open a browser and click"
+	echo -e "[e-h] the image not working button repeatedly. You should"
+	echo -e "[e-h] get the fallback server next try."
 
 	sitepage=$1
 
@@ -26,7 +31,7 @@ dl_eh() {
 	DATA=`cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/g' | sed 's/"><img alt.*//g' | grep 'url:'`
   rm ../tmp.1
 	
-	echo "$DATA"
+#	echo "$DATA"
 
   eval "urls=(`echo $DATA | tr '\n' ' ' | sed 's/url://g'`)"
 
@@ -47,20 +52,20 @@ dl_eh() {
        extra="-O $(echo ${get[1]} | sed 's/.*n=//')"
     fi
 
-    #echo ${get[@]}
+    # echo ${get[@]}
 
     if [ "${get[0]}" == "$page" ]; then
           doneyet=1
     fi
 
-    echo wget --no-cache --quiet -nc -t 0 -w 30 "${get[1]}" $extra
+#    echo wget --no-cache --quiet -nc -t 0 -w 30 "${get[1]}" $extra
     wget --no-cache --quiet -nc -t 0 -w 30 "${get[1]}" $extra
 
     if [ ! "${get[0]}" == "" ]; then
        page="${get[0]}"
     fi
 
-    echo "next $page"
+#   echo "next $page"
 
 		spinner
 	done
@@ -73,32 +78,5 @@ dl_eh() {
 }
 
 scrape_eh() {
-	echo -n "[Mangapark] Scraping Chapters..."
-
-	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
-
-	grep 'class="ch sts"' scrape.htm > batch.txtr
-
-	sed -i 's|^.*href="||g' batch.txtr
-	sed -i 's|">.*||g' batch.txtr
-	sed -i "s/^[[:space:]]*//" batch.txtr
-	sed -i "s/[[:space:]]*$//" batch.txtr
-
-	# URLS are local.
-	sed -i "s|^|http://mangapark.com|g" batch.txtr
-
-	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
-	sed -i "s|/1$||g" batch.txtr
-	sed -i "s|/3-1$||g" batch.txtr
-	sed -i "s|/6-1$||g" batch.txtr
-	sed -i "s|/10-1$||g" batch.txtr
-
-	# Lines are reverse order. tac.
-	# If whatever we're using has no tac, you're stuck with reverse order.
-	tac batch.txtr >> batch.txt || cat batch.txtr >> batch.txt
-
-	# We've scraped a batch file from the URL list. Clean up.
-	rm scrape.htm batch.txtr
-
-	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+	echo -n "[e-h] This isn't supported, considering there's really zero categorization here."
 }

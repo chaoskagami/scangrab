@@ -48,29 +48,72 @@ else # Not a common operation - either invalid or a module-op.
 	done
 
 	if [ "$MATCH" = "" ]; then # All checks failed. Usage~
-		echo "Usage:"
-		echo "	$0 TYPE PARAM [EXTRA]"
-		echo "Special Types: auto batch autobatch"
-		echo "  (*) auto (a) chooses based on URL"
-		echo "  (*) batch (l) is a file with a list of types and URLs"
-		echo "  (*) autobatch (b) is a file with URLs which will be run thru auto"
-		echo "  (*) scrape (s) will take a manga's page and scrape chapters to batch.txt"
-		echo "Download Modules:"
+		type 1
+		echo -e "Usage:"
+		type 0
+		echo -ne "\t$0\t"
+		color 3
+		echo -ne "OPERATION\t"
+		color 5
+		echo -e "[PARAMS]"
+		type 0
+		type 1
+		echo -e "Operations:"
+		type 0
+		color 3
+		echo -e "\tauto (a)"
+		type 0
+		echo -e "\t\tChooses module based on URL"
+		color 3
+		echo -e "\tbatch (l)"
+		type 0
+		echo -e "\t\tTakes a file with a list of types and URLs"
+		color 3
+		echo -e "\tautobatch (b)"
+		type 0
+		echo -e "\t\tTakes a file with URLs which will be run with auto."
+		color 3
+		echo -e "\tscrape (s)"
+		type 0
+		echo -e "\t\tWill take a manga's page and scrape chapters to"
+		echo -e "\t\ta file named batch.txt"
+		echo ""
+		echo -e "\tYou can also specify a module name followed by"
+		echo -e "\tthe URL instead of using the auto-detect."
+		type 1
+		echo -e "Download Modules:"
+		type 0
 		for mod in "${MODS[@]}"; do
 			longname=$(temp=\$${mod}_longname && eval echo $temp)
 			url=$(temp=\$${mod}_url && eval echo $temp)
-			echo -n "  [$mod]	$longname	"
-			if [ ${#longname} -lt 8 ]; then
-				echo -n "	"
-			fi
-			echo "$url"
+			echo -ne "\tModule Name:\t\t"
+			color 3
+			echo -e "$mod"
+			type 0
+			echo -ne "\t\tLong Name:\t\t"
+			color 4
+			echo -e "$longname"
+			type 0
+			echo -ne "\t\tSite(s) Used with:\t"
+			color 5
+			echo -e "$url"
+			type 0
+			echo ""
 		done
-		echo "Info:"
-		echo "  - If you see an emote in the output, it means we had to deal"
-		echo "    with a retrieval quirk."
-		echo "     [ :/ ] Given GZip'd data even though we said it wasn't supported in the GET."
-		echo "            This happens frequently with batoto."
-		echo "  - Some modules accept an extra parameter. In scrape, it is a filter."
+		type 1
+		echo -e "Misc Info"
+		type 0
+		echo -e "\tIf you see an emote in the output, it means we had to deal"
+		echo -e "\twith a retrieval quirk."
+		echo -e "\n\t[ :/ ]\tGiven GZip'd data even though we said it wasn't"
+		echo -e "\t\tsupported in the GET."
+		type 2
+		echo -e "\t\tThis happens frequently with batoto when doing"
+		echo -e "\t\tmultiple fetches. :/"
+		type 0
+		echo ""
+		echo -e "\tSome modules accept an extra parameter. Usually, this"
+		echo -e "\tis a filter. Try values like 'English' or 'French'."
 	else # Module operation.
 		eval $MATCH
 	fi

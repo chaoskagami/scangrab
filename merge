@@ -26,35 +26,51 @@ if [ -d "$1" ]; then
 fi
 
 # Spit support first.
-cat support > $TARGET
+cat support > $TARGET.tmp
 
 # Module code.
 MODS=(`ls modules/`)
 
 # Module list.
-echo "MODS=(${MODS[@]})" >> $TARGET
+echo "MODS=(${MODS[@]})" >> $TARGET.tmp
 
 # Module content
 for module in ${MODS[@]}; do
-	cat modules/$module >> $TARGET
+	cat modules/$module >> $TARGET.tmp
 done
 
 # Actual code.
-cat core >> $TARGET
+cat core >> $TARGET.tmp
 
 if [ $MINIFY = 1 ]; then
 	# Remove leading and trailing WS.
-	sed -i "s/^[[:space:]]*//" $TARGET
-	sed -i "s/[[:space:]]*$//" $TARGET
+	sed -i "s/^[[:space:]]*//" $TARGET.tmp
+	sed -i "s/[[:space:]]*$//" $TARGET.tmp
 
 	# Remove lines consisting of a comment.
-	sed -i "/^[[:space:]]*#.*/d" $TARGET
-	
+	sed -i "/^[[:space:]]*#.*/d" $TARGET.tmp
+
 	# Remove lines consisting of WS.
-	sed -i "/^[[:space:]]*$/d" $TARGET
+	sed -i "/^[[:space:]]*$/d" $TARGET.tmp
+
+	# Replace all instances of "echo" and "echo -e" with 'o'.
+
+	# First define the replacements.
+	echo -e "o() {\necho \$@\n}" >> $TARGET.fun
+	echo -e "n() {\necho -ne \$@\n}" >> $TARGET.fun
+	echo -e "e() {\necho -e \$@\n}" >> $TARGET.fun
+
+	# Now repl.
+	sed -i "s/^echo -e/e/g" $TARGET.tmp
+	sed -i "s/^echo -ne/n/g" $TARGET.tmp
+	sed -i "s/^echo -en/n/g" $TARGET.tmp
+	sed -i "s/^echo/o/g" $TARGET.tmp
 
 	# We just nuked the shebang, so fix that.
-	echo "#!/bin/bash"|cat - $TARGET > $TARGET.min && mv $TARGET.min $TARGET
+	echo "#!/bin/bash"|cat - $TARGET.fun $TARGET.tmp >> $TARGET.min && mv $TARGET.min $TARGET
+
+	# Remove tmp.
+	rm $TARGET.{fun,tmp}
 fi
 
 # Life needs to be easier.

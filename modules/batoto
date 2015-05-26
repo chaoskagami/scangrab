@@ -14,6 +14,8 @@ dl_batoto() {
 	# Batoto requires a different strategy.
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
+
+	echo "[Batoto] If this so happens to fail, they changed their page generator again."
 	
 	folder="`echo $1 | sed -re 's/^.+\///'`"
 	mkdir -p $folder
@@ -80,6 +82,8 @@ dl_batoto() {
 }
 
 scrape_batoto() {
+
+	echo "[Batoto] If this so happens to fail, they changed their page generator again."
 
 	echo -n "[Batoto] Scraping Chapters..."
 

@@ -1,3 +1,11 @@
+type() {
+	echo -ne "\x1b[$1m"
+}
+
+color() {
+	echo -ne "\x1b[3$1m"
+}
+
 cbz_make() {
 	echo -ne "[Post] Making CBZ..."
 	zip -r "$1.zip" "$1" > /dev/null 2>&1
