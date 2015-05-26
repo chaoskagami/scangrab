@@ -56,9 +56,9 @@ if [ $MINIFY = 1 ]; then
 	# Replace all instances of "echo" and "echo -e" with 'o'.
 
 	# First define the replacements.
-	echo -e "o() {\necho \$@\n}" >> $TARGET.fun
-	echo -e "n() {\necho -ne \$@\n}" >> $TARGET.fun
-	echo -e "e() {\necho -e \$@\n}" >> $TARGET.fun
+	echo -e "o() {\necho \"\$@\"\n}" >> $TARGET.fun
+	echo -e "n() {\necho -ne \"\$@\"\n}" >> $TARGET.fun
+	echo -e "e() {\necho -e \"\$@\"\n}" >> $TARGET.fun
 
 	# Now repl.
 	sed -i "s/^echo -e/e/g" $TARGET.tmp
@@ -66,8 +66,19 @@ if [ $MINIFY = 1 ]; then
 	sed -i "s/^echo -en/n/g" $TARGET.tmp
 	sed -i "s/^echo/o/g" $TARGET.tmp
 
+
 	# We just nuked the shebang, so fix that.
 	echo "#!/bin/bash"|cat - $TARGET.fun $TARGET.tmp >> $TARGET.min && mv $TARGET.min $TARGET
+
+	# Some function names and etc can be simplified.
+	sed -i "s/auto_/a_/g" $TARGET
+	sed -i "s/scrape_/s_/g" $TARGET
+	sed -i "s/dl_/d_/g" $TARGET
+	sed -i "s/_url/_u/g" $TARGET
+	sed -i "s/_longname/_l/g" $TARGET
+	sed -i "s/_SPINNER_CHAR/_SC/g" $TARGET
+	sed -i "s/spinner/ss/g" $TARGET
+	sed -i "s/done_spin/se/g" $TARGET
 
 	# Remove tmp.
 	rm $TARGET.{fun,tmp}
