@@ -14,9 +14,8 @@ Here's the list of sites it currently handles (with scraper indicating it can ge
  * [scraper] Mangapark
  * [scraper] Batoto
  * [scraper] Dynasty Scans
- * [scraper] Fakku
  * [scraper] Most FoolSlide Sites (foolrulez, vortex-scans, etc)
- * E-H (Yeah, I know, I know...)
+ * Anything not nsfw in this branch
 
 Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
  * Batoto (Extra: Language. Try 'English', 'Chinese', 'Russian', 'French', etc.)
@@ -33,5 +32,4 @@ A lot of temporary files may show up with some sites. This is normal. I may rewr
 
 Note: I will not add support for mangafox. Why? Their scans get run thru jpeg, they don't credit where it's due, and they watermark everything. Have fun coding that yourself.
 
-Don't want anything NSFW because you can't or don't want it? Check the sfw branch out. It's sync'd every once in a while from master with the stuff removed.
-
+This is the branch for politically correct people, like you, the person reading this. I still believe this version to be crippled. Keep in mind, with anime and manga - what is and isn't sfw is up for debate.
