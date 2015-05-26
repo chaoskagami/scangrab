@@ -4,7 +4,7 @@ MINIFY=1
 
 TARGET="$1"
 if [ "$TARGET" = "" ]; then
-	TARGET="./scangrab-merge"
+	TARGET="./scangrab.min"
 elif [ "$TARGET" = "-h" ]; then
 	echo "This script merges the modules and the core to make"
 	echo "a standalone script. By default, the output is"
@@ -17,6 +17,8 @@ elif [ "$TARGET" = "-h" ]; then
 	echo "It also optimizes the output for size; e.g. minify."
 	echo "If you don't want minified output, open this script"
 	echo "and change MINIFY=1 to MINIFY=0 at the top."
+	echo "Scangrab will experimentally work with zsh;"
+	echo "change the shebang if you feel like it."
 	exit 0
 fi
 

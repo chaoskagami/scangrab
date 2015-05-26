@@ -16,6 +16,7 @@ Here's the list of sites it currently handles (with scraper indicating it can ge
  * [scraper] Dynasty Scans
  * [scraper] Fakku
  * [scraper] Most FoolSlide Sites (foolrulez, vortex-scans, etc)
+ * E-H (Yeah, I know, I know...)
 
 Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
  * Batoto (Extra: Language. Try 'English', 'Chinese', 'Russian', 'French', etc.)
@@ -31,3 +32,6 @@ The 'merge' script will merge all of the shell scripts into a more permanent and
 A lot of temporary files may show up with some sites. This is normal. I may rewrite to use eval later everywhere.
 
 Note: I will not add support for mangafox. Why? Their scans get run thru jpeg, they don't credit where it's due, and they watermark everything. Have fun coding that yourself.
+
+Don't want anything NSFW because you can't or don't want it? Check the sfw branch out. It's sync'd every once in a while from master with the stuff removed.
+
