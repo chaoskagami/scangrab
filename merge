@@ -68,6 +68,9 @@ if [ $MINIFY = 1 ]; then
 	sed -i "s/^echo -en/n/g" $TARGET.tmp
 	sed -i "s/^echo/o/g" $TARGET.tmp
 
+	# More miscellaneous stripdowns.
+	echo 'B="\b\b\b\b\b\b\b\b\b\b"' >> $TARGET.fun
+	sed -i 's/\\b\\b\\b\\b\\b\\b\\b\\b\\b\\b/$B/g' $TARGET.tmp
 
 	# We just nuked the shebang, so fix that.
 	echo "#!/bin/bash"|cat - $TARGET.fun $TARGET.tmp >> $TARGET.min && mv $TARGET.min $TARGET
