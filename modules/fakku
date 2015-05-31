@@ -14,13 +14,15 @@ auto_fakku() {
 }
 
 dl_fakku() {
-	folder="`echo $1 | sed -re 's/^.+\///'`"
-	mkdir -p $folder
-	cd $folder
+	folder="$(echo $1 | sed -re 's/^.+\///' | entity_to_char)"
+	mkdir -p "$folder"
+	cd "$folder"
 
-	wget "$1/read" -O page.htm > /dev/null 2>&1
+	fetch "$1/read" page.htm
 	echo `grep "window.params.thumbs =" page.htm` > tmp.1
-
+	
+	# First take care of entities
+	cat tmp.1 | entity_to_char > tmp.1
 	# First. Escape fixups. Nuke escaped forward slashes
 	sed -i 's/\\\//\//g' tmp.1
 	# Next. Reformat decl.
@@ -36,7 +38,7 @@ dl_fakku() {
 	# Because some pages have unicode escapes (javascript thing ugh) we have to echo the contents of the file
 	# to itself to escape them. UGHHHHH
 
-	printf "`cat tmp.1`" > tmp.1
+	printf "$(cat tmp.1)" > tmp.1
 
 	# Load in the array.
 	. tmp.1
@@ -45,9 +47,11 @@ dl_fakku() {
 
 	echo -n "[Fakku] Downloading '$folder' "
 
+	CUR=0
 	for image in "${pages[@]}"; do
-		wget --no-cache -nc -t 0 -w 30 "https:$image"
-		spinner
+		fetch "https:$image"
+		spinner "$CUR"
+		CUR=$(( CUR + 1 ))
 	done
 
 	done_spin
@@ -57,13 +61,13 @@ dl_fakku() {
 	
 	cd ..
 	
-	cbz_make $folder
+	cbz_make "$folder"
 }
 
 scrape_fakku() {
 	echo -n "[Fakku] Scraping Chapters..."
 	
-	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
+	fetch "$1" scrape.htm
 
 	grep 'class="content-title"' scrape.htm > batch.txtf
 

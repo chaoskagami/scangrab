@@ -14,9 +14,9 @@ dl_mread() {
 
 	# Folder edit works different. URLs are consistent with mangareader. e.g aho-girl/1
 	# I'm using pipes for clarity.
-	folder="`echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|www\.mangareader\.net\/||g" | sed -e "s|\/|-|g"`"
-	mkdir -p $folder
-	cd $folder
+	folder="$(echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|www\.mangareader\.net\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
+	mkdir -p "$folder"
+	cd "$folder"
 
 	echo -n "[Mangareader] Blindly Downloading '$folder' "
 
@@ -28,7 +28,7 @@ dl_mread() {
 		# Increment CUR.
 		CUR=$(( CUR + 1 ))
 	
-		PAGEDATA=`wget --quiet --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm`
+		PAGEDATA=$(fetch "$1/$CUR" "$CUR.htm")
 		IS_404=$?
 
 		if [ $IS_404 = 0 ]; then
@@ -39,7 +39,7 @@ dl_mread() {
 			# Get extension of src.
 			EXT="${src##*.}"
 
-			wget --no-cache -nc -t 0 -w 30 "$src" -O $CUR.$EXT > /dev/null 2>&1
+			fetch "$src" "$CUR.$EXT"
 	
 			spinner
 		fi
@@ -53,7 +53,7 @@ dl_mread() {
 
 	cd ..
 
-	cbz_make $folder
+	cbz_make "$folder"
 
 }
 

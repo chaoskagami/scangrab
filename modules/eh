@@ -1,9 +1,19 @@
 eh_longname="E-Hentai"
 eh_url="http://e-hentai.org/"
 
+#notice_eh() {
+#	if [ "$noticed_eh" = "" ]; then
+#		echo -e "[e-h] Warning, this is experimental and subject to random failures."
+#		echo -e "[e-h] This is because H@H is a unreliable download service.
+#		echo -e "[e-h] And we are not a proper node, if you know what I mean."
+#		echo -e "[e-h] Also - this will count towards your image limit of 5k."
+#		noticed_eh=1
+#	fi
+#}
+
 auto_eh() {
 	if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
-		# Mangareader
+		# E-H
 		return 1
 	fi
 
@@ -11,63 +21,53 @@ auto_eh() {
 }
 
 dl_eh() {
-	echo -e "[e-h] Warning, this is experimental and subject to random"
-	echo -e "[e-h] failures. I think some of the 'nodes' don't respond"
-	echo -e "[e-h] properly, so if an image fails; open a browser and click"
-	echo -e "[e-h] the image not working button repeatedly. You should"
-	echo -e "[e-h] get the fallback server next try."
+	#notice_eh
 
 	sitepage=$1
 
-  wget --quiet $sitepage -O tmp.1
+	fetch "${sitepage}/?nw=always" tmp.1
 
 	# Unfortunately e-h has shit system. Time to code page extraction
 	# I'm using pipes for clarity.
-  # the last sed deals with names like fate/stay night which are invalid
-	folder="`cat tmp.1 | grep 'title>' - | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/E-Hentai Galleries/Rip/g' | sed 's|/|_|g'`"
+	# the last sed deals with names like fate/stay night which are invalid
+	folder="$(cat tmp.1 | grep 'title>' - | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
 	mkdir -p "$folder"
 	cd "$folder"
 	
-	DATA=`cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/g' | sed 's/"><img alt.*//g' | grep 'url:'`
-  rm ../tmp.1
-	
-#	echo "$DATA"
+	DATA=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/g' | sed 's/"><img alt.*//g' | grep 'url:')
+	rm ../tmp.1
 
-  eval "urls=(`echo $DATA | tr '\n' ' ' | sed 's/url://g'`)"
+	eval "urls=(`echo $DATA | tr '\n' ' ' | sed 's/url://g'`)"
 
-  page="${urls[0]}"
+	page="${urls[0]}"
 
 	echo -n "[e-h] Downloading '$folder' "
 
-  doneyet=0
+	doneyet=0
 
+	CUR=0
 	while [ $doneyet == 0 ]; do
+		get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp' -))
 
-    get=($(wget --quiet --no-cache -nc -t 0 -w 30 "$page" -O - | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp' -))
+		extra=""
 
-     extra=""
+		if [ "${get[1]}" == "" ]; then
+			get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 '.php?f=' -))
+			extra="-O $(echo ${get[1]} | sed 's/.*n=//')"
+		fi
 
-    if [ "${get[1]}" == "" ]; then
-       get=($(wget --quiet --no-cache -nc -t 0 -w 30 "$page" -O - | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 '.php?f=' -))
-       extra="-O $(echo ${get[1]} | sed 's/.*n=//')"
-    fi
+		if [ "${get[0]}" == "$page" ]; then
+			doneyet=1
+		fi
 
-    # echo ${get[@]}
+		fetch "${get[1]}" "$extra"
 
-    if [ "${get[0]}" == "$page" ]; then
-          doneyet=1
-    fi
+		if [ ! "${get[0]}" == "" ]; then
+			page="${get[0]}"
+		fi
 
-#    echo wget --no-cache --quiet -nc -t 0 -w 30 "${get[1]}" $extra
-    wget --no-cache --quiet -nc -t 0 -w 30 "${get[1]}" $extra
-
-    if [ ! "${get[0]}" == "" ]; then
-       page="${get[0]}"
-    fi
-
-#   echo "next $page"
-
-		spinner
+		spinner "$CUR"
+		CUR=$(( CUR + 1 ))
 	done
 	
 	done_spin

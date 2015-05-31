@@ -1,6 +1,8 @@
 #!/bin/bash
 
-MINIFY=1
+if [ "$MINIFY" == "" ]; then
+	MINIFY=1
+fi
 
 TARGET="$1"
 if [ "$TARGET" = "" ]; then
@@ -87,6 +89,8 @@ if [ $MINIFY = 1 ]; then
 
 	# Remove tmp.
 	rm $TARGET.{fun,tmp}
+else
+	mv $TARGET.tmp $TARGET
 fi
 
 # Life needs to be easier.

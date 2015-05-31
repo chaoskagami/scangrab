@@ -12,18 +12,18 @@ auto_mpark() {
 
 dl_mpark() {
 
-	sitepage=$1
+	sitepage="$1"
 
 	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
 	sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
 
 	# Folder edit works different. URLs are consistent with mangapark, e.g. manga/s1/v1/c1
 	# I'm using pipes for clarity.
-	folder="`echo $sitepage | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.com\/manga\/||g" | sed -e "s|\/|-|g"`"
-	mkdir -p $folder
-	cd $folder
+	folder="$(echo $sitepage | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.com\/manga\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
+	mkdir -p "$folder"
+	cd "$folder"
 	
-	DATA=`wget --quiet $sitepage -O - | grep 'a target="_blank"' - | sed 's|<em><a target="_blank" href=||g'`
+	DATA=$(fetch "$sitepage" "-" | grep 'a target="_blank"' - | sed 's|<em><a target="_blank" href=||g')
 	
 	echo "$DATA" > tmp.1
 
@@ -32,9 +32,11 @@ dl_mpark() {
 
 	echo -n "[Mangapark] Downloading '$folder' "
 
+	CUR=0
 	for image in "${pages[@]}"; do
-		wget --no-cache -nc -t 0 -w 30 "$image" > /dev/null 2>&1
-		spinner
+		fetch "$image"
+		spinner "$CUR"
+		CUR=$(( CUR + 1 ))
 	done
 
 	rm tmp.1
@@ -43,13 +45,13 @@ dl_mpark() {
 
 	cd ..
 
-	cbz_make $folder
+	cbz_make "$folder"
 }
 
 scrape_mpark() {
 	echo -n "[Mangapark] Scraping Chapters..."
 
-	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
+	fetch "$1" scrape.htm
 
 	grep 'class="ch sts"' scrape.htm > batch.txtr
 

@@ -19,7 +19,7 @@ dl_dynsc() {
 	mkdir -p $folder
 	cd $folder
 
-	PAGEDATA=`wget --quiet $1 -O - | grep "var pages" -`
+	PAGEDATA=`fetch "$1" "-" | grep "var pages" -`
 
 	# This set of seds cuts up the pagelist in a manner
 	# that makes it identical to a bash array.
@@ -36,22 +36,25 @@ dl_dynsc() {
 
 	echo -n "[DynastyScans] Downloading '$folder' "
 
+	CUR=0
+
 	for image in "${pages[@]}"; do
-		wget --no-cache -nc -t 0 -w 30 "http://dynasty-scans.com$image" > /dev/null 2>&1
-		spinner
+		fetch "http://dynasty-scans.com$image" "-"
+		spinner "$CUR"
+		CUR=$(( CUR + 1 ))
 	done
 
 	done_spin
 	
 	cd ..
 
-	cbz_make $folder
+	cbz_make "$folder"
 }
 
 scrape_dynsc() {
 	echo -n "[DynastyScans] Scraping Chapters..."
 
-	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
+	fetch "$1" "scrape.htm"
 
 	grep 'class="name"' scrape.htm > batch.txtf
 

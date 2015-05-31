@@ -18,27 +18,146 @@ cbz_make() {
 
 
 _SPINNER_CHAR="|"
+_NUM=0
 _FIRST=1
 spinner() {
 	if [ $_FIRST = 1 ]; then
-		echo -ne "[$_SPINNER_CHAR]"
 		_FIRST=0
 	else
-		echo -ne "\b\b\b"
-		if [ "$_SPINNER_CHAR" = "|" ]; then
-			_SPINNER_CHAR="/"
-		elif [ "$_SPINNER_CHAR" = "/" ]; then
-			_SPINNER_CHAR="-"
-		elif [ "$_SPINNER_CHAR" = "-" ]; then
-			_SPINNER_CHAR="\\"
-		elif [ "$_SPINNER_CHAR" = "\\" ]; then
-			_SPINNER_CHAR="|"
-		fi
-
-		echo -ne "[$_SPINNER_CHAR]"
+		echo -ne "\b\b\b\b"
 	fi
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+
+	if [ "$_SPINNER_CHAR" = "|" ]; then
+		_SPINNER_CHAR="/"
+	elif [ "$_SPINNER_CHAR" = "/" ]; then
+		_SPINNER_CHAR="-"
+	elif [ "$_SPINNER_CHAR" = "-" ]; then
+		_SPINNER_CHAR="\\"
+	elif [ "$_SPINNER_CHAR" = "\\" ]; then
+		_SPINNER_CHAR="|"
+	fi
+
+	_NUM=${#1}
+	echo -ne "[$1 $_SPINNER_CHAR]"
 }
 
 done_spin() {
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
 	echo -e "\b\b\b[OK]"
+}
+
+FETCH_RESULT="0"
+fetch() {
+	wget="$(which wget)"
+	if [ ! "$wget" = "" ]; then
+		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
+		if [ "$2" = "" ]; then
+			$wget $common_opts "$1"
+			FETCH_RESULT=$?
+		else
+			$wget $common_opts "$1" -O "$2"
+			FETCH_RESULT=$?
+		fi
+	else
+		curl="$(which curl)"
+		if [ ! "$curl" = "" ]; then
+			if [ "$2" = "-" ]; then
+				$curl "$1"
+				FETCH_RESULT=$?
+			elif [ "$2" = "" ]; then
+				$curl "$1" > "$(basename $1)"				
+				FETCH_RESULT=$?
+			else
+				$curl "$1" > "$2"
+				FETCH_RESULT=$?
+			fi
+		else
+			if [ "`uname -s`" = "Linux" ]; then
+				# There are some things we can do in this case. Not pretty things, and https is impossible.
+				echo "[Internal] Abort. You have no wget or curl, and no fallback."
+				exit 1
+			else
+				echo "[Internal] Abort. You have no wget or curl, and no fallback."
+				exit 1
+			fi
+		fi
+	fi
+
+	return $FETCH_RESULT	
+}
+
+entity_to_char() {
+	# This probably doesn't handle every case. It should be enough.
+	sed \
+		-e "s/&#32;/ /g" \
+		-e "s/&nbsp;/ /g" \
+		-e "s/&#33;/\!/g" \
+		-e "s/&#34;/\"/g" \
+		-e "s/&#35;/\#/g" \
+		\
+		-e "s/&#36;/\$/g" \
+		-e "s/&#37;/\%/g" \
+		-e "s/&amp;/\&/g" \
+		-e "s/&#38;/\&/g" \
+		-e "s/&#39;/'/g" \
+		\
+		-e "s/&#40;/\(/g" \
+		-e "s/&#41;/\)/g" \
+		-e "s/&#42;/\*/g" \
+		-e "s/&#43;/\+/g" \
+		-e "s/&#44;/\,/g" \
+		\
+		-e "s/&#45;/\-/g" \
+		-e "s/&#46;/\./g" \
+		-e "s/&#58;/\:/g" \
+		-e "s/&#59;/\;/g" \
+		-e "s/&lt;/\</g" \
+		\
+		-e "s/&#60;/\</g" \
+		-e "s/&gt/\>/g" \
+		-e "s/&#61;/\>/g" \
+		-e "s/&#63;/\?/g" \
+		-e "s/&#64;/\@/g" \
+		\
+		-e "s/&#91;/\[/g" \
+		-e "s/&#92;/\\\\/g" \
+		-e "s/&#93;/\]/g" \
+		-e "s/&#94;/\^/g" \
+		-e "s/&#95;/\_/g" \
+		\
+		-e "s/&#123;/\{/g" \
+		-e "s/&#124;/\|/g" \
+		-e "s/&#125;/\}/g" \
+		-e "s/&#126;/\~/g" \
+		-e "s/&yen;/¥/g" \
+		\
+		-e "s/&#165;/¥/g" \
+		-e "s/&sup2;/²/g" \
+		-e "s/&#178;/²/g" \
+		-e "s/&sup3;/³/g" \
+		-e "s/&#179;/³/g" \
+		\
+		-e "s/&frac14;/¼/g" \
+		-e "s/&#188;/¼/g" \
+		-e "s/&frac12;/½/g" \
+		-e "s/&#189;/½/g" \
+		-e "s/&frac34;/¾/g" \
+		\
+		-e "s/&#190;/¾/g" \
+		-e "s/&spades;/♠/g" \
+		-e "s/&#9824;/♠/g" \
+		-e "s/&clubs;/♣/g" \
+		-e "s/&#9827;/♣/g" \
+		\
+		-e "s/&hearts;/♥/g" \
+		-e "s/&#9829;/♥/g" \
+		-e "s/&diams;/♦/g" \
+		-e "s/&#9830;/♦/g"
+
 }
