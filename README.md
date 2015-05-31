@@ -26,7 +26,13 @@ To be honest, the reason I originally coded this was Dynasty Scans' nonsense "fi
 
 To add a new source to download from, make a shell script in modules/, say, arandom. There should be two functions - auto_arandom and dl_arandom. auto_arandom should determine from $1, the url, whether it is the right plugin, returning 1 if so. dl_arandom would do the bulk of work by downloading $1. You must provide a scrape_arandom even if it's a stub.
 
-The 'merge' script will merge all of the shell scripts into a more permanent and standalone scangrab-merge. This can be dropped anywhere, say, /usr/local/bin.
+The 'merge' script will merge all of the shell scripts into a more permanent and standalone scangrab.min. This can be dropped anywhere, say, /usr/local/bin. Merge's behavior can be adjusted, but the default is to minify and create an xz self-decompressing shell script. This is desirable because minifying shaves off 4k, and compressing cuts that down to a fourth. I'm a size-optimization freak. In detail:
+
+ * 21573 scg.raw   (raw)
+ * 15116 scg.min   (minify)
+ * 4841  scg.shbz2 (bz2-min)
+ * 4707  scg.shgz  (gz-min)
+ * 4564  scg.shxz  (xz-min)
 
 A lot of temporary files may show up with some sites. This is normal. I may rewrite to use eval later everywhere.
 

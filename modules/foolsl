@@ -29,11 +29,10 @@ dl_foolsl() {
 
 	FAILED=0
 
-	wget --content-disposition --no-cache -nc -t 0 -w 30 "$LAZYURL" > /dev/null 2>&1 || export FAILED=1
+	fetch "$LAZYURL" || export FAILED=1
 
 	if [ $FAILED = 1 ]; then
-		echo "[FAIL]"
-		echo "[Foolslide] Downloading via alternate method "
+		echo "[Foolslide] Requesting zip failed."
 	else
 		echo "[OK]"
 	fi
@@ -43,7 +42,7 @@ scrape_foolsl() {
 
 	echo -n "[Foolslide] Scraping Chapters..."
 
-	wget --no-cache -nc -t 0 -w 30 "$1" -O tmp.htm > /dev/null 2>&1
+	fetch "$1" tmp.htm
 
 	grep '<div class="title"><a href=' tmp.htm > batch.txtr
 	

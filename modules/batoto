@@ -1,6 +1,13 @@
 batoto_longname="Batoto"
 batoto_url="http://bato.to/"
 
+notice_batoto() {
+	if [ "$noticed_batoto" = "" ]; then
+		echo "[Batoto] If this so happens to fail, they changed their page generator again."
+		noticed_batoto=1
+	fi
+}
+
 auto_batoto() {
 	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Batoto
@@ -11,34 +18,34 @@ auto_batoto() {
 }
 
 dl_batoto() {
+	notice_batoto
+
 	# Batoto requires a different strategy.
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
-
-	echo "[Batoto] If this so happens to fail, they changed their page generator again."
 	
-	folder="`echo $1 | sed -re 's/^.+\///'`"
-	mkdir -p $folder
-	cd $folder
+	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e s/[[:space:]]*$// | entity_to_char)"
 
-	IS_404=0
+	mkdir -p "$folder"
+	cd "$folder"
+
 	CUR=0
 	PAGES=0
+	RET=0
 	
 	echo -n "[Batoto] Downloading '$folder' "
 
-	while [ $IS_404 = 0 ]; do
+	while [ "$RET" = "0" ]; do
 		# Increment CUR.
 		CUR=$(( CUR + 1 ))
 	
-		wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1/$CUR" -O $CUR.htm > /dev/null 2>&1
+		fetch "$1/$CUR" "$CUR.htm"
 		
 		# Batoto sometimes gives out gunzips. We need to account for that... =_=
 
 		echo `file $CUR.htm` | grep 'gzip' - > /dev/null 2>&1
 
 		RET=$?
-
 
 		# Quirk: GZip. The server ignores our request for non-gz sometimes.
 		if [ $RET = 0 ]; then # Yeah, got a gz.
@@ -56,15 +63,12 @@ dl_batoto() {
 
 		# Load 'src'
 		. $CUR.tmp
-	
-		# Get extension of src.
-		EXT="${src##*.}"
 
-		# If this 404's, wget will return non-zero. Thus, loop breaks.
-		wget --no-cache -nc -t 0 -w 30 "$src" -O $CUR.$EXT > /dev/null 2>&1
-		IS_404=$?
+		# If this 404's, fetch will return non-zero. Thus, loop breaks.
+		fetch "$src"
+		RET=$?
 	
-		spinner
+		spinner "$CUR"
 	done
 
 	PAGES=$(( CUR - 1 ))
@@ -78,16 +82,15 @@ dl_batoto() {
 
 	cd ..
 
-	cbz_make $folder
+	cbz_make "$folder"
 }
 
 scrape_batoto() {
-
-	echo "[Batoto] If this so happens to fail, they changed their page generator again."
+	notice_batoto
 
 	echo -n "[Batoto] Scraping Chapters..."
 
-	wget --user-agent="" --header "Accept-Encoding: identity" --no-cache -nc -t 0 -w 30 "$1" -O scrape.htm > /dev/null 2>&1
+	fetch "$1" scrape.htm
 		
 	# Batoto sometimes gives out gunzips. We need to account for that... =_=
 

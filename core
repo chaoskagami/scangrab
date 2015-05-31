@@ -1,6 +1,8 @@
 
 # Determine operation.
 
+fetch_detect
+
 if [ "$1" = "auto" -o "$1" = "a" ]; then # Common operation - Automatic Module Select.
 	for module in ${MODS[@]}; do
 		eval auto_$module $2
@@ -114,6 +116,22 @@ else # Not a common operation - either invalid or a module-op.
 		echo ""
 		echo -e "\tSome modules accept an extra parameter. Usually, this"
 		echo -e "\tis a filter. Try values like 'English' or 'French'."
+		type 1
+		echo -e "System Tools"
+		type 0
+		echo -ne "\tDownload Command: "
+		if [ "$_FETCHTOOL" = "1" ]; then
+			echo -ne "wget"
+			if [ $_BUSYBOX = 1 ]; then
+				echo -e ", busybox"
+			else
+				echo -e ""
+			fi
+		elif [ "$_FETCHTOOL" = "2" ]; then
+			echo -e "curl"
+		else
+			echo -e "not found. Install a program like wget or curl."
+		fi
 	else # Module operation.
 		eval $MATCH
 	fi
