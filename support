@@ -53,43 +53,54 @@ done_spin() {
 }
 
 FETCH_RESULT="0"
-fetch() {
-	wget="$(which wget)"
-	if [ ! "$wget" = "" ]; then
+FETCH_CMD=""
+_FETCHTOOL=0
+_BUSYBOX=0
+fetch_detect() {
+	_wget="$(which wget)"
+	_curl="$(which curl)"
+	if [ ! "$_wget" = "" ]; then
 		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
-		if [ "$2" = "" ]; then
-			$wget $common_opts "$1"
-			FETCH_RESULT=$?
-		else
-			$wget $common_opts "$1" -O "$2"
-			FETCH_RESULT=$?
+
+		if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
+			echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
+			common_opts=" -q -c -U \"Mozilla/4.0\""
+			_BUSYBOX=1
 		fi
+
+		FETCH_CMD="$_wget $common_opts"
+		_FETCHTOOL=1
 	else
-		curl="$(which curl)"
-		if [ ! "$curl" = "" ]; then
-			if [ "$2" = "-" ]; then
-				$curl "$1"
-				FETCH_RESULT=$?
-			elif [ "$2" = "" ]; then
-				$curl "$1" > "$(basename $1)"				
-				FETCH_RESULT=$?
-			else
-				$curl "$1" > "$2"
-				FETCH_RESULT=$?
-			fi
-		else
-			if [ "`uname -s`" = "Linux" ]; then
-				# There are some things we can do in this case. Not pretty things, and https is impossible.
-				echo "[Internal] Abort. You have no wget or curl, and no fallback."
-				exit 1
-			else
-				echo "[Internal] Abort. You have no wget or curl, and no fallback."
-				exit 1
-			fi
+		if [ ! "$_curl" = "" ]; then
+				FETCH_CMD=$_curl
+				_FETCHTOOL=2
 		fi
 	fi
 
 	return $FETCH_RESULT	
+}
+
+fetch() {
+	if [ $_FETCHTOOL = 1 ]; then
+		_CMD="$FETCH_CMD $1"
+		if [ ! "$2" = "" ]; then
+			_CMD="$_CMD -O $2"
+		fi
+	elif [ $_FETCHTOOL = 2 ]; then
+		_CMD="$FETCH_CMD $1"
+		if [ "$2" = "" ]; then
+			_CMD="$_CMD > $(basename "$1")"
+		elif [ ! "$2" = "-" ]; then
+			_CMD="$_CMD > "$2""
+		fi
+	fi
+
+	$_CMD
+	FETCH_RESULT=$?
+	if [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0]; then
+		echo "[WARNING] Image failed on busybox. Cannot retry."
+	fi
+	return $FETCH_RESULT
 }
 
 entity_to_char() {

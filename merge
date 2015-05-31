@@ -1,7 +1,15 @@
 #!/bin/bash
 
-if [ "$MINIFY" == "" ]; then
+if [ "$MINIFY" = "" ]; then
 	MINIFY=1
+fi
+
+if [ "$COMPRESS" = "" ]; then
+	COMPRESS="xz"
+fi
+
+if [ ! "$BRUTE" = "1" ]; then
+	BRUTE=0
 fi
 
 TARGET="$1"
@@ -10,17 +18,32 @@ if [ "$TARGET" = "" ]; then
 elif [ "$TARGET" = "-h" ]; then
 	echo "This script merges the modules and the core to make"
 	echo "a standalone script. By default, the output is"
-	echo "	./scangrab-merge"
+	echo ""
+	echo "	./scangrab.min"
+	echo ""
 	echo "but you can also pass where you would like as the"
 	echo "first parameter, like so:"
+	echo ""
 	echo "	./merge /usr/local/bin/scangrab"
+	echo ""
 	echo "This script DOES check to see if you passed it a"
 	echo "folder, and will refuse to work."
+	echo ""
 	echo "It also optimizes the output for size; e.g. minify."
 	echo "If you don't want minified output, open this script"
 	echo "and change MINIFY=1 to MINIFY=0 at the top."
+	echo ""
 	echo "Scangrab will experimentally work with zsh;"
 	echo "change the shebang if you feel like it."
+	echo ""
+	echo "We can also make a decompressible archive too."
+	echo "Export COMPRESS as one of {none,gzip,bzip2,xz}"
+	echo ""
+	echo "xz is default. Note that a system without the"
+	echo "tools won't even be able to execute it."
+	echo ""
+	echo "Additionally, setting BRUTE=1 will build all of"
+	echo "the different versions for comparison."
 	exit 0
 fi
 
@@ -45,6 +68,10 @@ done
 
 # Actual code.
 cat core >> $TARGET.tmp
+
+if [ $BRUTE = 1 ]; then
+	cp $TARGET.tmp $TARGET.raw
+fi
 
 if [ $MINIFY = 1 ]; then
 	# Remove leading and trailing WS.
@@ -89,9 +116,59 @@ if [ $MINIFY = 1 ]; then
 
 	# Remove tmp.
 	rm $TARGET.{fun,tmp}
+
+	if [ $BRUTE = 1 ]; then
+		cp $TARGET $TARGET.min
+	fi
 else
 	mv $TARGET.tmp $TARGET
 fi
 
+if [ $BRUTE = 1 ]; then
+	xz -9k $TARGET
+	bzip2 -9k $TARGET
+	gzip -9k $TARGET
+	rm $TARGET
+	echo "#!/bin/bash" > $TARGET.shbz2
+	echo "#!/bin/bash" > $TARGET.shgz
+	echo "#!/bin/bash" > $TARGET.shxz
+	echo 'eval "$(tail -n+4 "$0" | gzip -d)"' >> $TARGET.shgz
+	echo 'eval "$(tail -n+4 "$0" | bzip2 -d)"' >> $TARGET.shbz2
+	echo 'eval "$(tail -n+4 "$0" | xz -d)"' >> $TARGET.shxz
+	echo 'exit 0' >> $TARGET.shgz
+	echo 'exit 0' >> $TARGET.shbz2
+	echo 'exit 0' >> $TARGET.shxz
+	cat $TARGET.gz >> $TARGET.shgz
+	cat $TARGET.bz2 >> $TARGET.shbz2
+	cat $TARGET.xz >> $TARGET.shxz
+	rm $TARGET.{gz,xz,bz2}
+elif [ "$COMPRESS" = "xz" ]; then
+	xz -9 $TARGET
+	echo "#!/bin/bash" > $TARGET
+	echo 'eval "$(tail -n+4 "$0" | xz -d)"' >> $TARGET
+	echo 'exit 0' >> $TARGET
+	cat $TARGET.xz >> $TARGET
+	rm $TARGET.xz
+elif [ "$COMPRESS" = "bzip2" ]; then
+	bzip2 -9 $TARGET
+	echo "#!/bin/bash" > $TARGET
+	echo 'eval "$(tail -n+4 "$0" | bzip2 -d)"' >> $TARGET
+	echo 'exit 0' >> $TARGET
+	cat $TARGET.bz2 >> $TARGET
+	rm $TARGET.bz2
+elif [ "$COMPRESS" = "gzip" ]; then
+	gzip -9 $TARGET
+	echo "#!/bin/bash" > $TARGET
+	echo 'eval "$(tail -n+4 "$0" | gzip -d)"' >> $TARGET
+	echo 'exit 0' >> $TARGET
+	cat $TARGET.gz >> $TARGET
+	rm $TARGET.gz
+fi
+
+
 # Life needs to be easier.
-chmod +x $TARGET
+if [ $BRUTE = 1 ]; then
+	chmod +x $TARGET.{raw,min,sh{gz,xz,bz2}}
+else
+	chmod +x $TARGET
+fi
