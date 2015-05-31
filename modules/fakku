@@ -18,11 +18,11 @@ dl_fakku() {
 	mkdir -p "$folder"
 	cd "$folder"
 
-	fetch "$1/read" page.htm
+	fetch "$1/read" "page.htm"
 	echo `grep "window.params.thumbs =" page.htm` > tmp.1
-	
-	# First take care of entities
-	cat tmp.1 | entity_to_char > tmp.1
+
+	cat tmp.1
+
 	# First. Escape fixups. Nuke escaped forward slashes
 	sed -i 's/\\\//\//g' tmp.1
 	# Next. Reformat decl.
@@ -39,6 +39,8 @@ dl_fakku() {
 	# to itself to escape them. UGHHHHH
 
 	printf "$(cat tmp.1)" > tmp.1
+
+	cat tmp.1
 
 	# Load in the array.
 	. tmp.1
