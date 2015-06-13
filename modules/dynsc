@@ -19,27 +19,27 @@ dl_dynsc() {
 	mkdir -p $folder
 	cd $folder
 
-	PAGEDATA=`fetch "$1" "-" | grep "var pages" -`
+	PAGEDATA="$(fetch "$1" page.htm | grep "var pages" -)"
 
 	# This set of seds cuts up the pagelist in a manner
 	# that makes it identical to a bash array.
 	# So we're essentially modifying the webpage into a dl-script.
 	# Cool, eh?
 
-	PAGETMP=`echo $PAGEDATA | sed -e "s/\"image\"\://g" | sed -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" | sed -e "s/\}\]/\)/g" | sed -e "s/{//g" | sed -e "s/}//g" | sed -e "s/;//g" | sed -e "s/ //g" | sed -e "s/varpages=\[/pages=\(/g" | sed -e "s/,/ /g"`
+	PAGETMP="$(echo $PAGEDATA | sed -e "s/\"image\"\://g" | sed -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" | sed -e "s/\}\]/\)/g" | sed -e "s/{//g" | sed -e "s/}//g" | sed -e "s/;//g" | sed -e "s/ //g" | sed -e "s/varpages=\[/pages=\(/g" | sed -e "s/,/ /g")"
 
 	# One possible nasty. Spaces.
 	# sed -i "s/\%20/ /g" tmp.1
 
 	# Load in the array.
-	eval $PAGETMP
+	eval "$PAGETMP"
 
 	echo -n "[DynastyScans] Downloading '$folder' "
 
 	CUR=0
 
 	for image in "${pages[@]}"; do
-		fetch "http://dynasty-scans.com$image" "-"
+		fetch "http://dynasty-scans.com$image"
 		spinner "$CUR"
 		CUR=$(( CUR + 1 ))
 	done
