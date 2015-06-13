@@ -10,10 +10,9 @@ if [ "$COMPRESS" = "" ]; then
 	COMPRESS="xz"
 fi
 
-if [ ! "$BRUTE" = "1" ]; then
-	BRUTE=0
-	mkdir -p $(pwd)/dist
-	TARGET="$(pwd)/dist/scangrab"
+if [ $BRUTE = 1 ]; then
+	mkdir -p ./dist
+	TARGET="./dist/scangrab"
 fi
 
 if [ "$TARGET" = "" ]; then
@@ -51,8 +50,13 @@ elif [ "$TARGET" = "-h" ]; then
 	exit 0
 fi
 
-if [ -d "$1" ]; then
+if [ -d "$TARGET" ]; then
 	echo "Was told to overwrite a folder. Cowardly refusing."
+	exit 1
+fi
+
+if [ "$(readlink -f $TARGET)" = "$(pwd)/scangrab" ]; then
+	echo "Refusing to clobber the actual scangrab script. Why would you do that?"
 	exit 1
 fi
 
