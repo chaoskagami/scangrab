@@ -1,9 +1,11 @@
 mpark_longname="MangaPark"
 mpark_url="http://mangapark.com/"
+mpark_state=0 # Broken
+mpark_filt=0 # No filter
 
 auto_mpark() {
 	if [ -n "`echo $1 | grep 'mangapark.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
-		# Mangareader
+		# Mangapark
 		return 1
 	fi
 

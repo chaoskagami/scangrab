@@ -3,40 +3,193 @@
 
 fetch_detect
 
-if [ "$1" = "auto" -o "$1" = "a" ]; then # Common operation - Automatic Module Select.
+auto() {
 	for module in ${MODS[@]}; do
-		eval auto_$module $2
+		eval auto_$module $1
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
-			eval dl_$module $2
+			eval dl_$module $1
 			exit 0
 		fi
 	done
-elif [ "$1" = "batch" -o "$1" = "l" ]; then # Common operation - typed batch.
+}
+
+batch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
-	IFS=$'\n' read -d '' -r -a LINES < $2
+	IFS=$'\n' read -d '' -r -a LINES < $1
 	NEW=""
 	for chunk in "${LINES[@]}"; do
 		NEW="$NEW$0 $chunk ;"
 	done
 	eval $NEW
-elif [ "$1" = "autobatch" -o "$1" = "b" ]; then # Common operation - auto batch.
+}
+
+autobatch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
-	IFS=$'\n' read -d '' -r -a LINES < $2
+	IFS=$'\n' read -d '' -r -a LINES < $1
 	NEW=""
 	for chunk in "${LINES[@]}"; do
 		NEW="$NEW$0 auto $chunk ;"
 	done
 	eval $NEW
-elif [ "$1" = "scrape" -o "$1" = "s" ]; then # Link scraper.
+}
+
+scrape() {
 	for module in ${MODS[@]}; do
-		eval auto_$module $2
+		eval auto_$module $1
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
-			eval scrape_$module $2 $3
+			eval scrape_$module $1 $2
 			exit 0
 		fi
 	done
+}
+
+help() {
+	type 1
+	echo -e "Usage:"
+	type 0
+	echo -ne "\t$0\t"
+	color 3
+	echo -ne "OPERATION\t"
+	color 5
+	echo -e "[PARAMS]"
+	type 0
+	type 1
+	echo -e "Operations:"
+	type 0
+	color 3
+	echo -e "\tauto (a)"
+	type 0
+	echo -e "\t\tChooses module based on URL"
+	color 3
+	echo -e "\tbatch (l)"
+	type 0
+	echo -e "\t\tTakes a file with a list of types and URLs"
+	color 3
+	echo -e "\tautobatch (b)"
+	type 0
+	echo -e "\t\tTakes a file with URLs which will be run with auto."
+	color 3
+	echo -e "\tscrape (s)"
+	type 0
+	echo -e "\t\tWill take a manga's page and scrape chapters to"
+	echo -e "\t\ta file named batch.txt"
+	echo ""
+	echo -e "\tYou can also specify a module name followed by"
+	echo -e "\tthe URL instead of using the auto-detect."
+	type 1
+	echo -e "Download Modules:"
+	type 0
+	for mod in "${MODS[@]}"; do
+		longname=$(temp=\$${mod}_longname && eval echo $temp)
+		url=$(temp=\$${mod}_url && eval echo $temp)
+		broke=$(temp=\$${mod}_state && eval echo $temp)
+		filter=$(temp=\$${mod}_filt && eval echo $temp)
+
+		echo -ne "\tModule Name:\t\t"
+		color 3
+		echo -e "$mod"
+
+		type 0
+		echo -ne "\t\tLong Name:\t\t"
+		color 4
+		echo -e "$longname"
+
+		type 0
+		echo -ne "\t\tSite(s) Used with:\t"
+		color 5
+		echo -e "$url"
+		type 0
+		echo ""
+
+		type 0
+		echo -ne "\t\tSite(s) Current state:\t"
+		if [ "$broke" = "1" ]; then
+			color 2
+			echo -e "Works"
+		else
+			color 1
+			echo -e "Broken"
+		fi
+		type 0
+
+		if [ "$filter" = "1" ]; then
+			echo -e "\t\tSupports filters for scrape"
+		fi
+
+		echo ""
+	done
+	type 1
+	echo -e "Misc Info"
+	type 0
+	echo -e "\tIf you see an emote in the output, it means we had to deal"
+	echo -e "\twith a retrieval quirk."
+	echo -e "\n\t[ :/ ]\tGiven GZip'd data even though we said it wasn't"
+	echo -e "\t\tsupported in the GET."
+	type 2
+	echo -e "\t\tThis happens frequently with batoto when doing"
+	echo -e "\t\tmultiple fetches. :/"
+	type 0
+	echo ""
+	echo -e "\tSome modules accept an extra parameter. Usually, this"
+	echo -e "\tis a filter. Try values like 'English' or 'French'."
+	type 1
+	echo -e "System Tools"
+	type 0
+	if [ ! "$_wget" = "" ]; then
+		echo -e "\twget:\t\t$_wget"
+	fi
+	if [ ! "$_curl" = "" ]; then
+		echo -e "\tcurl:\t\t$_curl"
+	fi
+	if [ ! "$_aria" = "" ]; then
+		echo -e "\taria2c:\t\t$_aria"
+	fi
+	echo -ne "\tWill use:\t"
+	if [ $_FETCHTOOL = 1 ]; then
+		echo -ne "wget"
+		if [ $_BUSYBOX = 1 ]; then
+			echo -e ", busybox"
+		else
+			echo -e ""
+		fi
+	elif [ $_FETCHTOOL = 2 ]; then
+		echo -e "curl"
+	elif [ $_FETCHTOOL = 3 ]; then
+		echo -e "aria2c"
+	else
+		echo -e "not found. Install a program like wget or curl."
+	fi
+	type 1
+	echo -ne "License"
+	type 0
+	echo ""
+	echo -e "\tCopyright (C) 2015  Jon Feldman/@chaoskagami"
+	echo ""
+	echo -e "\tThis program is free software: you can redistribute it and/or modify"
+	echo -e "\tit under the terms of the GNU General Public License as published by"
+	echo -e "\tthe Free Software Foundation, either version 3 of the License, or"
+	echo -e "\t(at your option) any later version."
+	echo ""
+	echo -e "\tThis program is distributed in the hope that it will be useful,"
+	echo -e "\tbut WITHOUT ANY WARRANTY; without even the implied warranty of"
+	echo -e "\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+	echo -e "\tGNU General Public License for more details."
+	echo ""
+	echo -e "\tYou should have received a copy of the GNU General Public License"
+	echo -e "\talong with this program.  If not, see <http://www.gnu.org/licenses/>"
+}
+
+if [ "$1" = "auto" -o "$1" = "a" ]; then # Common operation - Automatic Module Select.
+	auto $2 $3
+elif [ "$1" = "batch" -o "$1" = "l" ]; then # Common operation - typed batch.
+	batch $2 $3
+elif [ "$1" = "autobatch" -o "$1" = "b" ]; then # Common operation - auto batch.
+	# $2 is a file. Read it in line by line as $1 and $2.
+	autobatch $2 $3
+elif [ "$1" = "scrape" -o "$1" = "s" ]; then # Link scraper.
+	scrape $2 $3
 else # Not a common operation - either invalid or a module-op.
 
 	# Detect whether it is a module operation.
@@ -50,118 +203,12 @@ else # Not a common operation - either invalid or a module-op.
 	done
 
 	if [ "$MATCH" = "" ]; then # All checks failed. Usage~
-		type 1
-		echo -e "Usage:"
-		type 0
-		echo -ne "\t$0\t"
-		color 3
-		echo -ne "OPERATION\t"
-		color 5
-		echo -e "[PARAMS]"
-		type 0
-		type 1
-		echo -e "Operations:"
-		type 0
-		color 3
-		echo -e "\tauto (a)"
-		type 0
-		echo -e "\t\tChooses module based on URL"
-		color 3
-		echo -e "\tbatch (l)"
-		type 0
-		echo -e "\t\tTakes a file with a list of types and URLs"
-		color 3
-		echo -e "\tautobatch (b)"
-		type 0
-		echo -e "\t\tTakes a file with URLs which will be run with auto."
-		color 3
-		echo -e "\tscrape (s)"
-		type 0
-		echo -e "\t\tWill take a manga's page and scrape chapters to"
-		echo -e "\t\ta file named batch.txt"
-		echo ""
-		echo -e "\tYou can also specify a module name followed by"
-		echo -e "\tthe URL instead of using the auto-detect."
-		type 1
-		echo -e "Download Modules:"
-		type 0
-		for mod in "${MODS[@]}"; do
-			longname=$(temp=\$${mod}_longname && eval echo $temp)
-			url=$(temp=\$${mod}_url && eval echo $temp)
-			echo -ne "\tModule Name:\t\t"
-			color 3
-			echo -e "$mod"
-			type 0
-			echo -ne "\t\tLong Name:\t\t"
-			color 4
-			echo -e "$longname"
-			type 0
-			echo -ne "\t\tSite(s) Used with:\t"
-			color 5
-			echo -e "$url"
-			type 0
-			echo ""
-		done
-		type 1
-		echo -e "Misc Info"
-		type 0
-		echo -e "\tIf you see an emote in the output, it means we had to deal"
-		echo -e "\twith a retrieval quirk."
-		echo -e "\n\t[ :/ ]\tGiven GZip'd data even though we said it wasn't"
-		echo -e "\t\tsupported in the GET."
-		type 2
-		echo -e "\t\tThis happens frequently with batoto when doing"
-		echo -e "\t\tmultiple fetches. :/"
-		type 0
-		echo ""
-		echo -e "\tSome modules accept an extra parameter. Usually, this"
-		echo -e "\tis a filter. Try values like 'English' or 'French'."
-		type 1
-		echo -e "System Tools"
-		type 0
-		if [ ! "$_wget" = "" ]; then
-			echo -e "\twget:\t\t$_wget"
-		fi
-		if [ ! "$_curl" = "" ]; then
-			echo -e "\tcurl:\t\t$_curl"
-		fi
-		if [ ! "$_aria" = "" ]; then
-			echo -e "\taria2c:\t\t$_aria"
-		fi
-		echo -ne "\tWill use:\t"
-		if [ $_FETCHTOOL = 1 ]; then
-			echo -ne "wget"
-			if [ $_BUSYBOX = 1 ]; then
-				echo -e ", busybox"
-			else
-				echo -e ""
-			fi
-		elif [ $_FETCHTOOL = 2 ]; then
-			echo -e "curl"
-		elif [ $_FETCHTOOL = 3 ]; then
-			echo -e "aria2c"
+		if [ ! "$(echo "$1" | grep http)" = "" ]; then
+			# URL as $1. Do auto.
+			auto $2
 		else
-			echo -e "not found. Install a program like wget or curl."
+			help
 		fi
-		type 1
-		echo -ne "License"
-		type 0
-		echo ""
-		echo -e "\tCopyright (C) 2015  Jon Feldman/@chaoskagami"
-		echo ""
-		echo -e "\tThis program is free software: you can redistribute it and/or modify"
-		echo -e "\tit under the terms of the GNU General Public License as published by"
-		echo -e "\tthe Free Software Foundation, either version 3 of the License, or"
-		echo -e "\t(at your option) any later version."
-		echo ""
-		echo -e "\tThis program is distributed in the hope that it will be useful,"
-		echo -e "\tbut WITHOUT ANY WARRANTY; without even the implied warranty of"
-		echo -e "\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
-		echo -e "\tGNU General Public License for more details."
-		echo ""
-		echo -e "\tYou should have received a copy of the GNU General Public License"
-		echo -e "\talong with this program.  If not, see <http://www.gnu.org/licenses/>"
-
 	else # Module operation.
 		eval $MATCH
 	fi

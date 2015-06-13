@@ -1,5 +1,7 @@
 batoto_longname="Batoto"
 batoto_url="http://bato.to/"
+batoto_state=1
+batoto_filt=1
 
 notice_batoto() {
 	if [ "$noticed_batoto" = "" ]; then
