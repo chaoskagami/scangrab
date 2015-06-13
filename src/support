@@ -8,6 +8,18 @@ color() {
 
 cbz_make() {
 	echo -ne "[Post] Making CBZ..."
+
+	# Check and make sure the folder has something, and is actually a folder.
+	if [ ! -d "$1" ]; then
+		echo -e "\n[Error] Not a folder. Something went wrong."
+		exit 1
+	fi
+	
+	if [ "$(ls "$1")" = "" ]; then
+		echo "[Error] No files? Download failed."
+		exit 1
+	fi
+
 	zip -r "$1.zip" "$1" > /dev/null 2>&1
 	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
 	
@@ -16,6 +28,15 @@ cbz_make() {
 	echo -e "\b\b\b\b\b\b\b\b\b\bFinished.    "
 }
 
+# NYI. Should verify an image is uncorrupted.
+	# Returns 0 on OK
+	# Returns 1 on corrupt
+verify() {
+	_identify=$(which identify)
+	if [ -f $_identify ]; then
+		echo -n ""
+	fi
+}
 
 _SPINNER_CHAR="|"
 _NUM=0

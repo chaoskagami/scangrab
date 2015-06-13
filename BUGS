@@ -1,0 +1,4 @@
+ - Mangapark and Mangareader are broken.
+ - Because E-H's H@H is stupid, sometimes it creates corrupt files
+   that no downloader tool detects (e.g. chopped jpegs.)
+   We need a way to check file validity.

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# This file automatically fetches some 'known' files. In case of an api change, the files should
+# be invalid.
+
+(cd ../src && ./merge ../test/scangrab)
+
+
+# We try to use SFW stuff for NSFW scrapers, fyi.
+
+# Okay as of June 13, 2015
+if [ -f ../src/modules/fakku ]; then
+	# Nagato Yuki. Non-H.
+	./scangrab a "https://www.fakku.net/doujinshi/if-nagato-yuki-had-disappearances-personality-from-the-start-english"
+fi
+
+# Okay as of June 13, 2015
+if [ -f ../src/modules/eh ]; then
+	# Natural Born Darkness. Seija doujin, Non-H. Had a good damn laugh.
+	./scangrab a "http://g.e-hentai.org/g/822043/3a881c225e/"
+fi
+
+# These we know exist, but still test for existence anyways.
+
+# Okay as of June 13, 2015
+if [ -f ../src/modules/dynsc ]; then
+	# Suika suika. Drunk.
+	./scangrab a "http://dynasty-scans.com/chapters/suika_suika"
+fi
+
+# Okay as of June 13, 2015
+if [ -f ../src/modules/batoto ]; then
+	# Medaka Box ch1
+	./scangrab a "http://bato.to/read/_/202832/medaka-box_v1_ch1_by_cxc-scans"
+fi
+
+if [ -f ../src/modules/mpark ]; then
+	# New Game. It's new-ish and kinda funny.
+	./scangrab a "http://mangapark.me/manga/new-game-tokunou-shoutarou/s1/v1/c1"
+fi
+
+# Okay as of June 13, 2015 (needs a few tweaks tho)
+if [ -f ../src/modules/foolsl ]; then
+	# The canonical test is Seitokai Yakuindomo; and these guys coded foolslide, so yeah.
+	./scangrab a "http://foolrulez.org/slide/reader/read/seitokai_yakuindomo/en/1/1/"
+fi
+
+if [ -f ../src/modules/mread ]; then
+	# Ema toyama does some good romcoms.
+	./scangrab a "http://www.mangareader.net/440-27882-1/watashi-ni-xx-shinasai/chapter-1.html"
+fi

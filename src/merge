@@ -10,7 +10,7 @@ if [ "$COMPRESS" = "" ]; then
 	COMPRESS="xz"
 fi
 
-if [ $BRUTE = 1 ]; then
+if [ "$BRUTE" = "1" ]; then
 	mkdir -p ./dist
 	TARGET="./dist/scangrab"
 fi
@@ -77,11 +77,11 @@ done
 # Actual code.
 cat core >> $TARGET.tmp
 
-if [ $BRUTE = 1 ]; then
+if [ "$BRUTE" = "1" ]; then
 	cp $TARGET.tmp $TARGET.raw
 fi
 
-if [ $MINIFY = 1 ]; then
+if [ "$MINIFY" = "1" ]; then
 	# Remove leading and trailing WS.
 	sed -i "s/^[[:space:]]*//" $TARGET.tmp
 	sed -i "s/[[:space:]]*$//" $TARGET.tmp
@@ -125,14 +125,14 @@ if [ $MINIFY = 1 ]; then
 	# Remove tmp.
 	rm $TARGET.{fun,tmp}
 
-	if [ $BRUTE = 1 ]; then
+	if [ "$BRUTE" = "1" ]; then
 		cp $TARGET $TARGET.min
 	fi
 else
 	mv $TARGET.tmp $TARGET
 fi
 
-if [ $BRUTE = 1 ]; then
+if [ "$BRUTE" = "1" ]; then
 	xz -9k $TARGET
 	bzip2 -9k $TARGET
 	gzip -9k $TARGET
@@ -175,7 +175,7 @@ fi
 
 
 # Life needs to be easier.
-if [ $BRUTE = 1 ]; then
+if [ "$BRUTE" = "1" ]; then
 	chmod +x $TARGET.*
 else
 	chmod +x $TARGET

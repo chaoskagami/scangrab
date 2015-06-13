@@ -1,5 +1,7 @@
 dynsc_longname="Dynasty Scans"
 dynsc_url="http://dynasty-scans.com/"
+dynsc_state=1
+dynsc_filt=0 # No filter
 
 auto_dynsc() {
 	if [ -n "`echo $1 | grep 'dynasty-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -25,8 +27,6 @@ dl_dynsc() {
 	# that makes it identical to a bash array.
 	# So we're essentially modifying the webpage into a dl-script.
 	# Cool, eh?
-
-	echo "$PAGEDATA"
 
 	PAGETMP="$(echo $PAGEDATA | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g")"
 

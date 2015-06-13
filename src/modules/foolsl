@@ -7,6 +7,8 @@
 
 foolsl_longname="FoolSlide"
 foolsl_url="Generic, n/a."
+foolsl_state=1
+foolsl_filt=0
 
 auto_foolsl() {
 	if [ -n "`echo $1 | grep 'foolrulez.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -25,7 +27,7 @@ dl_foolsl() {
 
 	LAZYURL=`echo $1 | sed "s|/read/|/download/|g"`
 
-	echo -n "[FoolSlide] Attempting Lazy Download "
+	echo -n "[FoolSlide] Attempting Lazy Download..."
 
 	FAILED=0
 

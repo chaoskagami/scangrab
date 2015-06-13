@@ -3,6 +3,8 @@
 
 fakku_longname="FAKKU"
 fakku_url="https://fakku.net/"
+fakku_state=1
+fakku_filt=0
 
 auto_fakku() {
 	if [ -n "`echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -14,36 +16,26 @@ auto_fakku() {
 }
 
 dl_fakku() {
-	folder="$(echo $1 | sed -re 's/^.+\///' | entity_to_char)"
-	mkdir -p "$folder"
-	cd "$folder"
-
-	fetch "$1/read" "page.htm"
-	echo `grep "window.params.thumbs =" page.htm` > tmp.1
-
-	cat tmp.1
+	PAGES="$(fetch "$1/read" "-" | grep "window.params.thumbs =")"
 
 	# First. Escape fixups. Nuke escaped forward slashes
-	sed -i 's/\\\//\//g' tmp.1
 	# Next. Reformat decl.
-	sed -i 's/\];/)/g' tmp.1
-	sed -i 's/window.params.thumbs = \[/pages=(/g' tmp.1
 	# Next. Nuke '.thumb'
-	sed -i 's/\.thumb//g' tmp.1
 	# Next. Nuke commas. Still, they can occur in names so we'll carefully filter.
-	sed -i 's/","/" "/g' tmp.1
 	# Last transform. '/thumbs/' to '/images/'
-	sed -i 's/\/thumbs\//\/images\//g' tmp.1
+	PAGEDATA="$(echo $PAGES | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
 
 	# Because some pages have unicode escapes (javascript thing ugh) we have to echo the contents of the file
 	# to itself to escape them. UGHHHHH
 
-	printf "$(cat tmp.1)" > tmp.1
+	DATA="$(printf "$PAGEDATA")"
 
-	cat tmp.1
+	folder="$(echo $PAGEDATA | sed -e 's|pages=("//t.fakku.net/images/manga/i/||g' -e 's|/images.*||g' -e 's|_| |g' | entity_to_char)"
+	mkdir -p "$folder"
+	cd "$folder"
 
 	# Load in the array.
-	. tmp.1
+	eval "$DATA"
 
 	# Download loop-de-loop.
 
@@ -58,9 +50,6 @@ dl_fakku() {
 
 	done_spin
 
-	rm tmp.1
-	rm page.htm
-	
 	cd ..
 	
 	cbz_make "$folder"

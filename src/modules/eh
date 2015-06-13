@@ -1,5 +1,7 @@
 eh_longname="E-Hentai"
 eh_url="http://e-hentai.org/"
+eh_state=1
+eh_filt=0
 
 #notice_eh() {
 #	if [ "$noticed_eh" = "" ]; then
