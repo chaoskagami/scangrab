@@ -1,10 +1,26 @@
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
 batoto_longname="Batoto"
 batoto_url="http://bato.to/"
 batoto_state=1
 batoto_filt=1
 
+noticed_batoto=0
 notice_batoto() {
-	if [ "$noticed_batoto" = "" ]; then
+	if [ $noticed_batoto = 0 ]; then
 		echo "[Batoto] If this so happens to fail, they changed their page generator again."
 		noticed_batoto=1
 	fi
@@ -20,13 +36,18 @@ auto_batoto() {
 }
 
 dl_batoto() {
-	notice_batoto
+	# notice_batoto
 
 	# Batoto requires a different strategy.
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
 	
-	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e s/[[:space:]]*$// | entity_to_char)"
+	data="$(fetch "$1" tmp)"
+	folder="$(cat tmp | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
+
+	rm tmp
+
+	echo "$folder"
 
 	mkdir -p "$folder"
 	cd "$folder"
@@ -40,35 +61,27 @@ dl_batoto() {
 	while [ "$RET" = "0" ]; do
 		# Increment CUR.
 		CUR=$(( CUR + 1 ))
-	
-		fetch "$1/$CUR" "$CUR.htm"
-		
+
+		# On batoto, two slashes is a syntax error as of Jun 13, 2015.
+
+		fetch "${1}${CUR}" "$CUR.htm"
+
 		# Batoto sometimes gives out gunzips. We need to account for that... =_=
 
-		echo `file $CUR.htm` | grep 'gzip' - > /dev/null 2>&1
-
-		RET=$?
-
-		# Quirk: GZip. The server ignores our request for non-gz sometimes.
-		if [ $RET = 0 ]; then # Yeah, got a gz.
+		if [ "$(mimetype $CUR.htm)" = "application/x-gzip" ]; then
 			echo -ne "  :/\b\b\b\b"
 
 			mv $CUR.htm $CUR.htm.gz
 			gunzip $CUR.htm.gz
 		fi
 
-		grep -A 1 'z-index: 1002' $CUR.htm | tail -n1 > $CUR.tmp
-	
-		# Edit magic.
-		sed -i "s/[[:space:]]*<img //g" $CUR.tmp
-		sed -i "s/ style=.*//g" $CUR.tmp
-
-		# Load 'src'
-		. $CUR.tmp
+		img="$(grep -C0 'img\.src = ' $CUR.htm | sed -e 's/^[[:space:]]*img\.src = \"//g' -e "s/\";[[:space:]]*$//g")"
 
 		# If this 404's, fetch will return non-zero. Thus, loop breaks.
-		fetch "$src"
+		fetch "$img" "" "nowarn"
 		RET=$?
+
+		rm $CUR.htm
 	
 		spinner "$CUR"
 	done
@@ -76,11 +89,6 @@ dl_batoto() {
 	PAGES=$(( CUR - 1 ))
 
 	done_spin
-
-	# Clean.
-
-	rm *.htm
-	rm *.tmp
 
 	cd ..
 
@@ -133,9 +141,7 @@ scrape_batoto() {
 	# Delete Blank lines.
 	sed -i '/^$/d' batch.txtr
 
-	# Lines are reverse order. tac.
-	# If whatever we're using has no tac, you're stuck with reverse order.
-	tac batch.txtr > batch.txtf || tail -r batch.txtr > batch.txtf
+	cat batch.txtr | reverse_lines > batch.txtf
 
 	if [ "$2" = "" ]; then
 		# Delete Language text, leaving urls
