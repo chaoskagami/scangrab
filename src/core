@@ -143,6 +143,25 @@ else # Not a common operation - either invalid or a module-op.
 		else
 			echo -e "not found. Install a program like wget or curl."
 		fi
+		type 1
+		echo -ne "License"
+		type 0
+		echo ""
+		echo -e "\tCopyright (C) 2015  Jon Feldman/@chaoskagami"
+		echo ""
+		echo -e "\tThis program is free software: you can redistribute it and/or modify"
+		echo -e "\tit under the terms of the GNU General Public License as published by"
+		echo -e "\tthe Free Software Foundation, either version 3 of the License, or"
+		echo -e "\t(at your option) any later version."
+		echo ""
+		echo -e "\tThis program is distributed in the hope that it will be useful,"
+		echo -e "\tbut WITHOUT ANY WARRANTY; without even the implied warranty of"
+		echo -e "\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+		echo -e "\tGNU General Public License for more details."
+		echo ""
+		echo -e "\tYou should have received a copy of the GNU General Public License"
+		echo -e "\talong with this program.  If not, see <http://www.gnu.org/licenses/>"
+
 	else # Module operation.
 		eval $MATCH
 	fi
