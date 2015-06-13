@@ -1,5 +1,7 @@
 #!/bin/bash
 
+TARGET="$1"
+
 if [ "$MINIFY" = "" ]; then
 	MINIFY=1
 fi
@@ -10,9 +12,10 @@ fi
 
 if [ ! "$BRUTE" = "1" ]; then
 	BRUTE=0
+	mkdir -p $(pwd)/dist
+	TARGET="dist/scangrab"
 fi
 
-TARGET="$1"
 if [ "$TARGET" = "" ]; then
 	TARGET="./scangrab.min"
 elif [ "$TARGET" = "-h" ]; then
@@ -43,7 +46,8 @@ elif [ "$TARGET" = "-h" ]; then
 	echo "tools won't even be able to execute it."
 	echo ""
 	echo "Additionally, setting BRUTE=1 will build all of"
-	echo "the different versions for comparison."
+	echo "the different versions for comparison and store"
+	echo "in a subfolder named dist."
 	exit 0
 fi
 
@@ -168,7 +172,9 @@ fi
 
 # Life needs to be easier.
 if [ $BRUTE = 1 ]; then
-	chmod +x $TARGET.{raw,min,sh{gz,xz,bz2}}
+	mkdir $(pwd)/dist
+	mv $TARGET.{raw,min,sh{gz,xz,bz2}} dist/
+	chmod +x dist/*
 else
 	chmod +x $TARGET
 fi
