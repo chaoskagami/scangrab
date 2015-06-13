@@ -119,16 +119,27 @@ else # Not a common operation - either invalid or a module-op.
 		type 1
 		echo -e "System Tools"
 		type 0
-		echo -ne "\tDownload Command: "
-		if [ "$_FETCHTOOL" = "1" ]; then
+		if [ ! "$_wget" = "" ]; then
+			echo -e "\twget:\t\t$_wget"
+		fi
+		if [ ! "$_curl" = "" ]; then
+			echo -e "\tcurl:\t\t$_curl"
+		fi
+		if [ ! "$_aria" = "" ]; then
+			echo -e "\taria2c:\t\t$_aria"
+		fi
+		echo -ne "\tWill use:\t"
+		if [ $_FETCHTOOL = 1 ]; then
 			echo -ne "wget"
 			if [ $_BUSYBOX = 1 ]; then
 				echo -e ", busybox"
 			else
 				echo -e ""
 			fi
-		elif [ "$_FETCHTOOL" = "2" ]; then
+		elif [ $_FETCHTOOL = 2 ]; then
 			echo -e "curl"
+		elif [ $_FETCHTOOL = 3 ]; then
+			echo -e "aria2c"
 		else
 			echo -e "not found. Install a program like wget or curl."
 		fi

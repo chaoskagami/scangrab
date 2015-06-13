@@ -1,5 +1,7 @@
 #!/bin/bash
 
+TARGET="$1"
+
 if [ "$MINIFY" = "" ]; then
 	MINIFY=1
 fi
@@ -8,11 +10,11 @@ if [ "$COMPRESS" = "" ]; then
 	COMPRESS="xz"
 fi
 
-if [ ! "$BRUTE" = "1" ]; then
-	BRUTE=0
+if [ $BRUTE = 1 ]; then
+	mkdir -p ./dist
+	TARGET="./dist/scangrab"
 fi
 
-TARGET="$1"
 if [ "$TARGET" = "" ]; then
 	TARGET="./scangrab.min"
 elif [ "$TARGET" = "-h" ]; then
@@ -43,12 +45,18 @@ elif [ "$TARGET" = "-h" ]; then
 	echo "tools won't even be able to execute it."
 	echo ""
 	echo "Additionally, setting BRUTE=1 will build all of"
-	echo "the different versions for comparison."
+	echo "the different versions for comparison and store"
+	echo "in a subfolder named dist."
 	exit 0
 fi
 
-if [ -d "$1" ]; then
+if [ -d "$TARGET" ]; then
 	echo "Was told to overwrite a folder. Cowardly refusing."
+	exit 1
+fi
+
+if [ "$(readlink -f $TARGET)" = "$(pwd)/scangrab" ]; then
+	echo "Refusing to clobber the actual scangrab script. Why would you do that?"
 	exit 1
 fi
 
@@ -168,7 +176,7 @@ fi
 
 # Life needs to be easier.
 if [ $BRUTE = 1 ]; then
-	chmod +x $TARGET.{raw,min,sh{gz,xz,bz2}}
+	chmod +x $TARGET.*
 else
 	chmod +x $TARGET
 fi

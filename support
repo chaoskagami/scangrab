@@ -59,6 +59,8 @@ _BUSYBOX=0
 fetch_detect() {
 	_wget="$(which wget)"
 	_curl="$(which curl)"
+	_aria="$(which aria2c)"
+
 	if [ ! "$_wget" = "" ]; then
 		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
 
@@ -74,6 +76,11 @@ fetch_detect() {
 		if [ ! "$_curl" = "" ]; then
 				FETCH_CMD=$_curl
 				_FETCHTOOL=2
+		else
+			if [ ! "$_aria" = "" ]; then
+					FETCH_CMD=$_aria
+					_FETCHTOOL=3
+			fi
 		fi
 	fi
 
@@ -93,10 +100,16 @@ fetch() {
 		elif [ ! "$2" = "-" ]; then
 			_CMD="$_CMD > "$2""
 		fi
+	elif [ $_FETCHTOOL = 3 ]; then
+		_CMD="$FETCH_CMD $1"
+		if [ ! "$2" = "" ]; then
+			_CMD="$_CMD -o $2"
+		fi
 	fi
 
 	$_CMD
 	FETCH_RESULT=$?
+
 	if [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0]; then
 		echo "[WARNING] Image failed on busybox. Cannot retry."
 	fi
@@ -105,6 +118,8 @@ fetch() {
 
 entity_to_char() {
 	# This probably doesn't handle every case. It should be enough.
+	# It also handles the case of illegal characters on windows/FAT/NTFS
+
 	sed \
 		-e "s/&#32;/ /g" \
 		-e "s/&nbsp;/ /g" \
@@ -169,6 +184,8 @@ entity_to_char() {
 		-e "s/&hearts;/♥/g" \
 		-e "s/&#9829;/♥/g" \
 		-e "s/&diams;/♦/g" \
-		-e "s/&#9830;/♦/g"
+		-e "s/&#9830;/♦/g" \
+		\
+		-e "s/|/-/g"
 
 }
