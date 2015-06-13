@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,8 +16,10 @@
 
 mread_longname="Mangareader"
 mread_url="http://www.mangareader.net/"
-mread_state=0 # Broken
-mread_filt=0 # No filter
+# Broken
+mread_state=0
+# No filter
+mread_filt=0
 
 auto_mread() {
 	if [ -n "`echo $1 | grep 'mangareader.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then

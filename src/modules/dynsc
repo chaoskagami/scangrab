@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
 #
 # This program is free software: you can redistribute it and/or modify
@@ -16,7 +17,8 @@
 dynsc_longname="Dynasty Scans"
 dynsc_url="http://dynasty-scans.com/"
 dynsc_state=1
-dynsc_filt=0 # No filter
+# No filter
+dynsc_filt=0
 
 auto_dynsc() {
 	if [ -n "`echo $1 | grep 'dynasty-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then

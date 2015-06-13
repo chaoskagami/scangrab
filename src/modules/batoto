@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
 #
 # This program is free software: you can redistribute it and/or modify
@@ -103,17 +104,11 @@ scrape_batoto() {
 	fetch "$1" scrape.htm
 		
 	# Batoto sometimes gives out gunzips. We need to account for that... =_=
-
-	echo `file scrape.htm` | grep 'gzip' - > /dev/null 2>&1
-
-	RET=$?
-
-	# Quirk: GZip. The server ignores our request for non-gz sometimes.
-	if [ $RET = 0 ]; then # Yeah, got a gz.
+	if [ "$(mimetype scrape.htm)" = "application/x-gzip" ]; then
 		echo -ne "  :/\b\b\b\b"
 
-		mv scrape.htm scrape.htm.gz
-		gunzip scrape.htm.gz
+		mv $CUR.htm $CUR.htm.gz
+		gunzip $CUR.htm.gz
 	fi
 
 	grep -A 2 'Sort:' scrape.htm >> batch.txtr

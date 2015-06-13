@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,8 +16,10 @@
 
 mpark_longname="MangaPark"
 mpark_url="http://mangapark.me/"
-mpark_state=0 # Broken
-mpark_filt=0 # No filter
+# Broken
+mpark_state=0
+# No filter
+mpark_filt=0
 
 auto_mpark() {
 	if [ -n "`echo $1 | grep 'mangapark.me/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
