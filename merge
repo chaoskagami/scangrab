@@ -176,8 +176,7 @@ fi
 
 # Life needs to be easier.
 if [ $BRUTE = 1 ]; then
-	mv $TARGET.{raw,min,sh{gz,xz,bz2}} dist/
-	chmod +x dist/*
+	chmod +x $TARGET.*
 else
 	chmod +x $TARGET
 fi
