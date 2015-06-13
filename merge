@@ -13,7 +13,7 @@ fi
 if [ ! "$BRUTE" = "1" ]; then
 	BRUTE=0
 	mkdir -p $(pwd)/dist
-	TARGET="dist/scangrab"
+	TARGET="$(pwd)/dist/scangrab"
 fi
 
 if [ "$TARGET" = "" ]; then
@@ -172,7 +172,6 @@ fi
 
 # Life needs to be easier.
 if [ $BRUTE = 1 ]; then
-	mkdir $(pwd)/dist
 	mv $TARGET.{raw,min,sh{gz,xz,bz2}} dist/
 	chmod +x dist/*
 else
