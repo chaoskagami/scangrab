@@ -1,0 +1,756 @@
+#!/bin/bash
+o() {
+echo "$@"
+}
+n() {
+echo -ne "$@"
+}
+e() {
+echo -e "$@"
+}
+B="\b\b\b\b\b\b\b\b\b\b"
+type() {
+n "\x1b[$1m"
+}
+color() {
+n "\x1b[3$1m"
+}
+cbz_make() {
+n "[Post] Making CBZ..."
+if [ ! -d "$1" ]; then
+e "\n[Error] Not a folder. Something went wrong."
+exit 1
+fi
+if [ "$(ls "$1")" = "" ]; then
+o "[Error] No files? Download failed."
+exit 1
+fi
+zip -r "$1.zip" "$1" > /dev/null 2>&1
+mv "$1.zip" "$1.cbz" > /dev/null 2>&1
+n "$B$B\b[Post] Cleanup..."
+rm -rf "$1"
+e "$BFinished.    "
+}
+verify() {
+_identify=$(which identify 2>/dev/null)
+if [ -f $_identify ]; then
+$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
+_IDRES=$?
+return $_IDRES
+fi
+return 0
+}
+_SC="|"
+_NUM=0
+_FIRST=1
+ss() {
+if [ $_FIRST = 1 ]; then
+_FIRST=0
+else
+n "\b\b\b\b"
+fi
+for (( i=0 ; i < _NUM ; i++ )); do
+n "\b"
+done
+if [ "$_SC" = "|" ]; then
+_SC="/"
+elif [ "$_SC" = "/" ]; then
+_SC="-"
+elif [ "$_SC" = "-" ]; then
+_SC="\\"
+elif [ "$_SC" = "\\" ]; then
+_SC="|"
+fi
+_NUM=${#1}
+n "[$1 $_SC]"
+}
+se() {
+for (( i=0 ; i < _NUM ; i++ )); do
+n "\b"
+done
+e "\b\b\b[OK]"
+}
+mimetype() {
+o "$(file --mime-type "$1" | sed 's/.* //g')"
+}
+FETCH_RESULT="0"
+FETCH_CMD=""
+_FETCHTOOL=0
+_BUSYBOX=0
+fetch_detect() {
+_wget="$(which wget 2>/dev/null)"
+_curl="$(which curl 2>/dev/null)"
+_aria="$(which aria2c 2>/dev/null)"
+if [ ! "$_wget" = "" ]; then
+common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
+if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
+o "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
+common_opts=" -q -c -U \"Mozilla/4.0\""
+_BUSYBOX=1
+fi
+FETCH_CMD="$_wget $common_opts"
+_FETCHTOOL=1
+else
+if [ ! "$_curl" = "" ]; then
+FETCH_CMD=$_curl
+_FETCHTOOL=2
+else
+if [ ! "$_aria" = "" ]; then
+FETCH_CMD=$_aria
+_FETCHTOOL=3
+fi
+fi
+fi
+return $FETCH_RESULT
+}
+fetch() {
+if [ $_FETCHTOOL = 1 ]; then
+_CMD="$FETCH_CMD \"$1\""
+if [ "$2" = "" ]; then
+_CMD="$_CMD -O $(basename "$1")"
+elif [ "$2" = "-" ]; then
+_CMD="$_CMD -O -"
+else
+_CMD="$_CMD -O \"$2\""
+fi
+elif [ $_FETCHTOOL = 2 ]; then
+_CMD="$FETCH_CMD $1"
+if [ "$2" = "" ]; then
+_CMD="$_CMD > $(basename "$1")"
+elif [ "$2" = "-" ]; then
+_CMD="$_CMD"
+else
+_CMD="$_CMD > \"$2\""
+fi
+elif [ $_FETCHTOOL = 3 ]; then
+_CMD="$FETCH_CMD $1"
+if [ "$2" = "" ]; then
+_CMD="$_CMD -o $(basename "$1")"
+elif [ "$2" = "-" ]; then
+_CMD="$_CMD -o -"
+else
+_CMD="$_CMD -o \"$2\""
+fi
+fi
+eval " $_CMD" 2>/dev/null
+FETCH_RESULT=$?
+if [ ! $FETCH_RESULT = 0 ]; then
+if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
+e "[WARN] Failed to fetch. Command was:\n$_CMD"
+fi
+elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
+o "[WARN] Image failed on busybox. Cannot retry."
+fi
+MIME="$(mimetype "$_FILE")"
+if [ "$MIME" = "image/jpeg" ] || [ "$MIME" = "image/png" ] || [ "$MIME" = "image/gif" ] || [ "$MIME" = "image/bmp" ]; then
+verify "$_FILE"
+VALID=$?
+if [ ! $VALID = 0 ]; then
+o "[WARN] File '$_FILE' is corrupted."
+fi
+fi
+return $FETCH_RESULT
+}
+entity_to_char() {
+sed \
+-e "s/&#32;/ /g" \
+-e "s/&nbsp;/ /g" \
+-e "s/&#33;/\!/g" \
+-e "s/&#34;/\"/g" \
+-e "s/&#35;/\#/g" \
+\
+-e "s/&#36;/\$/g" \
+-e "s/&#37;/\%/g" \
+-e "s/&amp;/\&/g" \
+-e "s/&#38;/\&/g" \
+-e "s/&#39;/'/g" \
+\
+-e "s/&#40;/\(/g" \
+-e "s/&#41;/\)/g" \
+-e "s/&#42;/\*/g" \
+-e "s/&#43;/\+/g" \
+-e "s/&#44;/\,/g" \
+\
+-e "s/&#45;/\-/g" \
+-e "s/&#46;/\./g" \
+-e "s/&#58;/\:/g" \
+-e "s/&#59;/\;/g" \
+-e "s/&lt;/\</g" \
+\
+-e "s/&#60;/\</g" \
+-e "s/&gt/\>/g" \
+-e "s/&#61;/\>/g" \
+-e "s/&#63;/\?/g" \
+-e "s/&#64;/\@/g" \
+\
+-e "s/&#91;/\[/g" \
+-e "s/&#92;/\\\\/g" \
+-e "s/&#93;/\]/g" \
+-e "s/&#94;/\^/g" \
+-e "s/&#95;/\_/g" \
+\
+-e "s/&#123;/\{/g" \
+-e "s/&#124;/\|/g" \
+-e "s/&#125;/\}/g" \
+-e "s/&#126;/\~/g" \
+-e "s/&yen;/¥/g" \
+\
+-e "s/&#165;/¥/g" \
+-e "s/&sup2;/²/g" \
+-e "s/&#178;/²/g" \
+-e "s/&sup3;/³/g" \
+-e "s/&#179;/³/g" \
+\
+-e "s/&frac14;/¼/g" \
+-e "s/&#188;/¼/g" \
+-e "s/&frac12;/½/g" \
+-e "s/&#189;/½/g" \
+-e "s/&frac34;/¾/g" \
+\
+-e "s/&#190;/¾/g" \
+-e "s/&spades;/♠/g" \
+-e "s/&#9824;/♠/g" \
+-e "s/&clubs;/♣/g" \
+-e "s/&#9827;/♣/g" \
+\
+-e "s/&hearts;/♥/g" \
+-e "s/&#9829;/♥/g" \
+-e "s/&diams;/♦/g" \
+-e "s/&#9830;/♦/g" \
+\
+-e "s/|/-/g"
+}
+reverse_lines() {
+readarray -t LINES
+for (( I = ${#LINES[@]}; I; )); do
+o "${LINES[--I]}"
+done
+}
+MODS=(batoto dynsc eh fakku foolsl mpark mread)
+batoto_l="Batoto"
+batoto_u="http://bato.to/"
+batoto_state=1
+batoto_filt=1
+noticed_batoto=0
+notice_batoto() {
+if [ $noticed_batoto = 0 ]; then
+o "[Batoto] If this so happens to fail, they changed their page generator again."
+noticed_batoto=1
+fi
+}
+a_batoto() {
+if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+fi
+return 0
+}
+d_batoto() {
+folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
+mkdir -p "$folder"
+cd "$folder"
+CUR=0
+PAGES=0
+RET=0
+base="$1"
+if [ ! "${base:${#base}-1}" = "/" ]; then
+base="${base}/"
+fi
+o -n "[Batoto] Downloading '$folder' "
+while [ "$RET" = "0" ]; do
+CUR=$(( CUR + 1 ))
+fetch "${base}${CUR}" "$CUR.htm"
+if [ "$(mimetype $CUR.htm)" = "application/x-gzip" ]; then
+n "  :/\b\b\b\b"
+mv $CUR.htm $CUR.htm.gz
+gunzip $CUR.htm.gz
+fi
+img="$(grep -C0 'img\.src = ' $CUR.htm | sed -e 's/^[[:space:]]*img\.src = \"//g' -e "s/\";[[:space:]]*$//g")"
+ext="${img##*.}"
+fetch "$img" "${CUR}_${folder}.${ext}"
+RET=$?
+rm $CUR.htm
+ss "$CUR"
+done
+PAGES=$(( CUR - 1 ))
+se
+cd ..
+cbz_make "$folder"
+}
+s_batoto() {
+notice_batoto
+o -n "[Batoto] Scraping Chapters..."
+fetch "$1" scrape.htm
+if [ "$(mimetype scrape.htm)" = "application/x-gzip" ]; then
+n "  :/\b\b\b\b"
+mv $CUR.htm $CUR.htm.gz
+gunzip $CUR.htm.gz
+fi
+grep -A 2 'Sort:' scrape.htm >> batch.txtr
+sed -i "s|^[[:space:]]*</td>[[:space:]]*||g" batch.txtr
+sed -i 's|^[[:space:]]*<td style="border-top:0;"><div title="||g' batch.txtr
+sed -i 's|" style="display: inline-block; width:16px; height: 12px;.*$||g' batch.txtr
+sed -i "s|<a href=\"||g" batch.txtr
+sed -i "s|\" title=.*||g" batch.txtr
+sed -i '/^[[:space:]]*$/d' batch.txtr
+sed -i "s/^[[:space:]]*//" batch.txtr
+sed -i "s/[[:space:]]*$//" batch.txtr
+sed -i 's|^--$||g' batch.txtr
+sed -i '/^$/d' batch.txtr
+cat batch.txtr | reverse_lines > batch.txtf
+if [ "$2" = "" ]; then
+sed -ni '0~2p' batch.txtf
+cat batch.txtf >> batch.txt
+else
+n "$B$B\b Applying Language Filter '$2'..."
+grep -A 1 "$2" batch.txtf > batch.txtf2
+sed -i '/^[[:space:]]*--[[:space:]]*$/d' batch.txtf2
+sed -i '/^$/d' batch.txtf2
+sed -ni '0~2p' batch.txtf2
+cat batch.txtf2 >> batch.txt
+fi
+rm scrape.htm batch.txtr batch.txtf*
+en "$B$B$B\b"
+for ((n=0;n < ${#2}; n++)); do
+en '\b'
+done
+e " Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+dynsc_l="Dynasty Scans"
+dynsc_u="http://dynasty-scans.com/"
+dynsc_state=1
+dynsc_filt=0
+a_dynsc() {
+if [ -n "`echo $1 | grep 'dynasty-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+fi
+return 0
+}
+d_dynsc() {
+PAGEDATA="$(fetch "$1" "-")"
+folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+mkdir -p "$folder"
+cd "$folder"
+PAGELIST="$(echo "$PAGEDATA" | grep "var pages")"
+PAGETMP="$(echo $PAGELIST | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g")"
+eval "$PAGETMP"
+o -n "[DynastyScans] Downloading '$folder' "
+CUR=0
+for image in "${pages[@]}"; do
+fetch "http://dynasty-scans.com$image"
+ss "$CUR"
+CUR=$(( CUR + 1 ))
+done
+se
+cd ..
+cbz_make "$folder"
+}
+s_dynsc() {
+o -n "[DynastyScans] Scraping Chapters..."
+fetch "$1" "-" | 			\
+grep 'class="name"' | 		\
+sed -e 's|^.*href="||g' 	\
+-e 's|" class=.*||g' 	\
+-e "s/^[[:space:]]*//" 	\
+-e "s/[[:space:]]*$//" 	\
+-e "s|^|http://dynasty-scans.com|g" >> batch.txt
+e "$B$B$B\b\b[DynastyScans] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+eh_l="E-Hentai"
+eh_u="http://e-hentai.org/"
+eh_state=1
+eh_filt=0
+a_eh() {
+if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+fi
+return 0
+}
+d_eh() {
+sitepage=$1
+fetch "${sitepage}/?nw=always" tmp.1
+folder="$(cat tmp.1 | grep 'title>' - | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
+mkdir -p "$folder"
+cd "$folder"
+DATA=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/g' | sed 's/"><img alt.*//g' | grep 'url:')
+rm ../tmp.1
+eval "urls=(`echo $DATA | tr '\n' ' ' | sed 's/url://g'`)"
+page="${urls[0]}"
+o -n "[e-h] Downloading '$folder' "
+doneyet=0
+CUR=0
+while [ $doneyet == 0 ]; do
+get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp' -))
+extra=""
+if [ "${get[1]}" == "" ]; then
+get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 '.php?f=' -))
+extra="-O $(echo ${get[1]} | sed 's/.*n=//')"
+fi
+if [ "${get[0]}" == "$page" ]; then
+doneyet=1
+fi
+fetch "${get[1]}" "$extra"
+if [ ! "${get[0]}" == "" ]; then
+page="${get[0]}"
+fi
+ss "$CUR"
+CUR=$(( CUR + 1 ))
+done
+se
+cd ..
+cbz_make "$folder"
+}
+s_eh() {
+e "[e-h] This isn't supported, considering there's really zero categorization here."
+}
+fakku_l="FAKKU"
+fakku_u="https://fakku.net/"
+fakku_state=1
+fakku_filt=0
+a_fakku() {
+if [ -n "$(echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
+return 1
+fi
+return 0
+}
+d_fakku() {
+PAGES="$(fetch "$1/read" "-" | grep "window.params.thumbs =" )"
+PAGEDATA="$(echo $PAGES | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
+DATA="$(printf "$PAGEDATA")"
+folder="$(echo $PAGEDATA | sed -e 's|pages=("//t.fakku.net/images/manga/i/||g' -e 's|/images.*||g' -e 's|_| |g' | entity_to_char)"
+mkdir -p "$folder"
+cd "$folder"
+eval "$DATA"
+o -n "[Fakku] Downloading '$folder' "
+CUR=0
+for image in "${pages[@]}"; do
+fetch "https:$image"
+ss "$CUR"
+CUR=$(( CUR + 1 ))
+done
+se
+cd ..
+cbz_make "$folder"
+}
+s_fakku() {
+o -n "[Fakku] Scraping Chapters..."
+fetch "$1" scrape.htm
+grep 'class="content-title"' scrape.htm > batch.txtf
+sed -i 's|^.*href="||g' batch.txtf
+sed -i 's|" title=.*||g' batch.txtf
+sed -i "s/^[[:space:]]*//" batch.txtf
+sed -i "s/[[:space:]]*$//" batch.txtf
+sed -i "s|^|https://fakku.net|g" batch.txtf
+cat batch.txtf >> batch.txt
+rm scrape.htm batch.txtf
+e "$B$B$B\b\b[Fakku] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+foolsl_l="FoolSlide"
+foolsl_u="Generic, n/a."
+foolsl_state=1
+foolsl_filt=0
+a_foolsl() {
+if [ -n "`echo $1 | grep 'foolrulez.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+elif [ -n "`echo $1 | grep 'vortex-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+fi
+return 0
+}
+d_foolsl() {
+LAZYURL=`echo $1 | sed "s|/read/|/download/|g"`
+o -n "[FoolSlide] Attempting Lazy Download..."
+FAILED=0
+fetch "$LAZYURL" || export FAILED=1
+if [ $FAILED = 1 ]; then
+o "Requesting zip failed."
+else
+o "[OK]"
+fi
+}
+s_foolsl() {
+o -n "[Foolslide] Scraping Chapters..."
+fetch "$1" "-" |							\
+grep '<div class="title"><a href='			\
+sed -e 's|<div class="title"><a href="||g'	\
+-e 's|" title=.*||g'						\
+-e "s/^[[:space:]]*//"						\
+-e "s/[[:space:]]*$//"					  | \
+reverse_lines >> batch.txt
+e "$B$B$B\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+mpark_l="MangaPark"
+mpark_u="http://mangapark.me/"
+mpark_state=1
+mpark_filt=0
+a_mpark() {
+if [ -n "`echo $1 | grep 'mangapark.me/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+fi
+return 0
+}
+d_mpark() {
+sitepage="$1"
+sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
+folder="$(echo $sitepage | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.me\/manga\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
+mkdir -p "$folder"
+cd "$folder"
+declare -a DATA
+DATA=$(fetch "$sitepage" "-" | grep 'target="_blank"' - | sed -e '1d' -e 's|^[[:space:]]*<a.*target="_blank" href=||g' -e "s/ title=.*$//" -e "s/\"//g"| tr '\n' ' ')
+o -n "[Mangapark] Downloading '$folder' "
+CUR=0
+for image in ${DATA[@]}; do
+fetch "$image"
+ss "$CUR"
+CUR=$(( CUR + 1 ))
+done
+se
+cd ..
+cbz_make "$folder"
+}
+s_mpark() {
+o -n "[Mangapark] Scraping Chapters..."
+fetch "$1" scrape.htm
+grep 'class="ch sts"' scrape.htm > batch.txtr
+sed -i 's|^.*href="||g' batch.txtr
+sed -i 's|">.*||g' batch.txtr
+sed -i "s/^[[:space:]]*//" batch.txtr
+sed -i "s/[[:space:]]*$//" batch.txtr
+sed -i "s|^|http://mangapark.com|g" batch.txtr
+sed -i "s|/1$||g" batch.txtr
+sed -i "s|/3-1$||g" batch.txtr
+sed -i "s|/6-1$||g" batch.txtr
+sed -i "s|/10-1$||g" batch.txtr
+tac batch.txtr >> batch.txt || cat batch.txtr >> batch.txt
+rm scrape.htm batch.txtr
+e "$B$B$B\b\b[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+mread_l="Mangareader"
+mread_u="http://www.mangareader.net/"
+mread_state=0
+mread_filt=0
+a_mread() {
+if [ -n "`echo $1 | grep 'mangareader.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+fi
+return 0
+}
+d_mread() {
+folder="$(echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|www\.mangareader\.net\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
+mkdir -p "$folder"
+cd "$folder"
+o -n "[Mangareader] Blindly Downloading '$folder' "
+IS_404=0
+CUR=0
+PAGES=0
+while [ $IS_404 = 0 ]; do
+CUR=$(( CUR + 1 ))
+PAGEDATA=$(fetch "$1/$CUR" "$CUR.htm")
+IS_404=$?
+if [ $IS_404 = 0 ]; then
+src=`grep '<div id="imgholder">' $CUR.htm | sed "s/^.*src=\"//g" | sed "s/\" alt=.*//g"`
+o $src
+EXT="${src##*.}"
+fetch "$src" "$CUR.$EXT"
+ss
+fi
+done
+PAGES=$(( CUR - 1 ))
+se
+rm *.htm
+cd ..
+cbz_make "$folder"
+}
+s_mread() {
+o "[MangaReader] NYI, sorry."
+}
+fetch_detect
+auto() {
+for module in ${MODS[@]}; do
+eval a_$module $1
+RETCHECK=$?
+if [ $RETCHECK = 1 ]; then
+eval d_$module $1
+exit 0
+fi
+done
+}
+batch() {
+IFS=$'\n' read -d '' -r -a LINES < $1
+NEW=""
+for chunk in "${LINES[@]}"; do
+NEW="$NEW$0 $chunk ;"
+done
+eval $NEW
+}
+autobatch() {
+IFS=$'\n' read -d '' -r -a LINES < $1
+NEW=""
+for chunk in "${LINES[@]}"; do
+NEW="$NEW$0 auto $chunk ;"
+done
+eval $NEW
+}
+scrape() {
+for module in ${MODS[@]}; do
+eval a_$module $1
+RETCHECK=$?
+if [ $RETCHECK = 1 ]; then
+eval s_$module $1 $2
+exit 0
+fi
+done
+}
+help() {
+type 1
+e "Usage:"
+type 0
+n "\t$0\t"
+color 3
+n "OPERATION\t"
+color 5
+e "[PARAMS]"
+type 0
+type 1
+e "Operations:"
+type 0
+color 3
+e "\tauto (a)"
+type 0
+e "\t\tChooses module based on URL"
+color 3
+e "\tbatch (l)"
+type 0
+e "\t\tTakes a file with a list of types and URLs"
+color 3
+e "\tautobatch (b)"
+type 0
+e "\t\tTakes a file with URLs which will be run with auto."
+color 3
+e "\tscrape (s)"
+type 0
+e "\t\tWill take a manga's page and scrape chapters to"
+e "\t\ta file named batch.txt"
+o ""
+e "\tYou can also specify a module name followed by"
+e "\tthe URL instead of using the auto-detect."
+type 1
+e "Download Modules:"
+type 0
+for mod in "${MODS[@]}"; do
+longname=$(temp=\$${mod}_l && eval echo $temp)
+url=$(temp=\$${mod}_u && eval echo $temp)
+broke=$(temp=\$${mod}_state && eval echo $temp)
+filter=$(temp=\$${mod}_filt && eval echo $temp)
+n "\tModule Name:\t\t"
+color 3
+e "$mod"
+type 0
+n "\t\tLong Name:\t\t"
+color 4
+e "$longname"
+type 0
+n "\t\tSite(s) Used with:\t"
+color 5
+e "$url"
+type 0
+o ""
+type 0
+n "\t\tSite(s) Current state:\t"
+if [ "$broke" = "1" ]; then
+color 2
+e "Works"
+else
+color 1
+e "Broken"
+fi
+type 0
+if [ "$filter" = "1" ]; then
+e "\t\tSupports filters for scrape"
+fi
+o ""
+done
+type 1
+e "Misc Info"
+type 0
+e "\tIf you see an emote in the output, it means we had to deal"
+e "\twith a retrieval quirk."
+e "\n\t[ :/ ]\tGiven GZip'd data even though we said it wasn't"
+e "\t\tsupported in the GET."
+type 2
+e "\t\tThis happens frequently with batoto when doing"
+e "\t\tmultiple fetches. :/"
+type 0
+o ""
+e "\tSome modules accept an extra parameter. Usually, this"
+e "\tis a filter. Try values like 'English' or 'French'."
+type 1
+e "System Tools"
+type 0
+if [ ! "$_wget" = "" ]; then
+e "\twget:\t\t$_wget"
+fi
+if [ ! "$_curl" = "" ]; then
+e "\tcurl:\t\t$_curl"
+fi
+if [ ! "$_aria" = "" ]; then
+e "\taria2c:\t\t$_aria"
+fi
+n "\tWill use:\t"
+if [ $_FETCHTOOL = 1 ]; then
+n "wget"
+if [ $_BUSYBOX = 1 ]; then
+e ", busybox"
+else
+e ""
+fi
+elif [ $_FETCHTOOL = 2 ]; then
+e "curl"
+elif [ $_FETCHTOOL = 3 ]; then
+e "aria2c"
+else
+e "not found. Install a program like wget or curl."
+fi
+type 1
+n "License"
+type 0
+o ""
+e "\tCopyright (C) 2015  Jon Feldman/@chaoskagami"
+o ""
+e "\tThis program is free software: you can redistribute it and/or modify"
+e "\tit under the terms of the GNU General Public License as published by"
+e "\tthe Free Software Foundation, either version 3 of the License, or"
+e "\t(at your option) any later version."
+o ""
+e "\tThis program is distributed in the hope that it will be useful,"
+e "\tbut WITHOUT ANY WARRANTY; without even the implied warranty of"
+e "\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+e "\tGNU General Public License for more details."
+o ""
+e "\tYou should have received a copy of the GNU General Public License"
+e "\talong with this program.  If not, see <http://www.gnu.org/licenses/>"
+}
+if [ "$1" = "auto" -o "$1" = "a" ]; then
+auto $2 $3
+elif [ "$1" = "batch" -o "$1" = "l" ]; then
+batch $2 $3
+elif [ "$1" = "autobatch" -o "$1" = "b" ]; then
+autobatch $2 $3
+elif [ "$1" = "scrape" -o "$1" = "s" ]; then
+scrape $2 $3
+else # Not a common operation - either invalid or a module-op.
+MATCH=""
+for module in ${MODS[@]}; do
+if [ "$1" = "$module" ]; then
+MATCH="d_$module $2"
+fi
+done
+if [ "$MATCH" = "" ]; then # All checks failed. Usage~
+if [ ! "$(echo "$1" | grep http)" = "" ]; then
+auto $1 $2
+else
+help
+fi
+else # Module operation.
+eval $MATCH
+fi
+fi

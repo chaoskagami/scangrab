@@ -1,0 +1,1224 @@
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+type() {
+	echo -ne "\x1b[$1m"
+}
+
+color() {
+	echo -ne "\x1b[3$1m"
+}
+
+cbz_make() {
+	echo -ne "[Post] Making CBZ..."
+
+	# Check and make sure the folder has something, and is actually a folder.
+	if [ ! -d "$1" ]; then
+		echo -e "\n[Error] Not a folder. Something went wrong."
+		exit 1
+	fi
+	
+	if [ "$(ls "$1")" = "" ]; then
+		echo "[Error] No files? Download failed."
+		exit 1
+	fi
+
+	zip -r "$1.zip" "$1" > /dev/null 2>&1
+	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
+	
+	echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Post] Cleanup..."
+	rm -rf "$1"
+	echo -e "\b\b\b\b\b\b\b\b\b\bFinished.    "
+}
+
+# Checks if an image is uncorrupted. If you don't have the tools, this never happens.
+	# Returns 0 on OK / no tool
+	# Returns code on corrupt
+
+verify() {
+	_identify=$(which identify 2>/dev/null)
+
+	if [ -f $_identify ]; then
+		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
+		_IDRES=$?
+		return $_IDRES
+	fi
+
+	return 0
+}
+
+_SPINNER_CHAR="|"
+_NUM=0
+_FIRST=1
+spinner() {
+	if [ $_FIRST = 1 ]; then
+		_FIRST=0
+	else
+		echo -ne "\b\b\b\b"
+	fi
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+
+	if [ "$_SPINNER_CHAR" = "|" ]; then
+		_SPINNER_CHAR="/"
+	elif [ "$_SPINNER_CHAR" = "/" ]; then
+		_SPINNER_CHAR="-"
+	elif [ "$_SPINNER_CHAR" = "-" ]; then
+		_SPINNER_CHAR="\\"
+	elif [ "$_SPINNER_CHAR" = "\\" ]; then
+		_SPINNER_CHAR="|"
+	fi
+
+	_NUM=${#1}
+	echo -ne "[$1 $_SPINNER_CHAR]"
+}
+
+done_spin() {
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+	echo -e "\b\b\b[OK]"
+}
+
+mimetype() {
+	echo "$(file --mime-type "$1" | sed 's/.* //g')"
+}
+
+FETCH_RESULT="0"
+FETCH_CMD=""
+_FETCHTOOL=0
+_BUSYBOX=0
+fetch_detect() {
+	_wget="$(which wget 2>/dev/null)"
+	_curl="$(which curl 2>/dev/null)"
+	_aria="$(which aria2c 2>/dev/null)"
+
+	if [ ! "$_wget" = "" ]; then
+		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
+
+		if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
+			echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
+			common_opts=" -q -c -U \"Mozilla/4.0\""
+			_BUSYBOX=1
+		fi
+
+		FETCH_CMD="$_wget $common_opts"
+		_FETCHTOOL=1
+	else
+		if [ ! "$_curl" = "" ]; then
+				FETCH_CMD=$_curl
+				_FETCHTOOL=2
+		else
+			if [ ! "$_aria" = "" ]; then
+					FETCH_CMD=$_aria
+					_FETCHTOOL=3
+			fi
+		fi
+	fi
+
+	return $FETCH_RESULT	
+}
+
+# AVOID CHANGING THIS FUNCTION IF AT ALL POSSIBLE.
+# THINGS WILL BREAK IN EVERYTHING IF THIS ONE BREAKS.
+
+fetch() {
+	if [ $_FETCHTOOL = 1 ]; then
+
+		_CMD="$FETCH_CMD \"$1\""
+		if [ "$2" = "" ]; then
+			_CMD="$_CMD -O $(basename "$1")"
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD -O -"
+		else
+			_CMD="$_CMD -O \"$2\""
+		fi
+
+	elif [ $_FETCHTOOL = 2 ]; then
+
+		_CMD="$FETCH_CMD $1"
+		if [ "$2" = "" ]; then
+			_CMD="$_CMD > $(basename "$1")"
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD"
+		else
+			_CMD="$_CMD > \"$2\""
+		fi
+
+	elif [ $_FETCHTOOL = 3 ]; then
+
+		_CMD="$FETCH_CMD $1"
+		if [ "$2" = "" ]; then
+			_CMD="$_CMD -o $(basename "$1")"
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD -o -"
+		else
+			_CMD="$_CMD -o \"$2\""
+		fi
+	fi
+	
+	# echo -e "\n$_CMD"
+	eval " $_CMD" 2>/dev/null
+	FETCH_RESULT=$?
+
+	if [ ! $FETCH_RESULT = 0 ]; then
+		if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
+			echo -e "[WARN] Failed to fetch. Command was:\n$_CMD"
+		fi
+	elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
+		echo "[WARN] Image failed on busybox. Cannot retry."
+	fi
+	
+	# If this is an image, check validity.
+	MIME="$(mimetype "$_FILE")"
+	if [ "$MIME" = "image/jpeg" ] || [ "$MIME" = "image/png" ] || [ "$MIME" = "image/gif" ] || [ "$MIME" = "image/bmp" ]; then
+		verify "$_FILE"
+		VALID=$?
+		if [ ! $VALID = 0 ]; then
+			echo "[WARN] File '$_FILE' is corrupted."
+		fi
+	fi
+
+	return $FETCH_RESULT
+}
+
+entity_to_char() {
+	# This probably doesn't handle every case. It should be enough.
+	# It also handles the case of illegal characters on windows/FAT/NTFS
+
+	sed \
+		-e "s/&#32;/ /g" \
+		-e "s/&nbsp;/ /g" \
+		-e "s/&#33;/\!/g" \
+		-e "s/&#34;/\"/g" \
+		-e "s/&#35;/\#/g" \
+		\
+		-e "s/&#36;/\$/g" \
+		-e "s/&#37;/\%/g" \
+		-e "s/&amp;/\&/g" \
+		-e "s/&#38;/\&/g" \
+		-e "s/&#39;/'/g" \
+		\
+		-e "s/&#40;/\(/g" \
+		-e "s/&#41;/\)/g" \
+		-e "s/&#42;/\*/g" \
+		-e "s/&#43;/\+/g" \
+		-e "s/&#44;/\,/g" \
+		\
+		-e "s/&#45;/\-/g" \
+		-e "s/&#46;/\./g" \
+		-e "s/&#58;/\:/g" \
+		-e "s/&#59;/\;/g" \
+		-e "s/&lt;/\</g" \
+		\
+		-e "s/&#60;/\</g" \
+		-e "s/&gt/\>/g" \
+		-e "s/&#61;/\>/g" \
+		-e "s/&#63;/\?/g" \
+		-e "s/&#64;/\@/g" \
+		\
+		-e "s/&#91;/\[/g" \
+		-e "s/&#92;/\\\\/g" \
+		-e "s/&#93;/\]/g" \
+		-e "s/&#94;/\^/g" \
+		-e "s/&#95;/\_/g" \
+		\
+		-e "s/&#123;/\{/g" \
+		-e "s/&#124;/\|/g" \
+		-e "s/&#125;/\}/g" \
+		-e "s/&#126;/\~/g" \
+		-e "s/&yen;/¥/g" \
+		\
+		-e "s/&#165;/¥/g" \
+		-e "s/&sup2;/²/g" \
+		-e "s/&#178;/²/g" \
+		-e "s/&sup3;/³/g" \
+		-e "s/&#179;/³/g" \
+		\
+		-e "s/&frac14;/¼/g" \
+		-e "s/&#188;/¼/g" \
+		-e "s/&frac12;/½/g" \
+		-e "s/&#189;/½/g" \
+		-e "s/&frac34;/¾/g" \
+		\
+		-e "s/&#190;/¾/g" \
+		-e "s/&spades;/♠/g" \
+		-e "s/&#9824;/♠/g" \
+		-e "s/&clubs;/♣/g" \
+		-e "s/&#9827;/♣/g" \
+		\
+		-e "s/&hearts;/♥/g" \
+		-e "s/&#9829;/♥/g" \
+		-e "s/&diams;/♦/g" \
+		-e "s/&#9830;/♦/g" \
+		\
+		-e "s/|/-/g"
+}
+
+reverse_lines() {
+    readarray -t LINES
+    for (( I = ${#LINES[@]}; I; )); do
+        echo "${LINES[--I]}"
+    done
+}
+MODS=(batoto dynsc eh fakku foolsl mpark mread)
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+batoto_longname="Batoto"
+batoto_url="http://bato.to/"
+batoto_state=1
+batoto_filt=1
+
+noticed_batoto=0
+notice_batoto() {
+	if [ $noticed_batoto = 0 ]; then
+		echo "[Batoto] If this so happens to fail, they changed their page generator again."
+		noticed_batoto=1
+	fi
+}
+
+auto_batoto() {
+	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Batoto
+		return 1
+	fi
+
+	return 0
+}
+
+dl_batoto() {
+	# notice_batoto
+
+	# Batoto requires a different strategy.
+	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
+	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
+	
+	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
+
+	mkdir -p "$folder"
+	cd "$folder"
+
+	CUR=0
+	PAGES=0
+	RET=0
+	
+	base="$1"
+	if [ ! "${base:${#base}-1}" = "/" ]; then
+		base="${base}/"
+	fi
+
+	echo -n "[Batoto] Downloading '$folder' "
+
+	while [ "$RET" = "0" ]; do
+		# Increment CUR.
+		CUR=$(( CUR + 1 ))
+
+		# On batoto, two slashes is a syntax error as of Jun 13, 2015.
+
+		# We also need to fetch to a file here unfortunately, because possible stupidity.
+		fetch "${base}${CUR}" "$CUR.htm"
+
+		# Batoto sometimes gives out gunzips. We need to account for that... =_=
+
+		if [ "$(mimetype $CUR.htm)" = "application/x-gzip" ]; then
+			echo -ne "  :/\b\b\b\b"
+
+			mv $CUR.htm $CUR.htm.gz
+			gunzip $CUR.htm.gz
+		fi
+
+		img="$(grep -C0 'img\.src = ' $CUR.htm | sed -e 's/^[[:space:]]*img\.src = \"//g' -e "s/\";[[:space:]]*$//g")"
+
+		ext="${img##*.}"
+
+		# If this 404's, fetch will return non-zero. Thus, loop breaks.
+		fetch "$img" "${CUR}_${folder}.${ext}"
+		RET=$?
+
+		rm $CUR.htm
+	
+		spinner "$CUR"
+	done
+
+	PAGES=$(( CUR - 1 ))
+
+	done_spin
+
+	cd ..
+
+	cbz_make "$folder"
+}
+
+scrape_batoto() {
+	notice_batoto
+
+	echo -n "[Batoto] Scraping Chapters..."
+
+	fetch "$1" scrape.htm
+		
+	# Batoto sometimes gives out gunzips. We need to account for that... =_=
+	if [ "$(mimetype scrape.htm)" = "application/x-gzip" ]; then
+		echo -ne "  :/\b\b\b\b"
+
+		mv $CUR.htm $CUR.htm.gz
+		gunzip $CUR.htm.gz
+	fi
+
+	grep -A 2 'Sort:' scrape.htm >> batch.txtr
+
+	# Delete the useless lines.
+	sed -i "s|^[[:space:]]*</td>[[:space:]]*||g" batch.txtr
+
+	# Remove Language lines.
+	sed -i 's|^[[:space:]]*<td style="border-top:0;"><div title="||g' batch.txtr
+	sed -i 's|" style="display: inline-block; width:16px; height: 12px;.*$||g' batch.txtr
+
+	# Edit up URL.
+	sed -i "s|<a href=\"||g" batch.txtr
+	sed -i "s|\" title=.*||g" batch.txtr
+
+	# Delete blank lines/space lines
+	sed -i '/^[[:space:]]*$/d' batch.txtr
+
+	# Strip.
+	sed -i "s/^[[:space:]]*//" batch.txtr
+	sed -i "s/[[:space:]]*$//" batch.txtr
+
+	sed -i 's|^--$||g' batch.txtr
+
+	# Delete Blank lines.
+	sed -i '/^$/d' batch.txtr
+
+	cat batch.txtr | reverse_lines > batch.txtf
+
+	if [ "$2" = "" ]; then
+		# Delete Language text, leaving urls
+		sed -ni '0~2p' batch.txtf
+		
+		cat batch.txtf >> batch.txt
+	else
+		echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b Applying Language Filter '$2'..."
+
+		grep -A 1 "$2" batch.txtf > batch.txtf2
+		
+		# Delete '--' lines
+		sed -i '/^[[:space:]]*--[[:space:]]*$/d' batch.txtf2
+
+		# Delete Blank lines.
+		sed -i '/^$/d' batch.txtf2
+
+		# Delete Language text, leaving urls
+		sed -ni '0~2p' batch.txtf2
+
+		cat batch.txtf2 >> batch.txt
+	fi
+
+	# We've scraped a batch file from the URL list. Clean up.
+	rm scrape.htm batch.txtr batch.txtf*
+	
+	echo -en "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
+
+	for ((n=0;n < ${#2}; n++)); do
+		echo -en '\b'
+	done
+
+	echo -e " Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+dynsc_longname="Dynasty Scans"
+dynsc_url="http://dynasty-scans.com/"
+dynsc_state=1
+# No filter
+dynsc_filt=0
+
+auto_dynsc() {
+	if [ -n "`echo $1 | grep 'dynasty-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Dynasty Scans.
+		return 1
+	fi
+
+	return 0
+}
+
+dl_dynsc() {
+	
+	# Now loop-de-loop. First, make a decent name. Dynasty always has
+	# a short-title at the end of the URL.
+
+	PAGEDATA="$(fetch "$1" "-")"
+
+	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+
+	mkdir -p "$folder"
+	cd "$folder"
+
+	PAGELIST="$(echo "$PAGEDATA" | grep "var pages")"
+
+	# This set of seds cuts up the pagelist in a manner
+	# that makes it identical to a bash array.
+	# So we're essentially modifying the webpage into a dl-script.
+	# Cool, eh?
+
+	PAGETMP="$(echo $PAGELIST | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g")"
+
+	# One possible nasty. Spaces.
+	# sed -i "s/\%20/ /g" tmp.1
+
+	# Load in the array.
+	eval "$PAGETMP"
+
+	echo -n "[DynastyScans] Downloading '$folder' "
+
+	CUR=0
+
+	for image in "${pages[@]}"; do
+		fetch "http://dynasty-scans.com$image"
+		spinner "$CUR"
+		CUR=$(( CUR + 1 ))
+	done
+
+	done_spin
+	
+	cd ..
+
+	cbz_make "$folder"
+}
+
+scrape_dynsc() {
+	echo -n "[DynastyScans] Scraping Chapters..."
+
+	# URLS are local.
+	fetch "$1" "-" | 			\
+	grep 'class="name"' | 		\
+	sed -e 's|^.*href="||g' 	\
+		-e 's|" class=.*||g' 	\
+		-e "s/^[[:space:]]*//" 	\
+		-e "s/[[:space:]]*$//" 	\
+		-e "s|^|http://dynasty-scans.com|g" >> batch.txt
+
+	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[DynastyScans] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+eh_longname="E-Hentai"
+eh_url="http://e-hentai.org/"
+eh_state=1
+eh_filt=0
+
+#notice_eh() {
+#	if [ "$noticed_eh" = "" ]; then
+#		echo -e "[e-h] Warning, this is experimental and subject to random failures."
+#		echo -e "[e-h] This is because H@H is a unreliable download service.
+#		echo -e "[e-h] And we are not a proper node, if you know what I mean."
+#		echo -e "[e-h] Also - this will count towards your image limit of 5k."
+#		noticed_eh=1
+#	fi
+#}
+
+auto_eh() {
+	if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# E-H
+		return 1
+	fi
+
+	return 0
+}
+
+dl_eh() {
+	#notice_eh
+
+	sitepage=$1
+
+	fetch "${sitepage}/?nw=always" tmp.1
+
+	# Unfortunately e-h has shit system. Time to code page extraction
+	# I'm using pipes for clarity.
+	# the last sed deals with names like fate/stay night which are invalid
+	folder="$(cat tmp.1 | grep 'title>' - | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
+	mkdir -p "$folder"
+	cd "$folder"
+	
+	DATA=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/g' | sed 's/"><img alt.*//g' | grep 'url:')
+	rm ../tmp.1
+
+	eval "urls=(`echo $DATA | tr '\n' ' ' | sed 's/url://g'`)"
+
+	page="${urls[0]}"
+
+	echo -n "[e-h] Downloading '$folder' "
+
+	doneyet=0
+
+	CUR=0
+	while [ $doneyet == 0 ]; do
+		get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp' -))
+
+		extra=""
+
+		if [ "${get[1]}" == "" ]; then
+			get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 '.php?f=' -))
+			extra="-O $(echo ${get[1]} | sed 's/.*n=//')"
+		fi
+
+		if [ "${get[0]}" == "$page" ]; then
+			doneyet=1
+		fi
+
+		fetch "${get[1]}" "$extra"
+
+		if [ ! "${get[0]}" == "" ]; then
+			page="${get[0]}"
+		fi
+
+		spinner "$CUR"
+		CUR=$(( CUR + 1 ))
+	done
+	
+	done_spin
+
+	cd ..
+
+	cbz_make "$folder"
+}
+
+scrape_eh() {
+	echo -e "[e-h] This isn't supported, considering there's really zero categorization here."
+}
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# Preface - code does not discriminate. Plus, if you read manga, let's be honest;
+# you've made the mistake of ending up here accidentally once.
+
+fakku_longname="FAKKU"
+fakku_url="https://fakku.net/"
+fakku_state=1
+fakku_filt=0
+
+auto_fakku() {
+	if [ -n "$(echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
+		# Fakku
+		return 1
+	fi
+
+	return 0
+}
+
+dl_fakku() {
+	PAGES="$(fetch "$1/read" "-" | grep "window.params.thumbs =" )"
+
+	# First. Escape fixups. Nuke escaped forward slashes
+	# Next. Reformat decl.
+	# Next. Nuke '.thumb'
+	# Next. Nuke commas. Still, they can occur in names so we'll carefully filter.
+	# Last transform. '/thumbs/' to '/images/'
+	PAGEDATA="$(echo $PAGES | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
+
+	# Because some pages have unicode escapes (javascript thing ugh) we have to echo the contents of the file
+	# to itself to escape them. UGHHHHH
+
+	DATA="$(printf "$PAGEDATA")"
+
+	folder="$(echo $PAGEDATA | sed -e 's|pages=("//t.fakku.net/images/manga/i/||g' -e 's|/images.*||g' -e 's|_| |g' | entity_to_char)"
+	mkdir -p "$folder"
+	cd "$folder"
+
+	# Load in the array.
+	eval "$DATA"
+
+	# Download loop-de-loop.
+
+	echo -n "[Fakku] Downloading '$folder' "
+
+	CUR=0
+	for image in "${pages[@]}"; do
+		fetch "https:$image"
+		spinner "$CUR"
+		CUR=$(( CUR + 1 ))
+	done
+
+	done_spin
+
+	cd ..
+	
+	cbz_make "$folder"
+}
+
+scrape_fakku() {
+	echo -n "[Fakku] Scraping Chapters..."
+	
+	fetch "$1" scrape.htm
+
+	grep 'class="content-title"' scrape.htm > batch.txtf
+
+	sed -i 's|^.*href="||g' batch.txtf
+	sed -i 's|" title=.*||g' batch.txtf
+	sed -i "s/^[[:space:]]*//" batch.txtf
+	sed -i "s/[[:space:]]*$//" batch.txtf
+
+	# Links are local.
+	sed -i "s|^|https://fakku.net|g" batch.txtf
+
+	# Don't bother doing any re-ordering here, since orders are chaotic.
+	cat batch.txtf >> batch.txt
+
+	# Clean up.
+	rm scrape.htm batch.txtf
+
+	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Fakku] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# Unlike all of the other plugins, this is a generic downloader for foolslide based sites.
+# Therefore, instead of keeping it a generic and needing to specifically ask for this plugin,
+# I use a compatibility list.
+# Sites using foolslide:
+#   reader.vortex-scans.com
+#   foolrulez.org
+
+foolsl_longname="FoolSlide"
+foolsl_url="Generic, n/a."
+foolsl_state=1
+foolsl_filt=0
+
+auto_foolsl() {
+	if [ -n "`echo $1 | grep 'foolrulez.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# FoolRulez
+		return 1
+	elif [ -n "`echo $1 | grep 'vortex-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# VortexScans
+		return 1
+	fi
+
+	return 0
+}
+
+dl_foolsl() {
+	# Attempt a lazy download first. Only image scrape if rejected.
+
+	LAZYURL=`echo $1 | sed "s|/read/|/download/|g"`
+
+	echo -n "[FoolSlide] Attempting Lazy Download..."
+
+	FAILED=0
+
+	fetch "$LAZYURL" || export FAILED=1
+
+	if [ $FAILED = 1 ]; then
+		echo "Requesting zip failed."
+	else
+		echo "[OK]"
+	fi
+}
+
+scrape_foolsl() {
+
+	echo -n "[Foolslide] Scraping Chapters..."
+
+	fetch "$1" "-" |							\
+	grep '<div class="title"><a href='			\
+	sed -e 's|<div class="title"><a href="||g'	\
+	-e 's|" title=.*||g'						\
+	-e "s/^[[:space:]]*//"						\
+	-e "s/[[:space:]]*$//"					  | \
+	reverse_lines >> batch.txt
+	
+	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+mpark_longname="MangaPark"
+mpark_url="http://mangapark.me/"
+# Broken
+mpark_state=1
+# No filter
+mpark_filt=0
+
+auto_mpark() {
+	if [ -n "`echo $1 | grep 'mangapark.me/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Mangapark
+		return 1
+	fi
+
+	return 0
+}
+
+dl_mpark() {
+
+	sitepage="$1"
+
+	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
+	sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
+
+	# Folder edit works different. URLs are consistent with mangapark, e.g. manga/s1/v1/c1
+	# I'm using pipes for clarity.
+	folder="$(echo $sitepage | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.me\/manga\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
+	mkdir -p "$folder"
+	cd "$folder"
+	
+	declare -a DATA
+	DATA=$(fetch "$sitepage" "-" | grep 'target="_blank"' - | sed -e '1d' -e 's|^[[:space:]]*<a.*target="_blank" href=||g' -e "s/ title=.*$//" -e "s/\"//g"| tr '\n' ' ')
+
+	# eval "pages = ( $DATA )"
+
+	echo -n "[Mangapark] Downloading '$folder' "
+
+	CUR=0
+	for image in ${DATA[@]}; do
+		fetch "$image"
+		spinner "$CUR"
+		CUR=$(( CUR + 1 ))
+	done
+	
+	done_spin
+
+	cd ..
+
+	cbz_make "$folder"
+}
+
+scrape_mpark() {
+	echo -n "[Mangapark] Scraping Chapters..."
+
+	fetch "$1" scrape.htm
+
+	grep 'class="ch sts"' scrape.htm > batch.txtr
+
+	sed -i 's|^.*href="||g' batch.txtr
+	sed -i 's|">.*||g' batch.txtr
+	sed -i "s/^[[:space:]]*//" batch.txtr
+	sed -i "s/[[:space:]]*$//" batch.txtr
+
+	# URLS are local.
+	sed -i "s|^|http://mangapark.com|g" batch.txtr
+
+	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
+	sed -i "s|/1$||g" batch.txtr
+	sed -i "s|/3-1$||g" batch.txtr
+	sed -i "s|/6-1$||g" batch.txtr
+	sed -i "s|/10-1$||g" batch.txtr
+
+	# Lines are reverse order. tac.
+	# If whatever we're using has no tac, you're stuck with reverse order.
+	tac batch.txtr >> batch.txt || cat batch.txtr >> batch.txt
+
+	# We've scraped a batch file from the URL list. Clean up.
+	rm scrape.htm batch.txtr
+
+	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+mread_longname="Mangareader"
+mread_url="http://www.mangareader.net/"
+# Broken
+mread_state=0
+# No filter
+mread_filt=0
+
+auto_mread() {
+	if [ -n "`echo $1 | grep 'mangareader.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Mangareader
+		return 1
+	fi
+
+	return 0
+}
+
+dl_mread() {
+
+	# Folder edit works different. URLs are consistent with mangareader. e.g aho-girl/1
+	# I'm using pipes for clarity.
+	folder="$(echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|www\.mangareader\.net\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
+	mkdir -p "$folder"
+	cd "$folder"
+
+	echo -n "[Mangareader] Blindly Downloading '$folder' "
+
+	IS_404=0
+	CUR=0
+	PAGES=0
+
+	while [ $IS_404 = 0 ]; do
+		# Increment CUR.
+		CUR=$(( CUR + 1 ))
+	
+		PAGEDATA=$(fetch "$1/$CUR" "$CUR.htm")
+		IS_404=$?
+
+		if [ $IS_404 = 0 ]; then
+			src=`grep '<div id="imgholder">' $CUR.htm | sed "s/^.*src=\"//g" | sed "s/\" alt=.*//g"`
+	
+			echo $src
+
+			# Get extension of src.
+			EXT="${src##*.}"
+
+			fetch "$src" "$CUR.$EXT"
+	
+			spinner
+		fi
+	done
+
+	PAGES=$(( CUR - 1 ))
+
+	done_spin
+
+	rm *.htm
+
+	cd ..
+
+	cbz_make "$folder"
+
+}
+
+scrape_mread() {
+	echo "[MangaReader] NYI, sorry."
+}
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# Determine operation.
+
+fetch_detect
+
+auto() {
+	for module in ${MODS[@]}; do
+		eval auto_$module $1
+		RETCHECK=$?
+		if [ $RETCHECK = 1 ]; then
+			eval dl_$module $1
+			exit 0
+		fi
+	done
+}
+
+batch() {
+	# $2 is a file. Read it in line by line as $1 and $2.
+	IFS=$'\n' read -d '' -r -a LINES < $1
+	NEW=""
+	for chunk in "${LINES[@]}"; do
+		NEW="$NEW$0 $chunk ;"
+	done
+	eval $NEW
+}
+
+autobatch() {
+	# $2 is a file. Read it in line by line as $1 and $2.
+	IFS=$'\n' read -d '' -r -a LINES < $1
+	NEW=""
+	for chunk in "${LINES[@]}"; do
+		NEW="$NEW$0 auto $chunk ;"
+	done
+	eval $NEW
+}
+
+scrape() {
+	for module in ${MODS[@]}; do
+		eval auto_$module $1
+		RETCHECK=$?
+		if [ $RETCHECK = 1 ]; then
+			eval scrape_$module $1 $2
+			exit 0
+		fi
+	done
+}
+
+help() {
+	type 1
+	echo -e "Usage:"
+	type 0
+	echo -ne "\t$0\t"
+	color 3
+	echo -ne "OPERATION\t"
+	color 5
+	echo -e "[PARAMS]"
+	type 0
+	type 1
+	echo -e "Operations:"
+	type 0
+	color 3
+	echo -e "\tauto (a)"
+	type 0
+	echo -e "\t\tChooses module based on URL"
+	color 3
+	echo -e "\tbatch (l)"
+	type 0
+	echo -e "\t\tTakes a file with a list of types and URLs"
+	color 3
+	echo -e "\tautobatch (b)"
+	type 0
+	echo -e "\t\tTakes a file with URLs which will be run with auto."
+	color 3
+	echo -e "\tscrape (s)"
+	type 0
+	echo -e "\t\tWill take a manga's page and scrape chapters to"
+	echo -e "\t\ta file named batch.txt"
+	echo ""
+	echo -e "\tYou can also specify a module name followed by"
+	echo -e "\tthe URL instead of using the auto-detect."
+	type 1
+	echo -e "Download Modules:"
+	type 0
+	for mod in "${MODS[@]}"; do
+		longname=$(temp=\$${mod}_longname && eval echo $temp)
+		url=$(temp=\$${mod}_url && eval echo $temp)
+		broke=$(temp=\$${mod}_state && eval echo $temp)
+		filter=$(temp=\$${mod}_filt && eval echo $temp)
+
+		echo -ne "\tModule Name:\t\t"
+		color 3
+		echo -e "$mod"
+
+		type 0
+		echo -ne "\t\tLong Name:\t\t"
+		color 4
+		echo -e "$longname"
+
+		type 0
+		echo -ne "\t\tSite(s) Used with:\t"
+		color 5
+		echo -e "$url"
+		type 0
+		echo ""
+
+		type 0
+		echo -ne "\t\tSite(s) Current state:\t"
+		if [ "$broke" = "1" ]; then
+			color 2
+			echo -e "Works"
+		else
+			color 1
+			echo -e "Broken"
+		fi
+		type 0
+
+		if [ "$filter" = "1" ]; then
+			echo -e "\t\tSupports filters for scrape"
+		fi
+
+		echo ""
+	done
+	type 1
+	echo -e "Misc Info"
+	type 0
+	echo -e "\tIf you see an emote in the output, it means we had to deal"
+	echo -e "\twith a retrieval quirk."
+	echo -e "\n\t[ :/ ]\tGiven GZip'd data even though we said it wasn't"
+	echo -e "\t\tsupported in the GET."
+	type 2
+	echo -e "\t\tThis happens frequently with batoto when doing"
+	echo -e "\t\tmultiple fetches. :/"
+	type 0
+	echo ""
+	echo -e "\tSome modules accept an extra parameter. Usually, this"
+	echo -e "\tis a filter. Try values like 'English' or 'French'."
+	type 1
+	echo -e "System Tools"
+	type 0
+	if [ ! "$_wget" = "" ]; then
+		echo -e "\twget:\t\t$_wget"
+	fi
+	if [ ! "$_curl" = "" ]; then
+		echo -e "\tcurl:\t\t$_curl"
+	fi
+	if [ ! "$_aria" = "" ]; then
+		echo -e "\taria2c:\t\t$_aria"
+	fi
+	echo -ne "\tWill use:\t"
+	if [ $_FETCHTOOL = 1 ]; then
+		echo -ne "wget"
+		if [ $_BUSYBOX = 1 ]; then
+			echo -e ", busybox"
+		else
+			echo -e ""
+		fi
+	elif [ $_FETCHTOOL = 2 ]; then
+		echo -e "curl"
+	elif [ $_FETCHTOOL = 3 ]; then
+		echo -e "aria2c"
+	else
+		echo -e "not found. Install a program like wget or curl."
+	fi
+	type 1
+	echo -ne "License"
+	type 0
+	echo ""
+	echo -e "\tCopyright (C) 2015  Jon Feldman/@chaoskagami"
+	echo ""
+	echo -e "\tThis program is free software: you can redistribute it and/or modify"
+	echo -e "\tit under the terms of the GNU General Public License as published by"
+	echo -e "\tthe Free Software Foundation, either version 3 of the License, or"
+	echo -e "\t(at your option) any later version."
+	echo ""
+	echo -e "\tThis program is distributed in the hope that it will be useful,"
+	echo -e "\tbut WITHOUT ANY WARRANTY; without even the implied warranty of"
+	echo -e "\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+	echo -e "\tGNU General Public License for more details."
+	echo ""
+	echo -e "\tYou should have received a copy of the GNU General Public License"
+	echo -e "\talong with this program.  If not, see <http://www.gnu.org/licenses/>"
+}
+
+if [ "$1" = "auto" -o "$1" = "a" ]; then
+	# Common operation - Automatic Module Select.
+	auto $2 $3
+elif [ "$1" = "batch" -o "$1" = "l" ]; then
+	# Common operation - typed batch.
+	batch $2 $3
+elif [ "$1" = "autobatch" -o "$1" = "b" ]; then
+	# Common operation - auto batch.
+	autobatch $2 $3
+elif [ "$1" = "scrape" -o "$1" = "s" ]; then
+	# Link scraper.
+	scrape $2 $3
+else # Not a common operation - either invalid or a module-op.
+
+	# Detect whether it is a module operation.
+
+	MATCH=""
+
+	for module in ${MODS[@]}; do
+		if [ "$1" = "$module" ]; then
+			MATCH="dl_$module $2"
+		fi
+	done
+
+	if [ "$MATCH" = "" ]; then # All checks failed. Usage~
+		if [ ! "$(echo "$1" | grep http)" = "" ]; then
+			# URL as $1. Do auto.
+			auto $1 $2
+		else
+			help
+		fi
+	else # Module operation.
+		eval $MATCH
+	fi
+fi

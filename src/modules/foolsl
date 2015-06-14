@@ -1,3 +1,19 @@
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
 # Unlike all of the other plugins, this is a generic downloader for foolslide based sites.
 # Therefore, instead of keeping it a generic and needing to specifically ask for this plugin,
 # I use a compatibility list.
@@ -34,7 +50,7 @@ dl_foolsl() {
 	fetch "$LAZYURL" || export FAILED=1
 
 	if [ $FAILED = 1 ]; then
-		echo "[Foolslide] Requesting zip failed."
+		echo "Requesting zip failed."
 	else
 		echo "[OK]"
 	fi
@@ -44,20 +60,13 @@ scrape_foolsl() {
 
 	echo -n "[Foolslide] Scraping Chapters..."
 
-	fetch "$1" tmp.htm
-
-	grep '<div class="title"><a href=' tmp.htm > batch.txtr
-	
-	sed -i 's|<div class="title"><a href="||g' batch.txtr
-	sed -i 's|" title=.*||g' batch.txtr
-	sed -i "s/^[[:space:]]*//" batch.txtr
-	sed -i "s/[[:space:]]*$//" batch.txtr
-
-	# Lines are reverse order. tac.
-	# If whatever we're using has no tac, you're stuck with reverse order.
-	tac batch.txtr >> batch.txt || cat batch.txtr >> batc.txt
-
-	rm tmp.htm batch.txtr
+	fetch "$1" "-" |							\
+	grep '<div class="title"><a href='			\
+	sed -e 's|<div class="title"><a href="||g'	\
+	-e 's|" title=.*||g'						\
+	-e "s/^[[:space:]]*//"						\
+	-e "s/[[:space:]]*$//"					  | \
+	reverse_lines >> batch.txt
 	
 	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

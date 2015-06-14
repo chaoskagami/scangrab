@@ -1,3 +1,19 @@
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
 type() {
 	echo -ne "\x1b[$1m"
 }
@@ -28,14 +44,20 @@ cbz_make() {
 	echo -e "\b\b\b\b\b\b\b\b\b\bFinished.    "
 }
 
-# NYI. Should verify an image is uncorrupted.
-	# Returns 0 on OK
-	# Returns 1 on corrupt
+# Checks if an image is uncorrupted. If you don't have the tools, this never happens.
+	# Returns 0 on OK / no tool
+	# Returns code on corrupt
+
 verify() {
-	_identify=$(which identify)
+	_identify=$(which identify 2>/dev/null)
+
 	if [ -f $_identify ]; then
-		echo -n ""
+		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
+		_IDRES=$?
+		return $_IDRES
 	fi
+
+	return 0
 }
 
 _SPINNER_CHAR="|"
@@ -73,14 +95,18 @@ done_spin() {
 	echo -e "\b\b\b[OK]"
 }
 
+mimetype() {
+	echo "$(file --mime-type "$1" | sed 's/.* //g')"
+}
+
 FETCH_RESULT="0"
 FETCH_CMD=""
 _FETCHTOOL=0
 _BUSYBOX=0
 fetch_detect() {
-	_wget="$(which wget)"
-	_curl="$(which curl)"
-	_aria="$(which aria2c)"
+	_wget="$(which wget 2>/dev/null)"
+	_curl="$(which curl 2>/dev/null)"
+	_aria="$(which aria2c 2>/dev/null)"
 
 	if [ ! "$_wget" = "" ]; then
 		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
@@ -108,32 +134,66 @@ fetch_detect() {
 	return $FETCH_RESULT	
 }
 
+# AVOID CHANGING THIS FUNCTION IF AT ALL POSSIBLE.
+# THINGS WILL BREAK IN EVERYTHING IF THIS ONE BREAKS.
+
 fetch() {
 	if [ $_FETCHTOOL = 1 ]; then
-		_CMD="$FETCH_CMD $1"
-		if [ ! "$2" = "" ]; then
-			_CMD="$_CMD -O $2"
+
+		_CMD="$FETCH_CMD \"$1\""
+		if [ "$2" = "" ]; then
+			_CMD="$_CMD -O $(basename "$1")"
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD -O -"
+		else
+			_CMD="$_CMD -O \"$2\""
 		fi
+
 	elif [ $_FETCHTOOL = 2 ]; then
+
 		_CMD="$FETCH_CMD $1"
 		if [ "$2" = "" ]; then
 			_CMD="$_CMD > $(basename "$1")"
-		elif [ ! "$2" = "-" ]; then
-			_CMD="$_CMD > "$2""
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD"
+		else
+			_CMD="$_CMD > \"$2\""
 		fi
+
 	elif [ $_FETCHTOOL = 3 ]; then
+
 		_CMD="$FETCH_CMD $1"
-		if [ ! "$2" = "" ]; then
-			_CMD="$_CMD -o $2"
+		if [ "$2" = "" ]; then
+			_CMD="$_CMD -o $(basename "$1")"
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD -o -"
+		else
+			_CMD="$_CMD -o \"$2\""
 		fi
 	fi
-
-	$_CMD
+	
+	# echo -e "\n$_CMD"
+	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
 
-	if [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0]; then
-		echo "[WARNING] Image failed on busybox. Cannot retry."
+	if [ ! $FETCH_RESULT = 0 ]; then
+		if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
+			echo -e "[WARN] Failed to fetch. Command was:\n$_CMD"
+		fi
+	elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
+		echo "[WARN] Image failed on busybox. Cannot retry."
 	fi
+	
+	# If this is an image, check validity.
+	MIME="$(mimetype "$_FILE")"
+	if [ "$MIME" = "image/jpeg" ] || [ "$MIME" = "image/png" ] || [ "$MIME" = "image/gif" ] || [ "$MIME" = "image/bmp" ]; then
+		verify "$_FILE"
+		VALID=$?
+		if [ ! $VALID = 0 ]; then
+			echo "[WARN] File '$_FILE' is corrupted."
+		fi
+	fi
+
 	return $FETCH_RESULT
 }
 
@@ -208,5 +268,11 @@ entity_to_char() {
 		-e "s/&#9830;/♦/g" \
 		\
 		-e "s/|/-/g"
+}
 
+reverse_lines() {
+    readarray -t LINES
+    for (( I = ${#LINES[@]}; I; )); do
+        echo "${LINES[--I]}"
+    done
 }

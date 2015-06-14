@@ -1,10 +1,28 @@
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
 mpark_longname="MangaPark"
-mpark_url="http://mangapark.com/"
-mpark_state=0 # Broken
-mpark_filt=0 # No filter
+mpark_url="http://mangapark.me/"
+# Broken
+mpark_state=1
+# No filter
+mpark_filt=0
 
 auto_mpark() {
-	if [ -n "`echo $1 | grep 'mangapark.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+	if [ -n "`echo $1 | grep 'mangapark.me/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Mangapark
 		return 1
 	fi
@@ -21,27 +39,23 @@ dl_mpark() {
 
 	# Folder edit works different. URLs are consistent with mangapark, e.g. manga/s1/v1/c1
 	# I'm using pipes for clarity.
-	folder="$(echo $sitepage | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.com\/manga\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
+	folder="$(echo $sitepage | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.me\/manga\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
 	mkdir -p "$folder"
 	cd "$folder"
 	
-	DATA=$(fetch "$sitepage" "-" | grep 'a target="_blank"' - | sed 's|<em><a target="_blank" href=||g')
-	
-	echo "$DATA" > tmp.1
+	declare -a DATA
+	DATA=$(fetch "$sitepage" "-" | grep 'target="_blank"' - | sed -e '1d' -e 's|^[[:space:]]*<a.*target="_blank" href=||g' -e "s/ title=.*$//" -e "s/\"//g"| tr '\n' ' ')
 
-	sed -i "s/ title=.*//" tmp.1
-	eval "pages=(`cat tmp.1 | tr '\n' ' '`)"
+	# eval "pages = ( $DATA )"
 
 	echo -n "[Mangapark] Downloading '$folder' "
 
 	CUR=0
-	for image in "${pages[@]}"; do
+	for image in ${DATA[@]}; do
 		fetch "$image"
 		spinner "$CUR"
 		CUR=$(( CUR + 1 ))
 	done
-
-	rm tmp.1
 	
 	done_spin
 
