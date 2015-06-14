@@ -4,12 +4,14 @@ scangrab
 Eventually, I became sick of the lack of manga downloading tools that were simple and well documented.
 
 To use this, you'll need the following incredibly common tools:
+
  * grep
  * sed
  * wget
  * file
  * gunzip
  * zip
+
 If you don't have these...well, try not running it on android or a netgear router. :P I also assume the GNU versions, so it may not work right on a mac.
 
 I removed 'bash' from the tools list since the scripts are bash and zsh compatible. If you want to use zsh, just change the shebang. However, it's still not POSIX, so dash probably will not work.
@@ -17,6 +19,7 @@ I removed 'bash' from the tools list since the scripts are bash and zsh compatib
 Scangrab is incredibly simplistic, unlike a number of alternatives. It consists of multiple shell scripts, and that's it. Want one script? I've coded up the multiple scripts so they can all be clunked together into one script.
 
 Here's the list of sites it currently handles (with scraper indicating it can generate a series batch file):
+
  * Mangareader
  * [scraper] Mangapark
  * [scraper] Batoto
@@ -26,6 +29,7 @@ Here's the list of sites it currently handles (with scraper indicating it can ge
  * E-H (Yeah, I know, I know...)
 
 Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
+
  * Batoto (Extra: Language. Try 'English', 'Chinese', 'Russian', 'French', etc.)
 
 This is open source software relased under the terms of GPLv3. Read COPYING.
