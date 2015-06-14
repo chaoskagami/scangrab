@@ -1,7 +1,7 @@
 scangrab
 =====
 
-tl;dr - To install, fetch whatever blob floats your boat from the raw folder and put it somewhere as +x. If you need to report an issue, please use the scangrab.raw version - line numbers are fucked in the min, and even worse in sfx.
+tl;dr - To install, fetch whatever blob floats your boat from the dist folder and put it somewhere as +x. If you need to report an issue, please use the scangrab.raw version - line numbers are fucked in the min, and even worse in sfx.
 
 Eventually, I became sick of the lack of manga downloading tools that were simple and well documented.
 
