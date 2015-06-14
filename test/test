@@ -18,8 +18,7 @@
 # This file automatically fetches some 'known' files. In case of an api change, the files should
 # be invalid.
 
-(cd ../src && COMPRESS=0 MINIFY=0 ./merge ../test/scangrab)
-
+(cd .. && ./dist.sh)
 
 # We try to use SFW stuff for NSFW scrapers, fyi.
 
