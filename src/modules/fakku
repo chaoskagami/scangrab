@@ -23,7 +23,7 @@ fakku_state=1
 fakku_filt=0
 
 auto_fakku() {
-	if [ -n "`echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+	if [ -n "$(echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
 		# Fakku
 		return 1
 	fi
@@ -32,7 +32,7 @@ auto_fakku() {
 }
 
 dl_fakku() {
-	PAGES="$(fetch "$1/read" "-" | grep "window.params.thumbs =")"
+	PAGES="$(fetch "$1/read" "-" | grep "window.params.thumbs =" )"
 
 	# First. Escape fixups. Nuke escaped forward slashes
 	# Next. Reformat decl.

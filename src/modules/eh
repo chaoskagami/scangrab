@@ -96,5 +96,5 @@ dl_eh() {
 }
 
 scrape_eh() {
-	echo -n "[e-h] This isn't supported, considering there's really zero categorization here."
+	echo -e "[e-h] This isn't supported, considering there's really zero categorization here."
 }

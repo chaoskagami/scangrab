@@ -134,34 +134,46 @@ fetch_detect() {
 	return $FETCH_RESULT	
 }
 
+# AVOID CHANGING THIS FUNCTION IF AT ALL POSSIBLE.
+# THINGS WILL BREAK IN EVERYTHING IF THIS ONE BREAKS.
+
 fetch() {
 	if [ $_FETCHTOOL = 1 ]; then
+
 		_CMD="$FETCH_CMD \"$1\""
 		if [ "$2" = "" ]; then
-			_FILE="$(basename "$1")"
+			_CMD="$_CMD -O $(basename "$1")"
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD -O -"
 		else
-			_FILE="$2"
+			_CMD="$_CMD -O \"$2\""
 		fi
-		_CMD="$_CMD -O $_FILE"
-	elif [ $_FETCHTOOL = 2 ]; then
-		_CMD="$FETCH_CMD $1"
-		if [ "$2" = "" ]; then
-			_FILE="$(basename "$1")"
-		else
-			_FILE="$2"
-		fi
-		_CMD="$_CMD > $_FILE"
-	elif [ $_FETCHTOOL = 3 ]; then
-		_CMD="$FETCH_CMD $1"
-		if [ "$2" = "" ]; then
-			_FILE="$(basename "$1")"
-		else
-			_FILE="$2"
-		fi
-		_CMD="$_CMD -o $_FILE"
-	fi
 
-	eval "$_CMD" 2>/dev/null
+	elif [ $_FETCHTOOL = 2 ]; then
+
+		_CMD="$FETCH_CMD $1"
+		if [ "$2" = "" ]; then
+			_CMD="$_CMD > $(basename "$1")"
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD"
+		else
+			_CMD="$_CMD > \"$2\""
+		fi
+
+	elif [ $_FETCHTOOL = 3 ]; then
+
+		_CMD="$FETCH_CMD $1"
+		if [ "$2" = "" ]; then
+			_CMD="$_CMD -o $(basename "$1")"
+		elif [ "$2" = "-" ]; then
+			_CMD="$_CMD -o -"
+		else
+			_CMD="$_CMD -o \"$2\""
+		fi
+	fi
+	
+	# echo -e "\n$_CMD"
+	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
 
 	if [ ! $FETCH_RESULT = 0 ]; then
@@ -258,7 +270,7 @@ entity_to_char() {
 		-e "s/|/-/g"
 }
 
-function reverse_lines {
+reverse_lines() {
     readarray -t LINES
     for (( I = ${#LINES[@]}; I; )); do
         echo "${LINES[--I]}"

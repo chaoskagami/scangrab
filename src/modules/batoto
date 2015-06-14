@@ -43,12 +43,7 @@ dl_batoto() {
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
 	
-	data="$(fetch "$1" tmp)"
-	folder="$(cat tmp | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
-
-	rm tmp
-
-	echo "$folder"
+	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
 
 	mkdir -p "$folder"
 	cd "$folder"
@@ -57,6 +52,11 @@ dl_batoto() {
 	PAGES=0
 	RET=0
 	
+	base="$1"
+	if [ ! "${base:${#base}-1}" = "/" ]; then
+		base="${base}/"
+	fi
+
 	echo -n "[Batoto] Downloading '$folder' "
 
 	while [ "$RET" = "0" ]; do
@@ -65,7 +65,8 @@ dl_batoto() {
 
 		# On batoto, two slashes is a syntax error as of Jun 13, 2015.
 
-		fetch "${1}${CUR}" "$CUR.htm"
+		# We also need to fetch to a file here unfortunately, because possible stupidity.
+		fetch "${base}${CUR}" "$CUR.htm"
 
 		# Batoto sometimes gives out gunzips. We need to account for that... =_=
 
@@ -78,8 +79,10 @@ dl_batoto() {
 
 		img="$(grep -C0 'img\.src = ' $CUR.htm | sed -e 's/^[[:space:]]*img\.src = \"//g' -e "s/\";[[:space:]]*$//g")"
 
+		ext="${img##*.}"
+
 		# If this 404's, fetch will return non-zero. Thus, loop breaks.
-		fetch "$img" "" "nowarn"
+		fetch "$img" "${CUR}_${folder}.${ext}"
 		RET=$?
 
 		rm $CUR.htm

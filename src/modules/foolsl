@@ -60,20 +60,13 @@ scrape_foolsl() {
 
 	echo -n "[Foolslide] Scraping Chapters..."
 
-	fetch "$1" tmp.htm
-
-	grep '<div class="title"><a href=' tmp.htm > batch.txtr
-	
-	sed -i 's|<div class="title"><a href="||g' batch.txtr
-	sed -i 's|" title=.*||g' batch.txtr
-	sed -i "s/^[[:space:]]*//" batch.txtr
-	sed -i "s/[[:space:]]*$//" batch.txtr
-
-	# Lines are reverse order. tac.
-	# If whatever we're using has no tac, you're stuck with reverse order.
-	cat batch.txtr | reverse_lines >> batch.txt
-
-	rm tmp.htm batch.txtr
+	fetch "$1" "-" |							\
+	grep '<div class="title"><a href='			\
+	sed -e 's|<div class="title"><a href="||g'	\
+	-e 's|" title=.*||g'						\
+	-e "s/^[[:space:]]*//"						\
+	-e "s/[[:space:]]*$//"					  | \
+	reverse_lines >> batch.txt
 	
 	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

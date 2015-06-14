@@ -34,18 +34,21 @@ dl_dynsc() {
 	# Now loop-de-loop. First, make a decent name. Dynasty always has
 	# a short-title at the end of the URL.
 
-	folder="`echo $1 | sed -re 's/^.+\///'`"
-	mkdir -p $folder
-	cd $folder
+	PAGEDATA="$(fetch "$1" "-")"
 
-	PAGEDATA="$(fetch "$1" "-" | grep "var pages")"
+	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+
+	mkdir -p "$folder"
+	cd "$folder"
+
+	PAGELIST="$(echo "$PAGEDATA" | grep "var pages")"
 
 	# This set of seds cuts up the pagelist in a manner
 	# that makes it identical to a bash array.
 	# So we're essentially modifying the webpage into a dl-script.
 	# Cool, eh?
 
-	PAGETMP="$(echo $PAGEDATA | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g")"
+	PAGETMP="$(echo $PAGELIST | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g")"
 
 	# One possible nasty. Spaces.
 	# sed -i "s/\%20/ /g" tmp.1
@@ -73,23 +76,14 @@ dl_dynsc() {
 scrape_dynsc() {
 	echo -n "[DynastyScans] Scraping Chapters..."
 
-	fetch "$1" "scrape.htm"
-
-	grep 'class="name"' scrape.htm > batch.txtf
-
-	sed -i 's|^.*href="||g' batch.txtf
-	sed -i 's|" class=.*||g' batch.txtf
-	sed -i "s/^[[:space:]]*//" batch.txtf
-	sed -i "s/[[:space:]]*$//" batch.txtf
-
 	# URLS are local.
-	sed -i "s|^|http://dynasty-scans.com|g" batch.txtf
-
-	# Luckily, dynasty is one of the few sites that does ascending rather than descending order (txtf = forward, txtr = reversed)
-	cat batch.txtf >> batch.txt
-
-	# We've scraped a batch file from the URL list. Clean up.
-	rm scrape.htm batch.txtf
+	fetch "$1" "-" | 			\
+	grep 'class="name"' | 		\
+	sed -e 's|^.*href="||g' 	\
+		-e 's|" class=.*||g' 	\
+		-e "s/^[[:space:]]*//" 	\
+		-e "s/[[:space:]]*$//" 	\
+		-e "s|^|http://dynasty-scans.com|g" >> batch.txt
 
 	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[DynastyScans] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

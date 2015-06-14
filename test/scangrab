@@ -829,7 +829,7 @@ scrape_foolsl() {
 mpark_longname="MangaPark"
 mpark_url="http://mangapark.me/"
 # Broken
-mpark_state=1
+mpark_state=0
 # No filter
 mpark_filt=0
 

@@ -17,7 +17,7 @@
 mpark_longname="MangaPark"
 mpark_url="http://mangapark.me/"
 # Broken
-mpark_state=0
+mpark_state=1
 # No filter
 mpark_filt=0
 
@@ -43,23 +43,19 @@ dl_mpark() {
 	mkdir -p "$folder"
 	cd "$folder"
 	
-	DATA=$(fetch "$sitepage" "-" | grep 'a target="_blank"' - | sed 's|<em><a target="_blank" href=||g')
-	
-	echo "$DATA" > tmp.1
+	declare -a DATA
+	DATA=$(fetch "$sitepage" "-" | grep 'target="_blank"' - | sed -e '1d' -e 's|^[[:space:]]*<a.*target="_blank" href=||g' -e "s/ title=.*$//" -e "s/\"//g"| tr '\n' ' ')
 
-	sed -i "s/ title=.*//" tmp.1
-	eval "pages=(`cat tmp.1 | tr '\n' ' '`)"
+	# eval "pages = ( $DATA )"
 
 	echo -n "[Mangapark] Downloading '$folder' "
 
 	CUR=0
-	for image in "${pages[@]}"; do
+	for image in ${DATA[@]}; do
 		fetch "$image"
 		spinner "$CUR"
 		CUR=$(( CUR + 1 ))
 	done
-
-	rm tmp.1
 	
 	done_spin
 
