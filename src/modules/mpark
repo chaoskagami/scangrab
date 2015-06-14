@@ -36,17 +36,15 @@ dl_mpark() {
 
 	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
 	sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
+	
+	FETCH="$(fetch "$sitepage" "-")"
 
-	# Folder edit works different. URLs are consistent with mangapark, e.g. manga/s1/v1/c1
-	# I'm using pipes for clarity.
-	folder="$(echo $sitepage | sed -e "s|http\:\/\/||g" | sed -e "s|mangapark\.me\/manga\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
+	folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g')"
 	mkdir -p "$folder"
 	cd "$folder"
-	
-	declare -a DATA
-	DATA=$(fetch "$sitepage" "-" | grep 'target="_blank"' - | sed -e '1d' -e 's|^[[:space:]]*<a.*target="_blank" href=||g' -e "s/ title=.*$//" -e "s/\"//g"| tr '\n' ' ')
 
-	# eval "pages = ( $DATA )"
+	declare -a DATA
+	DATA=$(echo "$FETCH" | grep 'target="_blank"' - | sed -e '1d' -e 's|^[[:space:]]*<a.*target="_blank" href=||g' -e "s/ title=.*$//" -e "s/\"//g"| tr '\n' ' ')
 
 	echo -n "[Mangapark] Downloading '$folder' "
 
