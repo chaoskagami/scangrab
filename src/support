@@ -47,10 +47,13 @@ cbz_make() {
 # Checks if an image is uncorrupted. If you don't have the tools, this never happens.
 	# Returns 0 on OK / no tool
 	# Returns code on corrupt
+_identify=$(which identify 2>/dev/null)
+CHECK_VALID=0
+if [ -f "$_identify" ]; then
+	CHECK_VALID=1
+fi
 
 verify() {
-	_identify=$(which identify 2>/dev/null)
-
 	if [ -f $_identify ]; then
 		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
 		_IDRES=$?

@@ -31,8 +31,12 @@ n "$B$B\b[Post] Cleanup..."
 rm -rf "$1"
 e "$BFinished.    "
 }
-verify() {
 _identify=$(which identify 2>/dev/null)
+CHECK_VALID=0
+if [ -f "$_identify" ]; then
+CHECK_VALID=1
+fi
+verify() {
 if [ -f $_identify ]; then
 $_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
 _IDRES=$?
@@ -647,6 +651,9 @@ e "\t\ta file named batch.txt"
 o ""
 e "\tYou can also specify a module name followed by"
 e "\tthe URL instead of using the auto-detect."
+echi ""
+e "\tIf you don't specify an operation and pass only a URL"
+e "\tthen we assume you want auto (a)."
 type 1
 e "Download Modules:"
 type 0
@@ -656,7 +663,7 @@ url=$(temp=\$${mod}_u && eval echo $temp)
 broke=$(temp=\$${mod}_state && eval echo $temp)
 filter=$(temp=\$${mod}_filt && eval echo $temp)
 note=$(temp=\$${mod}_note && eval echo $temp)
-n "\tModule Name:\t\t"
+n "\tModule Name:\t\t\t"
 color 3
 e "$mod"
 type 0
@@ -668,7 +675,6 @@ n "\t\tSite(s) Used with:\t"
 color 5
 e "$url"
 type 0
-o ""
 type 0
 n "\t\tSite(s) Current state:\t"
 if [ "$broke" = "1" ]; then
@@ -680,7 +686,7 @@ e "Broken"
 fi
 if [ ! "$note" = "" ]; then
 type 0
-n "\t\tSite Note:\t$note"
+e "\t\tSite Note:\t$note"
 fi
 type 0
 if [ "$filter" = "1" ]; then
@@ -698,11 +704,9 @@ e "\t\tsupported in the GET."
 type 2
 e "\t\tThis happens frequently with batoto when doing"
 e "\t\tmultiple fetches. :/"
-o ""
 type 0
 e "\n\t[ :( ]\tSite didn't respond and so the DL failed"
 e "\t\tWe had to revert to a fallback method."
-o ""
 e "\n\t[ >:( ]\tToo many normal requests failed; we reverted"
 e "\t\tto using entirely the fallback method."
 o ""
@@ -712,15 +716,15 @@ type 1
 e "System Tools"
 type 0
 if [ ! "$_wget" = "" ]; then
-e "\twget:\t\t$_wget"
+e "\twget:\t\t\t$_wget"
 fi
 if [ ! "$_curl" = "" ]; then
-e "\tcurl:\t\t$_curl"
+e "\tcurl:\t\t\t$_curl"
 fi
 if [ ! "$_aria" = "" ]; then
-e "\taria2c:\t\t$_aria"
+e "\taria2c:\t\t\t$_aria"
 fi
-n "\tWill use:\t"
+n "\tWill use:\t\t"
 if [ $_FETCHTOOL = 1 ]; then
 n "wget"
 if [ $_BUSYBOX = 1 ]; then
@@ -734,6 +738,15 @@ elif [ $_FETCHTOOL = 3 ]; then
 e "aria2c"
 else
 e "not found. Install a program like wget or curl."
+fi
+n "\tCheck broken images:\t"
+if [ $CHECK_VALID = 1 ]; then
+if [ -f $_identify ]; then
+n "imagemagick ($_identify)"
+fi
+o ""
+else
+o "No"
 fi
 type 1
 n "License"

@@ -94,6 +94,9 @@ help() {
 	echo ""
 	echo -e "\tYou can also specify a module name followed by"
 	echo -e "\tthe URL instead of using the auto-detect."
+	echi ""
+	echo -e "\tIf you don't specify an operation and pass only a URL"
+	echo -e "\tthen we assume you want auto (a)."
 	type 1
 	echo -e "Download Modules:"
 	type 0
@@ -104,7 +107,7 @@ help() {
 		filter=$(temp=\$${mod}_filt && eval echo $temp)
 		note=$(temp=\$${mod}_note && eval echo $temp)
 
-		echo -ne "\tModule Name:\t\t"
+		echo -ne "\tModule Name:\t\t\t"
 		color 3
 		echo -e "$mod"
 
@@ -118,7 +121,6 @@ help() {
 		color 5
 		echo -e "$url"
 		type 0
-		echo ""
 
 		type 0
 		echo -ne "\t\tSite(s) Current state:\t"
@@ -132,7 +134,7 @@ help() {
 
 		if [ ! "$note" = "" ]; then
 			type 0
-			echo -ne "\t\tSite Note:\t$note"
+			echo -e "\t\tSite Note:\t$note"
 		fi
 
 		type 0
@@ -165,15 +167,15 @@ help() {
 	echo -e "System Tools"
 	type 0
 	if [ ! "$_wget" = "" ]; then
-		echo -e "\twget:\t\t$_wget"
+		echo -e "\twget:\t\t\t$_wget"
 	fi
 	if [ ! "$_curl" = "" ]; then
-		echo -e "\tcurl:\t\t$_curl"
+		echo -e "\tcurl:\t\t\t$_curl"
 	fi
 	if [ ! "$_aria" = "" ]; then
-		echo -e "\taria2c:\t\t$_aria"
+		echo -e "\taria2c:\t\t\t$_aria"
 	fi
-	echo -ne "\tWill use:\t"
+	echo -ne "\tWill use:\t\t"
 	if [ $_FETCHTOOL = 1 ]; then
 		echo -ne "wget"
 		if [ $_BUSYBOX = 1 ]; then
@@ -187,6 +189,15 @@ help() {
 		echo -e "aria2c"
 	else
 		echo -e "not found. Install a program like wget or curl."
+	fi
+	echo -ne "\tCheck broken images:\t"
+	if [ $CHECK_VALID = 1 ]; then
+		if [ -f $_identify ]; then
+			echo -ne "imagemagick ($_identify)"
+		fi
+		echo ""
+	else
+		echo "No"
 	fi
 	type 1
 	echo -ne "License"
