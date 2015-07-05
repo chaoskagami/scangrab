@@ -63,6 +63,7 @@ verify() {
 _SPINNER_CHAR="|"
 _NUM=0
 _FIRST=1
+message=""
 spinner() {
 	if [ $_FIRST = 1 ]; then
 		_FIRST=0
@@ -86,6 +87,12 @@ spinner() {
 
 	_NUM=${#1}
 	echo -ne "[$1 $_SPINNER_CHAR]"
+
+	_STS=${#message}
+	echo -ne "$message"
+	for (( i=0 ; i < _STS ; i++ )); do
+		echo -ne "\b"
+	done
 }
 
 done_spin() {
@@ -109,7 +116,7 @@ fetch_detect() {
 	_aria="$(which aria2c 2>/dev/null)"
 
 	if [ ! "$_wget" = "" ]; then
-		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
+		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
 
 		if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
 			echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
@@ -176,13 +183,13 @@ fetch() {
 	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
 
-	if [ ! $FETCH_RESULT = 0 ]; then
-		if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
-			echo -e "[WARN] Failed to fetch. Command was:\n$_CMD"
-		fi
-	elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
-		echo "[WARN] Image failed on busybox. Cannot retry."
-	fi
+	#if [ ! $FETCH_RESULT = 0 ]; then
+		#if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
+			#echo -e "[WARN] Failed to fetch. Command was:\n$_CMD"
+		#fi
+	#elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
+		#echo "[WARN] Image failed on busybox. Cannot retry."
+	#fi
 	
 	# If this is an image, check validity.
 	MIME="$(mimetype "$_FILE")"
@@ -297,14 +304,7 @@ batoto_longname="Batoto"
 batoto_url="http://bato.to/"
 batoto_state=1
 batoto_filt=1
-
-noticed_batoto=0
-notice_batoto() {
-	if [ $noticed_batoto = 0 ]; then
-		echo "[Batoto] If this so happens to fail, they changed their page generator again."
-		noticed_batoto=1
-	fi
-}
+batoto_note="Their page template is highly unstable."
 
 auto_batoto() {
 	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -316,8 +316,6 @@ auto_batoto() {
 }
 
 dl_batoto() {
-	# notice_batoto
-
 	# Batoto requires a different strategy.
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
@@ -350,13 +348,12 @@ dl_batoto() {
 		# Batoto sometimes gives out gunzips. We need to account for that... =_=
 
 		if [ "$(mimetype $CUR.htm)" = "application/x-gzip" ]; then
-			echo -ne "  :/\b\b\b\b"
-
 			mv $CUR.htm $CUR.htm.gz
 			gunzip $CUR.htm.gz
+			message=" :/"
 		fi
 
-		img="$(grep -C0 'img\.src = ' $CUR.htm | sed -e 's/^[[:space:]]*img\.src = \"//g' -e "s/\";[[:space:]]*$//g")"
+		img="$(grep -C0 'z-index: 1003' $CUR.htm | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
 
 		ext="${img##*.}"
 
@@ -387,10 +384,9 @@ scrape_batoto() {
 		
 	# Batoto sometimes gives out gunzips. We need to account for that... =_=
 	if [ "$(mimetype scrape.htm)" = "application/x-gzip" ]; then
-		echo -ne "  :/\b\b\b\b"
-
 		mv $CUR.htm $CUR.htm.gz
 		gunzip $CUR.htm.gz
+		message=" :/"
 	fi
 
 	grep -A 2 'Sort:' scrape.htm >> batch.txtr
@@ -562,16 +558,7 @@ eh_longname="E-Hentai"
 eh_url="http://e-hentai.org/"
 eh_state=1
 eh_filt=0
-
-#notice_eh() {
-#	if [ "$noticed_eh" = "" ]; then
-#		echo -e "[e-h] Warning, this is experimental and subject to random failures."
-#		echo -e "[e-h] This is because H@H is a unreliable download service.
-#		echo -e "[e-h] And we are not a proper node, if you know what I mean."
-#		echo -e "[e-h] Also - this will count towards your image limit of 5k."
-#		noticed_eh=1
-#	fi
-#}
+eh_note="H@H is an unreliable CDN. Also, they count images by logged in IP."
 
 auto_eh() {
 	if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -583,10 +570,9 @@ auto_eh() {
 }
 
 dl_eh() {
-	#notice_eh
-
 	sitepage=$1
 
+	# This is so that we don't get the 'offensive' warning.
 	fetch "${sitepage}/?nw=always" tmp.1
 
 	# Unfortunately e-h has shit system. Time to code page extraction
@@ -607,29 +593,52 @@ dl_eh() {
 
 	doneyet=0
 
+	CDNFAIL=0
+
 	CUR=0
 	while [ $doneyet == 0 ]; do
-		get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp' -))
+		get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp'))
 
 		extra=""
-
-		if [ "${get[1]}" == "" ]; then
-			get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 '.php?f=' -))
-			extra="-O $(echo ${get[1]} | sed 's/.*n=//')"
-		fi
 
 		if [ "${get[0]}" == "$page" ]; then
 			doneyet=1
 		fi
 
-		fetch "${get[1]}" "$extra"
+		if [ $CDNFAIL -ge 3 ]; then
+			FETCH_RESULT=1
+		else
+			fetch "${get[1]}" "$extra"
+		fi
 
-		if [ ! "${get[0]}" == "" ]; then
+		if [ ! $FETCH_RESULT = 0 ]; then
+
+			message=" :("
+
+			CDNFAIL=$((CDNFAIL + 1))
+			if [ $CDNFAIL -ge 3 ]; then
+				message=" >:("
+			fi
+
+			notload=$(fetch "$page" "-" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+			get=($(fetch "$page?nl=${notload}" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'image.php' | entity_to_char ))
+			extra="$(echo ${get[1]} | sed 's/.*n=//')"
+
+			fetch "${get[1]}" "$extra"
+			if [ ! $FETCH_RESULT = 0 ]; then
+				message=" >:["
+			else
+				CUR=$(( CUR + 1 ))
+			fi
+		else
+			CUR=$(( CUR + 1 ))
+		fi
+
+		if [ ! "${get[0]}" = "" ]; then
 			page="${get[0]}"
 		fi
 
 		spinner "$CUR"
-		CUR=$(( CUR + 1 ))
 	done
 	
 	done_spin
@@ -665,6 +674,7 @@ fakku_longname="FAKKU"
 fakku_url="https://fakku.net/"
 fakku_state=1
 fakku_filt=0
+fakku_note="They've been shuffling things around recently."
 
 auto_fakku() {
 	if [ -n "$(echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
@@ -690,7 +700,7 @@ dl_fakku() {
 
 	DATA="$(printf "$PAGEDATA")"
 
-	folder="$(echo "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>//g' -e 's|</title>||g' | entity_to_char)"
+	folder="$(echo "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
 	mkdir -p "$folder"
 	cd "$folder"
 
@@ -757,8 +767,9 @@ scrape_fakku() {
 # Unlike all of the other plugins, this is a generic downloader for foolslide based sites.
 # Therefore, instead of keeping it a generic and needing to specifically ask for this plugin,
 # I use a compatibility list.
+
 # Sites using foolslide:
-#   reader.vortex-scans.com
+#   vortex-scans.com
 #   foolrulez.org
 
 foolsl_longname="FoolSlide"
@@ -1090,6 +1101,7 @@ help() {
 		url=$(temp=\$${mod}_url && eval echo $temp)
 		broke=$(temp=\$${mod}_state && eval echo $temp)
 		filter=$(temp=\$${mod}_filt && eval echo $temp)
+		note=$(temp=\$${mod}_note && eval echo $temp)
 
 		echo -ne "\tModule Name:\t\t"
 		color 3
@@ -1116,8 +1128,13 @@ help() {
 			color 1
 			echo -e "Broken"
 		fi
-		type 0
 
+		if [ ! "$note" = "" ]; then
+			type 0
+			echo -ne "\t\tSite Note:\t$note"
+		fi
+
+		type 0
 		if [ "$filter" = "1" ]; then
 			echo -e "\t\tSupports filters for scrape"
 		fi
