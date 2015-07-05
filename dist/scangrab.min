@@ -622,9 +622,9 @@ help() {
 type 1
 e "Usage:"
 type 0
-n "\t$0\t"
+n "     $0     "
 color 3
-n "OPERATION\t"
+n "OPERATION     "
 color 5
 e "[PARAMS]"
 type 0
@@ -632,28 +632,28 @@ type 1
 e "Operations:"
 type 0
 color 3
-e "\tauto (a)"
+e "     auto (a)"
 type 0
-e "\t\tChooses module based on URL"
+e "          Chooses module based on URL"
 color 3
-e "\tbatch (l)"
+e "     batch (l)"
 type 0
-e "\t\tTakes a file with a list of types and URLs"
+e "          Takes a file with a list of types and URLs"
 color 3
-e "\tautobatch (b)"
+e "     autobatch (b)"
 type 0
-e "\t\tTakes a file with URLs which will be run with auto."
+e "          Takes a file with URLs which will be run with auto."
 color 3
-e "\tscrape (s)"
+e "     scrape (s)"
 type 0
-e "\t\tWill take a manga's page and scrape chapters to"
-e "\t\ta file named batch.txt"
+e "          Will take a manga's page and scrape chapters to"
+e "          a file named batch.txt"
 o ""
-e "\tYou can also specify a module name followed by"
-e "\tthe URL instead of using the auto-detect."
-echi ""
-e "\tIf you don't specify an operation and pass only a URL"
-e "\tthen we assume you want auto (a)."
+e "     You can also specify a module name followed by"
+e "     the URL instead of using the auto-detect."
+o ""
+e "     If you don't specify an operation and pass only a URL"
+e "     then we assume you want auto (a)."
 type 1
 e "Download Modules:"
 type 0
@@ -663,20 +663,20 @@ url=$(temp=\$${mod}_u && eval echo $temp)
 broke=$(temp=\$${mod}_state && eval echo $temp)
 filter=$(temp=\$${mod}_filt && eval echo $temp)
 note=$(temp=\$${mod}_note && eval echo $temp)
-n "\tModule Name:\t\t\t"
+n "     Module Name:                "
 color 3
 e "$mod"
 type 0
-n "\t\tLong Name:\t\t"
+n "          Long Name:             "
 color 4
 e "$longname"
 type 0
-n "\t\tSite(s) Used with:\t"
+n "          Site(s) Used with:     "
 color 5
 e "$url"
 type 0
 type 0
-n "\t\tSite(s) Current state:\t"
+n "          Site(s) Current state: "
 if [ "$broke" = "1" ]; then
 color 2
 e "Works"
@@ -686,86 +686,90 @@ e "Broken"
 fi
 if [ ! "$note" = "" ]; then
 type 0
-e "\t\tSite Note:\t$note"
+e "          Site Note:             $note"
 fi
 type 0
 if [ "$filter" = "1" ]; then
-e "\t\tSupports filters for scrape"
+e "          Supports filters for scrape"
 fi
 o ""
 done
 type 1
 e "Misc Info"
 type 0
-e "\tIf you see an emote in the output, it means we had to deal"
-e "\twith a retrieval quirk."
-e "\n\t[ :/ ]\tGiven GZip'd data even though we said it wasn't"
-e "\t\tsupported in the GET."
+e "     If you see an emote in the output, it means we had to deal"
+e "     with a retrieval quirk."
+e "\n     [ :/ ]       Given GZip'd data even though we said it wasn't"
+e "                  supported in the GET."
 type 2
-e "\t\tThis happens frequently with batoto when doing"
-e "\t\tmultiple fetches. :/"
+e "                  This happens frequently with batoto when doing"
+e "                  multiple fetches. :/"
 type 0
-e "\n\t[ :( ]\tSite didn't respond and so the DL failed"
-e "\t\tWe had to revert to a fallback method."
-e "\n\t[ >:( ]\tToo many normal requests failed; we reverted"
-e "\t\tto using entirely the fallback method."
+e "\n     [ :( ]       Site didn't respond and so the DL failed"
+e "                  We had to revert to a fallback method."
+e "\n     [ >:( ]      Too many normal requests failed; we reverted"
+e "                  to using entirely the fallback method."
 o ""
-e "\tSome modules accept an extra parameter. Usually, this"
-e "\tis a filter. Try values like 'English' or 'French'."
+e "     Some modules accept an extra parameter. Usually, this"
+e "     is a filter. Try values like 'English' or 'French'."
 type 1
 e "System Tools"
 type 0
 if [ ! "$_wget" = "" ]; then
-e "\twget:\t\t\t$_wget"
+e "     wget:                $_wget"
 fi
 if [ ! "$_curl" = "" ]; then
-e "\tcurl:\t\t\t$_curl"
+e "     curl:                $_curl"
 fi
 if [ ! "$_aria" = "" ]; then
-e "\taria2c:\t\t\t$_aria"
+e "     aria2c:              $_aria"
 fi
-n "\tWill use:\t\t"
+n "     Will use:            "
 if [ $_FETCHTOOL = 1 ]; then
 n "wget"
 if [ $_BUSYBOX = 1 ]; then
-e ", busybox"
+n ", busybox"
 else
-e ""
+n ""
 fi
 elif [ $_FETCHTOOL = 2 ]; then
-e "curl"
+n "curl"
 elif [ $_FETCHTOOL = 3 ]; then
-e "aria2c"
+n "aria2c"
 else
-e "not found. Install a program like wget or curl."
+n "no tool. Install one of: "
 fi
-n "\tCheck broken images:\t"
+o " (wget, curl, aria2c)"
+n "     Check broken images: "
 if [ $CHECK_VALID = 1 ]; then
 if [ -f $_identify ]; then
 n "imagemagick ($_identify)"
 fi
 o ""
 else
-o "No"
+o "no"
 fi
 type 1
-n "License"
+n "License / Info"
 type 0
 o ""
-e "\tCopyright (C) 2015  Jon Feldman/@chaoskagami"
+e "     Copyright (C) 2015     Jon Feldman/@chaoskagami"
 o ""
-e "\tThis program is free software: you can redistribute it and/or modify"
-e "\tit under the terms of the GNU General Public License as published by"
-e "\tthe Free Software Foundation, either version 3 of the License, or"
-e "\t(at your option) any later version."
+e "     This program is free software: you can redistribute it and/or modify"
+e "     it under the terms of the GNU General Public License as published by"
+e "     the Free Software Foundation, either version 3 of the License, or"
+e "     (at your option) any later version."
 o ""
-e "\tThis program is distributed in the hope that it will be useful,"
-e "\tbut WITHOUT ANY WARRANTY; without even the implied warranty of"
-e "\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
-e "\tGNU General Public License for more details."
+e "     This program is distributed in the hope that it will be useful,"
+e "     but WITHOUT ANY WARRANTY; without even the implied warranty of"
+e "     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+e "     GNU General Public License for more details."
 o ""
-e "\tYou should have received a copy of the GNU General Public License"
-e "\talong with this program.  If not, see <http://www.gnu.org/licenses/>"
+e "     You should have received a copy of the GNU General Public License"
+e "     along with this program.  If not, see <http://www.gnu.org/licenses/>"
+o ""
+e "     The latest version of scangrab can always be found at the github"
+e "     page here: https://github.com/chaoskagami/scangrab"
 }
 if [ "$1" = "auto" -o "$1" = "a" ]; then
 auto $2 $3

@@ -1067,9 +1067,9 @@ help() {
 	type 1
 	echo -e "Usage:"
 	type 0
-	echo -ne "\t$0\t"
+	echo -ne "     $0     "
 	color 3
-	echo -ne "OPERATION\t"
+	echo -ne "OPERATION     "
 	color 5
 	echo -e "[PARAMS]"
 	type 0
@@ -1077,28 +1077,28 @@ help() {
 	echo -e "Operations:"
 	type 0
 	color 3
-	echo -e "\tauto (a)"
+	echo -e "     auto (a)"
 	type 0
-	echo -e "\t\tChooses module based on URL"
+	echo -e "          Chooses module based on URL"
 	color 3
-	echo -e "\tbatch (l)"
+	echo -e "     batch (l)"
 	type 0
-	echo -e "\t\tTakes a file with a list of types and URLs"
+	echo -e "          Takes a file with a list of types and URLs"
 	color 3
-	echo -e "\tautobatch (b)"
+	echo -e "     autobatch (b)"
 	type 0
-	echo -e "\t\tTakes a file with URLs which will be run with auto."
+	echo -e "          Takes a file with URLs which will be run with auto."
 	color 3
-	echo -e "\tscrape (s)"
+	echo -e "     scrape (s)"
 	type 0
-	echo -e "\t\tWill take a manga's page and scrape chapters to"
-	echo -e "\t\ta file named batch.txt"
+	echo -e "          Will take a manga's page and scrape chapters to"
+	echo -e "          a file named batch.txt"
 	echo ""
-	echo -e "\tYou can also specify a module name followed by"
-	echo -e "\tthe URL instead of using the auto-detect."
-	echi ""
-	echo -e "\tIf you don't specify an operation and pass only a URL"
-	echo -e "\tthen we assume you want auto (a)."
+	echo -e "     You can also specify a module name followed by"
+	echo -e "     the URL instead of using the auto-detect."
+	echo ""
+	echo -e "     If you don't specify an operation and pass only a URL"
+	echo -e "     then we assume you want auto (a)."
 	type 1
 	echo -e "Download Modules:"
 	type 0
@@ -1109,23 +1109,23 @@ help() {
 		filter=$(temp=\$${mod}_filt && eval echo $temp)
 		note=$(temp=\$${mod}_note && eval echo $temp)
 
-		echo -ne "\tModule Name:\t\t\t"
+		echo -ne "     Module Name:                "
 		color 3
 		echo -e "$mod"
 
 		type 0
-		echo -ne "\t\tLong Name:\t\t"
+		echo -ne "          Long Name:             "
 		color 4
 		echo -e "$longname"
 
 		type 0
-		echo -ne "\t\tSite(s) Used with:\t"
+		echo -ne "          Site(s) Used with:     "
 		color 5
 		echo -e "$url"
 		type 0
 
 		type 0
-		echo -ne "\t\tSite(s) Current state:\t"
+		echo -ne "          Site(s) Current state: "
 		if [ "$broke" = "1" ]; then
 			color 2
 			echo -e "Works"
@@ -1136,12 +1136,12 @@ help() {
 
 		if [ ! "$note" = "" ]; then
 			type 0
-			echo -e "\t\tSite Note:\t$note"
+			echo -e "          Site Note:             $note"
 		fi
 
 		type 0
 		if [ "$filter" = "1" ]; then
-			echo -e "\t\tSupports filters for scrape"
+			echo -e "          Supports filters for scrape"
 		fi
 
 		echo ""
@@ -1149,76 +1149,80 @@ help() {
 	type 1
 	echo -e "Misc Info"
 	type 0
-	echo -e "\tIf you see an emote in the output, it means we had to deal"
-	echo -e "\twith a retrieval quirk."
-	echo -e "\n\t[ :/ ]\tGiven GZip'd data even though we said it wasn't"
-	echo -e "\t\tsupported in the GET."
+	echo -e "     If you see an emote in the output, it means we had to deal"
+	echo -e "     with a retrieval quirk."
+	echo -e "\n     [ :/ ]       Given GZip'd data even though we said it wasn't"
+	echo -e "                  supported in the GET."
 	type 2
-	echo -e "\t\tThis happens frequently with batoto when doing"
-	echo -e "\t\tmultiple fetches. :/"
+	echo -e "                  This happens frequently with batoto when doing"
+	echo -e "                  multiple fetches. :/"
 	type 0
-	echo -e "\n\t[ :( ]\tSite didn't respond and so the DL failed"
-	echo -e "\t\tWe had to revert to a fallback method."
+	echo -e "\n     [ :( ]       Site didn't respond and so the DL failed"
+	echo -e "                  We had to revert to a fallback method."
 
-	echo -e "\n\t[ >:( ]\tToo many normal requests failed; we reverted"
-	echo -e "\t\tto using entirely the fallback method."
+	echo -e "\n     [ >:( ]      Too many normal requests failed; we reverted"
+	echo -e "                  to using entirely the fallback method."
 	echo ""
-	echo -e "\tSome modules accept an extra parameter. Usually, this"
-	echo -e "\tis a filter. Try values like 'English' or 'French'."
+	echo -e "     Some modules accept an extra parameter. Usually, this"
+	echo -e "     is a filter. Try values like 'English' or 'French'."
 	type 1
 	echo -e "System Tools"
 	type 0
 	if [ ! "$_wget" = "" ]; then
-		echo -e "\twget:\t\t\t$_wget"
+		echo -e "     wget:                $_wget"
 	fi
 	if [ ! "$_curl" = "" ]; then
-		echo -e "\tcurl:\t\t\t$_curl"
+		echo -e "     curl:                $_curl"
 	fi
 	if [ ! "$_aria" = "" ]; then
-		echo -e "\taria2c:\t\t\t$_aria"
+		echo -e "     aria2c:              $_aria"
 	fi
-	echo -ne "\tWill use:\t\t"
+	echo -ne "     Will use:            "
 	if [ $_FETCHTOOL = 1 ]; then
 		echo -ne "wget"
 		if [ $_BUSYBOX = 1 ]; then
-			echo -e ", busybox"
+			echo -ne ", busybox"
 		else
-			echo -e ""
+			echo -ne ""
 		fi
 	elif [ $_FETCHTOOL = 2 ]; then
-		echo -e "curl"
+		echo -ne "curl"
 	elif [ $_FETCHTOOL = 3 ]; then
-		echo -e "aria2c"
+		echo -ne "aria2c"
 	else
-		echo -e "not found. Install a program like wget or curl."
+		echo -ne "no tool. Install one of: "
 	fi
-	echo -ne "\tCheck broken images:\t"
+	echo " (wget, curl, aria2c)"
+	echo -ne "     Check broken images: "
 	if [ $CHECK_VALID = 1 ]; then
 		if [ -f $_identify ]; then
 			echo -ne "imagemagick ($_identify)"
 		fi
 		echo ""
 	else
-		echo "No"
+		echo "no"
 	fi
 	type 1
-	echo -ne "License"
+	echo -ne "License / Info"
 	type 0
 	echo ""
-	echo -e "\tCopyright (C) 2015  Jon Feldman/@chaoskagami"
+	echo -e "     Copyright (C) 2015     Jon Feldman/@chaoskagami"
 	echo ""
-	echo -e "\tThis program is free software: you can redistribute it and/or modify"
-	echo -e "\tit under the terms of the GNU General Public License as published by"
-	echo -e "\tthe Free Software Foundation, either version 3 of the License, or"
-	echo -e "\t(at your option) any later version."
+	echo -e "     This program is free software: you can redistribute it and/or modify"
+	echo -e "     it under the terms of the GNU General Public License as published by"
+	echo -e "     the Free Software Foundation, either version 3 of the License, or"
+	echo -e "     (at your option) any later version."
 	echo ""
-	echo -e "\tThis program is distributed in the hope that it will be useful,"
-	echo -e "\tbut WITHOUT ANY WARRANTY; without even the implied warranty of"
-	echo -e "\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
-	echo -e "\tGNU General Public License for more details."
+	echo -e "     This program is distributed in the hope that it will be useful,"
+	echo -e "     but WITHOUT ANY WARRANTY; without even the implied warranty of"
+	echo -e "     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+	echo -e "     GNU General Public License for more details."
 	echo ""
-	echo -e "\tYou should have received a copy of the GNU General Public License"
-	echo -e "\talong with this program.  If not, see <http://www.gnu.org/licenses/>"
+	echo -e "     You should have received a copy of the GNU General Public License"
+	echo -e "     along with this program.  If not, see <http://www.gnu.org/licenses/>"
+	echo ""
+	echo -e "     The latest version of scangrab can always be found at the github"
+	echo -e "     page here: https://github.com/chaoskagami/scangrab"
 }
 
 if [ "$1" = "auto" -o "$1" = "a" ]; then
