@@ -413,10 +413,10 @@ fi
 return 0
 }
 d_fakku() {
-PAGES="$(fetch "$1/read" "-" | grep "window.params.thumbs =" )"
-PAGEDATA="$(echo $PAGES | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
+PAGE="$(fetch "$1/read" "-")"
+PAGEDATA="$(echo "$PAGE" | grep "window.params.thumbs =" | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
 DATA="$(printf "$PAGEDATA")"
-folder="$(echo $PAGEDATA | sed -e 's|pages=("//t.fakku.net/images/manga/i/||g' -e 's|/images.*||g' -e 's|_| |g' | entity_to_char)"
+folder="$(echo "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>//g' -e 's|</title>||g' | entity_to_char)"
 mkdir -p "$folder"
 cd "$folder"
 eval "$DATA"

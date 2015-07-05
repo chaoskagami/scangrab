@@ -676,21 +676,21 @@ auto_fakku() {
 }
 
 dl_fakku() {
-	PAGES="$(fetch "$1/read" "-" | grep "window.params.thumbs =" )"
+	PAGE="$(fetch "$1/read" "-")"
 
 	# First. Escape fixups. Nuke escaped forward slashes
 	# Next. Reformat decl.
 	# Next. Nuke '.thumb'
 	# Next. Nuke commas. Still, they can occur in names so we'll carefully filter.
 	# Last transform. '/thumbs/' to '/images/'
-	PAGEDATA="$(echo $PAGES | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
+	PAGEDATA="$(echo "$PAGE" | grep "window.params.thumbs =" | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
 
 	# Because some pages have unicode escapes (javascript thing ugh) we have to echo the contents of the file
 	# to itself to escape them. UGHHHHH
 
 	DATA="$(printf "$PAGEDATA")"
 
-	folder="$(echo $PAGEDATA | sed -e 's|pages=("//t.fakku.net/images/manga/i/||g' -e 's|/images.*||g' -e 's|_| |g' | entity_to_char)"
+	folder="$(echo "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>//g' -e 's|</title>||g' | entity_to_char)"
 	mkdir -p "$folder"
 	cd "$folder"
 

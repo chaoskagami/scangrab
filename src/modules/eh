@@ -18,16 +18,7 @@ eh_longname="E-Hentai"
 eh_url="http://e-hentai.org/"
 eh_state=1
 eh_filt=0
-
-#notice_eh() {
-#	if [ "$noticed_eh" = "" ]; then
-#		echo -e "[e-h] Warning, this is experimental and subject to random failures."
-#		echo -e "[e-h] This is because H@H is a unreliable download service.
-#		echo -e "[e-h] And we are not a proper node, if you know what I mean."
-#		echo -e "[e-h] Also - this will count towards your image limit of 5k."
-#		noticed_eh=1
-#	fi
-#}
+eh_note="H@H is an unreliable CDN. Also, they count images by logged in IP."
 
 auto_eh() {
 	if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -39,10 +30,9 @@ auto_eh() {
 }
 
 dl_eh() {
-	#notice_eh
-
 	sitepage=$1
 
+	# This is so that we don't get the 'offensive' warning.
 	fetch "${sitepage}/?nw=always" tmp.1
 
 	# Unfortunately e-h has shit system. Time to code page extraction
@@ -63,29 +53,52 @@ dl_eh() {
 
 	doneyet=0
 
+	CDNFAIL=0
+
 	CUR=0
 	while [ $doneyet == 0 ]; do
-		get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp' -))
+		get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp'))
 
 		extra=""
-
-		if [ "${get[1]}" == "" ]; then
-			get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 '.php?f=' -))
-			extra="-O $(echo ${get[1]} | sed 's/.*n=//')"
-		fi
 
 		if [ "${get[0]}" == "$page" ]; then
 			doneyet=1
 		fi
 
-		fetch "${get[1]}" "$extra"
+		if [ $CDNFAIL -ge 3 ]; then
+			FETCH_RESULT=1
+		else
+			fetch "${get[1]}" "$extra"
+		fi
 
-		if [ ! "${get[0]}" == "" ]; then
+		if [ ! $FETCH_RESULT = 0 ]; then
+
+			message=" :("
+
+			CDNFAIL=$((CDNFAIL + 1))
+			if [ $CDNFAIL -ge 3 ]; then
+				message=" >:("
+			fi
+
+			notload=$(fetch "$page" "-" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+			get=($(fetch "$page?nl=${notload}" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'image.php' | entity_to_char ))
+			extra="$(echo ${get[1]} | sed 's/.*n=//')"
+
+			fetch "${get[1]}" "$extra"
+			if [ ! $FETCH_RESULT = 0 ]; then
+				message=" >:["
+			else
+				CUR=$(( CUR + 1 ))
+			fi
+		else
+			CUR=$(( CUR + 1 ))
+		fi
+
+		if [ ! "${get[0]}" = "" ]; then
 			page="${get[0]}"
 		fi
 
 		spinner "$CUR"
-		CUR=$(( CUR + 1 ))
 	done
 	
 	done_spin
