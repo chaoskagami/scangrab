@@ -698,7 +698,13 @@ e "\t\tsupported in the GET."
 type 2
 e "\t\tThis happens frequently with batoto when doing"
 e "\t\tmultiple fetches. :/"
+o ""
 type 0
+e "\n\t[ :( ]\tSite didn't respond and so the DL failed"
+e "\t\tWe had to revert to a fallback method."
+o ""
+e "\n\t[ >:( ]\tToo many normal requests failed; we reverted"
+e "\t\tto using entirely the fallback method."
 o ""
 e "\tSome modules accept an extra parameter. Usually, this"
 e "\tis a filter. Try values like 'English' or 'French'."

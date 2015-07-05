@@ -1151,7 +1151,13 @@ help() {
 	type 2
 	echo -e "\t\tThis happens frequently with batoto when doing"
 	echo -e "\t\tmultiple fetches. :/"
+	echo ""
 	type 0
+	echo -e "\n\t[ :( ]\tSite didn't respond and so the DL failed"
+	echo -e "\t\tWe had to revert to a fallback method."
+	echo ""
+	echo -e "\n\t[ >:( ]\tToo many normal requests failed; we reverted"
+	echo -e "\t\tto using entirely the fallback method."
 	echo ""
 	echo -e "\tSome modules accept an extra parameter. Usually, this"
 	echo -e "\tis a filter. Try values like 'English' or 'French'."
