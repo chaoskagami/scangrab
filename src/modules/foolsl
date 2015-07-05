@@ -17,8 +17,9 @@
 # Unlike all of the other plugins, this is a generic downloader for foolslide based sites.
 # Therefore, instead of keeping it a generic and needing to specifically ask for this plugin,
 # I use a compatibility list.
+
 # Sites using foolslide:
-#   reader.vortex-scans.com
+#   vortex-scans.com
 #   foolrulez.org
 
 foolsl_longname="FoolSlide"

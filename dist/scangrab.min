@@ -43,6 +43,7 @@ return 0
 _SC="|"
 _NUM=0
 _FIRST=1
+message=""
 ss() {
 if [ $_FIRST = 1 ]; then
 _FIRST=0
@@ -63,6 +64,11 @@ _SC="|"
 fi
 _NUM=${#1}
 n "[$1 $_SC]"
+_STS=${#message}
+n "$message"
+for (( i=0 ; i < _STS ; i++ )); do
+n "\b"
+done
 }
 se() {
 for (( i=0 ; i < _NUM ; i++ )); do
@@ -82,7 +88,7 @@ _wget="$(which wget 2>/dev/null)"
 _curl="$(which curl 2>/dev/null)"
 _aria="$(which aria2c 2>/dev/null)"
 if [ ! "$_wget" = "" ]; then
-common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
+common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
 if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
 o "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
 common_opts=" -q -c -U \"Mozilla/4.0\""
@@ -134,13 +140,6 @@ fi
 fi
 eval " $_CMD" 2>/dev/null
 FETCH_RESULT=$?
-if [ ! $FETCH_RESULT = 0 ]; then
-if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
-e "[WARN] Failed to fetch. Command was:\n$_CMD"
-fi
-elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
-o "[WARN] Image failed on busybox. Cannot retry."
-fi
 MIME="$(mimetype "$_FILE")"
 if [ "$MIME" = "image/jpeg" ] || [ "$MIME" = "image/png" ] || [ "$MIME" = "image/gif" ] || [ "$MIME" = "image/bmp" ]; then
 verify "$_FILE"
@@ -231,13 +230,7 @@ batoto_l="Batoto"
 batoto_u="http://bato.to/"
 batoto_state=1
 batoto_filt=1
-noticed_batoto=0
-notice_batoto() {
-if [ $noticed_batoto = 0 ]; then
-o "[Batoto] If this so happens to fail, they changed their page generator again."
-noticed_batoto=1
-fi
-}
+batoto_note="Their page template is highly unstable."
 a_batoto() {
 if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 return 1
@@ -260,11 +253,11 @@ while [ "$RET" = "0" ]; do
 CUR=$(( CUR + 1 ))
 fetch "${base}${CUR}" "$CUR.htm"
 if [ "$(mimetype $CUR.htm)" = "application/x-gzip" ]; then
-n "  :/\b\b\b\b"
 mv $CUR.htm $CUR.htm.gz
 gunzip $CUR.htm.gz
+message=" :/"
 fi
-img="$(grep -C0 'img\.src = ' $CUR.htm | sed -e 's/^[[:space:]]*img\.src = \"//g' -e "s/\";[[:space:]]*$//g")"
+img="$(grep -C0 'z-index: 1003' $CUR.htm | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
 ext="${img##*.}"
 fetch "$img" "${CUR}_${folder}.${ext}"
 RET=$?
@@ -281,9 +274,9 @@ notice_batoto
 o -n "[Batoto] Scraping Chapters..."
 fetch "$1" scrape.htm
 if [ "$(mimetype scrape.htm)" = "application/x-gzip" ]; then
-n "  :/\b\b\b\b"
 mv $CUR.htm $CUR.htm.gz
 gunzip $CUR.htm.gz
+message=" :/"
 fi
 grep -A 2 'Sort:' scrape.htm >> batch.txtr
 sed -i "s|^[[:space:]]*</td>[[:space:]]*||g" batch.txtr
@@ -553,6 +546,7 @@ longname=$(temp=\$${mod}_l && eval echo $temp)
 url=$(temp=\$${mod}_u && eval echo $temp)
 broke=$(temp=\$${mod}_state && eval echo $temp)
 filter=$(temp=\$${mod}_filt && eval echo $temp)
+note=$(temp=\$${mod}_note && eval echo $temp)
 n "\tModule Name:\t\t"
 color 3
 e "$mod"
@@ -574,6 +568,10 @@ e "Works"
 else
 color 1
 e "Broken"
+fi
+if [ ! "$note" = "" ]; then
+type 0
+n "\t\tSite Note:\t$note"
 fi
 type 0
 if [ "$filter" = "1" ]; then

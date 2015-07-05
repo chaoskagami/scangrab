@@ -102,6 +102,7 @@ help() {
 		url=$(temp=\$${mod}_url && eval echo $temp)
 		broke=$(temp=\$${mod}_state && eval echo $temp)
 		filter=$(temp=\$${mod}_filt && eval echo $temp)
+		note=$(temp=\$${mod}_note && eval echo $temp)
 
 		echo -ne "\tModule Name:\t\t"
 		color 3
@@ -128,8 +129,13 @@ help() {
 			color 1
 			echo -e "Broken"
 		fi
-		type 0
 
+		if [ ! "$note" = "" ]; then
+			type 0
+			echo -ne "\t\tSite Note:\t$note"
+		fi
+
+		type 0
 		if [ "$filter" = "1" ]; then
 			echo -e "\t\tSupports filters for scrape"
 		fi

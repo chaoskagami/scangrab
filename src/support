@@ -63,6 +63,7 @@ verify() {
 _SPINNER_CHAR="|"
 _NUM=0
 _FIRST=1
+message=""
 spinner() {
 	if [ $_FIRST = 1 ]; then
 		_FIRST=0
@@ -86,6 +87,12 @@ spinner() {
 
 	_NUM=${#1}
 	echo -ne "[$1 $_SPINNER_CHAR]"
+
+	_STS=${#message}
+	echo -ne "$message"
+	for (( i=0 ; i < _STS ; i++ )); do
+		echo -ne "\b"
+	done
 }
 
 done_spin() {
@@ -109,7 +116,7 @@ fetch_detect() {
 	_aria="$(which aria2c 2>/dev/null)"
 
 	if [ ! "$_wget" = "" ]; then
-		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 0 --random-wait "
+		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
 
 		if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
 			echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
@@ -176,13 +183,13 @@ fetch() {
 	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
 
-	if [ ! $FETCH_RESULT = 0 ]; then
-		if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
-			echo -e "[WARN] Failed to fetch. Command was:\n$_CMD"
-		fi
-	elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
-		echo "[WARN] Image failed on busybox. Cannot retry."
-	fi
+	#if [ ! $FETCH_RESULT = 0 ]; then
+		#if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
+			#echo -e "[WARN] Failed to fetch. Command was:\n$_CMD"
+		#fi
+	#elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
+		#echo "[WARN] Image failed on busybox. Cannot retry."
+	#fi
 	
 	# If this is an image, check validity.
 	MIME="$(mimetype "$_FILE")"

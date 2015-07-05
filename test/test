@@ -18,48 +18,121 @@
 # This file automatically fetches some 'known' files. In case of an api change, the files should
 # be invalid.
 
-(cd .. && ./dist.sh)
+source ../src/support
+
+# We override this. We don't want things zipped.
+cbz_make() {
+	CHECK_FLDR="$1"
+	echo -ne "[Test] Checking $1..."
+}
+
+fetch_detect
 
 # We try to use SFW stuff for NSFW scrapers, fyi.
 
-# Okay as of June 13, 2015
-if [ -f ../src/modules/fakku ]; then
-	# Nagato Yuki. Non-H.
-	./scangrab a "https://www.fakku.net/doujinshi/if-nagato-yuki-had-disappearances-personality-from-the-start-english"
+if [ "$1" = "" ]; then
+	ALL=1
 fi
 
-# Okay as of June 13, 2015
+# Okay as of July 4, 2015
+if [ -f ../src/modules/fakku ]; then
+	if [ ALL = 1 ] || [ "$1" = "fakku" ]; then
+		source ../src/modules/fakku
+		# Nagato Yuki. Non-H.
+		dl_fakku "https://www.fakku.net/doujinshi/if-nagato-yuki-had-disappearances-personality-from-the-start-english"
+		cd "${CHECK_FLDR}"
+		sha512sum -c --quiet "../${CHECK_FLDR}.txt"
+		R=$?
+		if [ $R = 0 ]; then
+			echo "OK!"
+		else
+			echo "Failed."
+		fi
+		cd ..
+	fi
+fi
+
+# Okay as of July 4, 2015
 if [ -f ../src/modules/eh ]; then
-	# Natural Born Darkness. Seija doujin, Non-H. Had a good damn laugh.
-	./scangrab a "http://g.e-hentai.org/g/822043/3a881c225e/"
+	if [ ALL = 1 ] || [ "$1" = "eh" ]; then
+		source ../src/modules/eh
+		# Natural Born Darkness. Seija doujin, Non-H. Had a good damn laugh.
+		dl_eh "http://g.e-hentai.org/g/822043/3a881c225e/"
+		cd "${CHECK_FLDR}"
+		sha512sum -c --quiet "../${CHECK_FLDR}.txt"
+		R=$?
+		if [ $R = 0 ]; then
+			echo "OK!"
+		else
+			echo "Failed."
+		fi
+		cd ..
+	fi
 fi
 
 # These we know exist, but still test for existence anyways.
 
-# Okay as of June 13, 2015
+# Okay as of July 4, 2015
 if [ -f ../src/modules/dynsc ]; then
-	# Suika suika. Drunk.
-	./scangrab a "http://dynasty-scans.com/chapters/suika_suika"
+	if [ ALL = 1 ] || [ "$1" = "dynsc" ]; then
+		source ../src/modules/dynsc
+		# Suika suika. Drunk.
+		dl_dynsc "http://dynasty-scans.com/chapters/suika_suika"
+		cd "${CHECK_FLDR}"
+		sha512sum -c --quiet "../${CHECK_FLDR}.txt"
+		R=$?
+		if [ $R = 0 ]; then
+			echo "OK!"
+		else
+			echo "Failed."
+		fi
+		cd ..
+	fi
 fi
 
 # Okay as of June 13, 2015
 if [ -f ../src/modules/batoto ]; then
-	# Medaka Box ch1
-	./scangrab a "http://bato.to/read/_/202832/medaka-box_v1_ch1_by_cxc-scans"
+	if [ ALL = 1 ] || [ "$1" = "batoto" ]; then
+		source ../src/modules/batoto
+		# Medaka Box ch1
+		dl_batoto "http://bato.to/read/_/202832/medaka-box_v1_ch1_by_cxc-scans"
+		cd "${CHECK_FLDR}"
+		sha512sum -c --quiet "../${CHECK_FLDR}.txt"
+		R=$?
+		if [ $R = 0 ]; then
+			echo "OK!"
+		else
+			echo "Failed."
+		fi
+		cd ..
+	fi
 fi
 
+# Working as of July 4, 2015
 if [ -f ../src/modules/mpark ]; then
-	# New Game. It's new-ish and kinda funny.
-	./scangrab a "http://mangapark.me/manga/new-game-tokunou-shoutarou/s1/v1/c1"
+	if [ ALL = 1 ] || [ "$1" = "mpark" ]; then
+		source ../src/modules/mpark
+		# New Game. It's new-ish and kinda funny.
+		dl_mpark "http://mangapark.me/manga/new-game-tokunou-shoutarou/s1/v1/c1"
+	fi
 fi
 
-# Okay as of June 13, 2015 (needs a few tweaks tho)
+# Okay as of July 4, 2015 (needs a few tweaks tho)
 if [ -f ../src/modules/foolsl ]; then
-	# The canonical test is Seitokai Yakuindomo; and these guys coded foolslide, so yeah.
-	./scangrab a "http://foolrulez.org/slide/reader/read/seitokai_yakuindomo/en/1/1/"
+	if [ ALL = 1 ] || [ "$1" = "foolsl" ]; then
+		source ../src/modules/foolsl
+		# The canonical test is Seitokai Yakuindomo; and these guys coded foolslide, so yeah.
+		dl_foolsl "http://foolrulez.org/slide/reader/read/seitokai_yakuindomo/en/1/1/"
+		# We can't test the 'gimme zip' download...
+		echo "Can't test. This is expected."
+	fi
 fi
 
+# Totally non-functional.
 if [ -f ../src/modules/mread ]; then
-	# Ema toyama does some good romcoms.
-	./scangrab a "http://www.mangareader.net/440-27882-1/watashi-ni-xx-shinasai/chapter-1.html"
+	if [ ALL = 1 ] || [ "$1" = "mread" ]; then
+		source ../src/modules/mread
+		# Ema toyama does some good romcoms.
+		dl_mread "http://www.mangareader.net/440-27882-1/watashi-ni-xx-shinasai/chapter-1.html"
+	fi
 fi
