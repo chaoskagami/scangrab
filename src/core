@@ -201,7 +201,7 @@ help() {
 		echo "no"
 	fi
 	type 1
-	echo -ne "License"
+	echo -ne "License / Info"
 	type 0
 	echo ""
 	echo -e "     Copyright (C) 2015     Jon Feldman/@chaoskagami"
@@ -218,6 +218,9 @@ help() {
 	echo ""
 	echo -e "     You should have received a copy of the GNU General Public License"
 	echo -e "     along with this program.  If not, see <http://www.gnu.org/licenses/>"
+	echo ""
+	echo -e "     The latest version of scangrab can always be found at the github"
+	echo -e "     page here: https://github.com/chaoskagami/scangrab"
 }
 
 if [ "$1" = "auto" -o "$1" = "a" ]; then
