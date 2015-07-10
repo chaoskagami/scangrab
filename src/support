@@ -77,6 +77,12 @@ if [ -f "$_identify" ]; then
 	CHECK_VALID=1
 fi
 
+_convert=$(which convert 2>/dev/null)
+HAVE_IMAGICK=0
+if [ -f "$_identify" ]; then
+	HAVE_IMAGICK=1
+fi
+
 verify() {
 	if [ -f $_identify ]; then
 		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null

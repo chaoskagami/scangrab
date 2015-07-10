@@ -1,0 +1,92 @@
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# I need to add an option later for page splitting with imagemagick.
+# The whole two-in-one thing is annoying.
+
+mangabox_longname="Mangabox"
+mangabox_url="https://www.mangabox.me/"
+mangabox_state=1
+mangabox_filt=0
+mangabox_note="Automatically splits pages with IM. The PC webpage is broken badly. Don't report it."
+
+auto_mangabox() {
+	if [ -n "`echo $1 | grep 'mangabox.me/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# MangaBox
+		return 1
+	fi
+
+	return 0
+}
+
+dl_mangabox() {
+	
+	echo "[MangaBox] Getting list of pages..."
+
+	fetch "$1" "tmp.htm"
+
+	fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char)"
+
+	declare -a list
+	list=($(cat tmp.htm | grep 'class="jsNext"' | sed -e 's|.*<li><img src="||g' -e 's|?.*||g'))
+
+	mkdir -p "$fullname"
+	cd "$fullname"
+
+	echo -n "[MangaBox] Downloading '$fullname'... "
+
+	NUM=0
+	for page in ${list[@]}; do
+		NUM=$((NUM + 1))
+		VALID=1
+		while [ ! $VALID = 0 ]; do
+			fetch $page
+			verify $(basename $page)
+			VALID=$?
+		done
+
+		if [ $HAVE_IMAGICK = 1 ]; then
+			spinner "Download:$NUM"
+			
+			$_convert $(basename $page) -crop 2x1@ +repage +adjoin "${NUM}_%d.png"
+
+			spinner "Reformat:$NUM"
+
+			rm $(basename $page)
+
+			spinner "Collat:$NUM"			
+
+			mv ${NUM}_0.png ${NUM}_b.png
+			mv ${NUM}_1.png ${NUM}_a.png
+		else
+			spinner "$NUM"
+		fi
+	done
+
+	cd ..
+
+	done_spin
+
+	rm tmp.htm
+
+	cbz_make "$fullname"
+}
+
+scrape_mangabox() {
+
+	echo "[MangaBox] Not yet supported, sorry."
+	exit 1
+}

@@ -29,13 +29,14 @@ Here's the list of sites it currently handles (with scraper indicating it can ge
  * [scraper] Fakku
  * [scraper] Most FoolSlide Sites (foolrulez, vortex-scans, etc)
  * [official, scraper] Niconico Seiga (Manga)
+ * [official] MangaBox
  * E-H (Yeah, I know, I know...)
 
 Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
 
  * Batoto (Extra: Language. Try 'English', 'Chinese', 'Russian', 'French', etc.)
 
-This is open source software relased under the terms of GPLv3. Read COPYING.
+This is open source software relased under the terms of GPLv3. Read COPYING. Please pay heed to your local laws and don't redistribute anything you download. That said, this software itself contains no content and I'm not responsible for how you (ab)use it. Treat it like youtube-dl in terms of legality.
 
 To be honest, the reason I originally coded this was Dynasty Scans' nonsense "five zips a day" limit. By viewing the images standalone, I'm already downloading more data than the zip. Also, disatisfaction in general with hakuneko - Adding more sources is impossible, because it consists of far too much GUI code.
 

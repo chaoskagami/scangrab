@@ -58,6 +58,11 @@ CHECK_VALID=0
 if [ -f "$_identify" ]; then
 CHECK_VALID=1
 fi
+_convert=$(which convert 2>/dev/null)
+HAVE_IMAGICK=0
+if [ -f "$_identify" ]; then
+HAVE_IMAGICK=1
+fi
 verify() {
 if [ -f $_identify ]; then
 $_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
@@ -274,7 +279,7 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-MODS=(batoto dynsc eh fakku foolsl mpark mread niconicoseiga)
+MODS=(batoto dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 batoto_l="Batoto"
 batoto_u="http://bato.to/"
 batoto_state=1
@@ -539,6 +544,56 @@ sed -e 's|<div class="title"><a href="||g'	\
 -e "s/[[:space:]]*$//"					  | \
 reverse_lines >> batch.txt
 e "$B$B$B\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+}
+mangabox_l="Mangabox"
+mangabox_u="https://www.mangabox.me/"
+mangabox_state=1
+mangabox_filt=0
+mangabox_note="Automatically splits pages with IM. The PC webpage is broken badly. Don't report it."
+a_mangabox() {
+if [ -n "`echo $1 | grep 'mangabox.me/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+fi
+return 0
+}
+d_mangabox() {
+o "[MangaBox] Getting list of pages..."
+fetch "$1" "tmp.htm"
+fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char)"
+declare -a list
+list=($(cat tmp.htm | grep 'class="jsNext"' | sed -e 's|.*<li><img src="||g' -e 's|?.*||g'))
+mkdir -p "$fullname"
+cd "$fullname"
+o -n "[MangaBox] Downloading '$fullname'... "
+NUM=0
+for page in ${list[@]}; do
+NUM=$((NUM + 1))
+VALID=1
+while [ ! $VALID = 0 ]; do
+fetch $page
+verify $(basename $page)
+VALID=$?
+done
+if [ $HAVE_IMAGICK = 1 ]; then
+ss "Download:$NUM"
+$_convert $(basename $page) -crop 2x1@ +repage +adjoin "${NUM}_%d.png"
+ss "Reformat:$NUM"
+rm $(basename $page)
+ss "Collat:$NUM"
+mv ${NUM}_0.png ${NUM}_b.png
+mv ${NUM}_1.png ${NUM}_a.png
+else
+ss "$NUM"
+fi
+done
+cd ..
+se
+rm tmp.htm
+cbz_make "$fullname"
+}
+s_mangabox() {
+o "[MangaBox] Not yet supported, sorry."
+exit 1
 }
 mpark_l="MangaPark"
 mpark_u="http://mangapark.me/"
