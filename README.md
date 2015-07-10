@@ -20,7 +20,7 @@ I removed 'bash' from the tools list since the scripts are bash and zsh compatib
 
 Scangrab is incredibly simplistic, unlike a number of alternatives. It consists of multiple shell scripts, and that's it. Want one script? I've coded up the multiple scripts so they can all be clunked together into one script.
 
-Here's the list of sites it currently handles (with scraper indicating it can generate a series batch file):
+Here's the list of sites it currently handles (with scraper indicating it can generate a series batch file, official indicating that it is not a scanlation site, but either an official source or localization):
 
  * Mangareader
  * [scraper] Mangapark
@@ -28,6 +28,7 @@ Here's the list of sites it currently handles (with scraper indicating it can ge
  * [scraper] Dynasty Scans
  * [scraper] Fakku
  * [scraper] Most FoolSlide Sites (foolrulez, vortex-scans, etc)
+ * [official] Niconico Seiga (Manga)
  * E-H (Yeah, I know, I know...)
 
 Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
