@@ -1151,7 +1151,13 @@ dl_niconicoseiga() {
 }
 
 scrape_niconicoseiga() {
-	echo "[Niconico] This is not supported."
+	COOKIES=1
+
+	echo "[Niconico] Scraping chapters..."
+
+	fetch "$1" "-" | grep 'class="episode"' | sed -e 's|.*<a href="||g' -e 's|?.*||g' -e 's|/watch|http://seiga.nicovideo.jp/watch|g' >> batch.txt
+
+	echo "[Niconico] Done."
 }
 #!/bin/bash
 

@@ -672,7 +672,10 @@ rm $name.lst $name.htm
 cbz_make "$fullname"
 }
 s_niconicoseiga() {
-o "[Niconico] This is not supported."
+COOKIES=1
+o "[Niconico] Scraping chapters..."
+fetch "$1" "-" | grep 'class="episode"' | sed -e 's|.*<a href="||g' -e 's|?.*||g' -e 's|/watch|http://seiga.nicovideo.jp/watch|g' >> batch.txt
+o "[Niconico] Done."
 }
 fetch_detect
 auto() {

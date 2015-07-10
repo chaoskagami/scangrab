@@ -28,7 +28,7 @@ Here's the list of sites it currently handles (with scraper indicating it can ge
  * [scraper] Dynasty Scans
  * [scraper] Fakku
  * [scraper] Most FoolSlide Sites (foolrulez, vortex-scans, etc)
- * [official] Niconico Seiga (Manga)
+ * [official, scraper] Niconico Seiga (Manga)
  * E-H (Yeah, I know, I know...)
 
 Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
