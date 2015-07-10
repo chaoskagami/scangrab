@@ -14,12 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+COLOR=0
+_tput=$(which tput 2>/dev/null)
+if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
+	COLOR=1
+	if [ -f $_tput ]; then
+		# Better method.
+		COLOR=2
+	fi
+fi
+
 type() {
-	echo -ne "\x1b[$1m"
+	if [ $COLOR = 1 ]; then
+		echo -ne "\x1b[$1m"
+	elif [ $COLOR = 2 ]; then
+		if [ $1 = 0 ]; then
+			tput sgr0
+		elif [ $1 = 1 ]; then
+			tput bold
+		elif [ $1 = 2 ]; then
+			tput dim
+		fi
+	fi
 }
 
-color() {
-	echo -ne "\x1b[3$1m"
+color() { 
+	if [ $COLOR = 1 ]; then
+		echo -ne "\x1b[3$1m"
+	elif [ $COLOR = 2 ]; then
+		tput setaf $1
+	fi
 }
 
 cbz_make() {
@@ -144,13 +168,45 @@ fetch_detect() {
 	return $FETCH_RESULT	
 }
 
+# This creates a cookie jar.
+# $1 - Username field
+# $2 - Password field
+# $3 - Username
+# $4 - Password
+# $5 - URL
+
+COOKIES=0
+COOKIEJAR=$(pwd)/cookiejar
+s_login() {
+	if [ $_FETCHTOOL = 1 ]; then
+		# WGET
+		_CMD="$FETCH_CMD --post-data='$1=$3&$2=$4' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O /dev/null"
+
+	elif [ $_FETCHTOOL = 2 ]; then
+		# CURL
+		_CMD="$FETCH_CMD -d '$1=$3&$2=$4' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
+
+	elif [ $_FETCHTOOL = 3 ]; then
+		#ARIA2C
+		_CMD="$FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
+
+	fi
+	
+	# echo -e "\n$_CMD"
+	eval " $_CMD" 2>/dev/null
+	FETCH_RESULT=$?
+}
+
 # AVOID CHANGING THIS FUNCTION IF AT ALL POSSIBLE.
 # THINGS WILL BREAK IN EVERYTHING IF THIS ONE BREAKS.
-
 fetch() {
 	if [ $_FETCHTOOL = 1 ]; then
 
 		_CMD="$FETCH_CMD \"$1\""
+		if [ $COOKIES = 1 ]; then
+			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies"
+		fi
+
 		if [ "$2" = "" ]; then
 			_CMD="$_CMD -O $(basename "$1")"
 		elif [ "$2" = "-" ]; then
@@ -162,6 +218,10 @@ fetch() {
 	elif [ $_FETCHTOOL = 2 ]; then
 
 		_CMD="$FETCH_CMD $1"
+		if [ $COOKIES = 1 ]; then
+			_CMD="$_CMD -b $COOKIEJAR -c $COOKIEJAR"
+		fi
+
 		if [ "$2" = "" ]; then
 			_CMD="$_CMD > $(basename "$1")"
 		elif [ "$2" = "-" ]; then
@@ -173,6 +233,10 @@ fetch() {
 	elif [ $_FETCHTOOL = 3 ]; then
 
 		_CMD="$FETCH_CMD $1"
+		if [ $COOKIES = 1 ]; then
+			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR"
+		fi
+
 		if [ "$2" = "" ]; then
 			_CMD="$_CMD -o $(basename "$1")"
 		elif [ "$2" = "-" ]; then
@@ -209,7 +273,8 @@ fetch() {
 
 entity_to_char() {
 	# This probably doesn't handle every case. It should be enough.
-	# It also handles the case of illegal characters on windows/FAT/NTFS
+	# It also handles the case of illegal characters on windows/FAT/NTFS.
+	# And the case of a slash in the name which is the only illegal one on linux.
 
 	sed \
 		-e "s/&#32;/ /g" \
@@ -277,7 +342,8 @@ entity_to_char() {
 		-e "s/&diams;/♦/g" \
 		-e "s/&#9830;/♦/g" \
 		\
-		-e "s/|/-/g"
+		-e "s/|/-/g" \
+		-e "s|/|-|g"
 }
 
 reverse_lines() {

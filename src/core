@@ -61,6 +61,24 @@ scrape() {
 	done
 }
 
+mod_login() {
+	for module in ${MODS[@]}; do
+		echo "$1" = "$module"
+		if [ "$1" = "$module" ]; then
+			
+			if [ "$( eval echo \$${module}_loginreq )" = "1" ]; then
+				eval login_$module \"$2\" \"$3\"
+				exit 0
+			else
+				echo "$module does not need login."
+				exit 0
+			fi
+		fi
+	done
+	echo "No such module."
+	exit 1
+}
+
 help() {
 	type 1
 	echo -e "Usage:"
@@ -91,6 +109,11 @@ help() {
 	type 0
 	echo -e "          Will take a manga's page and scrape chapters to"
 	echo -e "          a file named batch.txt"
+	color 3
+	echo -e "     login (u)"
+	type 0
+	echo -e "          Pass the module name, your username and password."
+	echo -e "          This will generate a cookie jar as ./cookiejar"
 	echo ""
 	echo -e "     You can also specify a module name followed by"
 	echo -e "     the URL instead of using the auto-detect."
@@ -200,6 +223,52 @@ help() {
 	else
 		echo "no"
 	fi
+	echo -ne "     Color:               "
+	if [ $COLOR = 1 ]; then
+		color 1
+		echo -ne "y"
+		color 2
+		echo -ne "e"
+		color 3
+		echo -ne "s"
+		color 4
+		echo -ne " "
+		echo -ne "("
+		color 5
+		echo -ne "d"
+		color 6
+		echo -ne "u"
+		color 1
+		echo -ne "m"
+		color 2
+		echo -ne "b"
+		color 3
+		echo ")"
+		type 0
+	elif [ $COLOR = 2 ]; then
+		color 1
+		echo -ne "y"
+		color 2
+		echo -ne "e"
+		color 3
+		echo -ne "s"
+		color 4
+		echo -ne " "
+		echo -ne "("
+		color 5
+		echo -ne "t"
+		color 6
+		echo -ne "p"
+		color 1
+		echo -ne "u"
+		color 2
+		echo -ne "t"
+		color 3
+		echo ")"
+		type 0
+	else
+		echo "no (TERM='$TERM')"
+	fi
 	type 1
 	echo -ne "License / Info"
 	type 0
@@ -235,6 +304,9 @@ elif [ "$1" = "autobatch" -o "$1" = "b" ]; then
 elif [ "$1" = "scrape" -o "$1" = "s" ]; then
 	# Link scraper.
 	scrape $2 $3
+elif [ "$1" = "login" -o "$1" = "u" ]; then
+	# Site login.
+	mod_login $2 $3 $4
 else # Not a common operation - either invalid or a module-op.
 
 	# Detect whether it is a module operation.
