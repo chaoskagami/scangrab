@@ -1218,9 +1218,7 @@ scrape() {
 
 mod_login() {
 	for module in ${MODS[@]}; do
-		echo "$1" = "$module"
 		if [ "$1" = "$module" ]; then
-			
 			if [ "$( eval echo \$${module}_loginreq )" = "1" ]; then
 				eval login_$module \"$2\" \"$3\"
 				exit 0
