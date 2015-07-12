@@ -82,7 +82,7 @@ dl_batoto() {
 
 	PAGES=$(( CUR - 1 ))
 
-	done_spin
+	spinner_done
 
 	cd ..
 

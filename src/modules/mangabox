@@ -78,7 +78,7 @@ dl_mangabox() {
 
 	cd ..
 
-	done_spin
+	spinner_done
 
 	rm tmp.htm
 

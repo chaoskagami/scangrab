@@ -1,3 +1,5 @@
+rev=c51b6f694007b057ef799d606797de57c8766182
+branch=master
 #!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
 #
@@ -14,20 +16,76 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-COLOR=0
-_tput=$(which tput 2>/dev/null)
+# These values can be read but should not be written by a module.
+COOKIEJAR="$(pwd)/cookiejar"
+HAVE_IMAGICK=0
+FETCH_RESULT=0
+
+# These values are used by support/core but are controlled by modules.
+message=""
+use_cookies=0
+
+# Anything which starts with an underscore is internal and shouldn't be touched.
+_COLOR=0
+_FETCH_CMD=""
+_CHECK_VALID=0
+_FETCHTOOL=0
+_BUSYBOX=0
+_SPINNER_CHAR="|"
+_NUM=0
+_FIRST=1
+
+# Tools. Use these variables instead of actual command names.
+_tput="$(which tput 2>/dev/null)"
+_identify="$(which identify 2>/dev/null)"
+_convert="$(which convert 2>/dev/null)"
+_wget="$(which wget 2>/dev/null)"
+_curl="$(which curl 2>/dev/null)"
+_aria="$(which aria2c 2>/dev/null)"
+
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
-	COLOR=1
+	_COLOR=1
 	if [ -f $_tput ]; then
 		# Better method.
-		COLOR=2
+		_COLOR=2
 	fi
 fi
 
+if [ -f "$_identify" ]; then
+	_CHECK_VALID=1
+fi
+
+if [ -f "$_identify" ]; then
+	HAVE_IMAGICK=1
+fi
+
+if [ ! "$_wget" = "" ]; then
+	common_opts=" --quiet --no-cache --content-disposition --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
+
+	if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
+		echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
+		common_opts=" -q -c -U \"Mozilla/4.0\""
+		_BUSYBOX=1
+	fi
+
+	_FETCH_CMD="$_wget $common_opts"
+	_FETCHTOOL=1
+else
+	if [ ! "$_curl" = "" ]; then
+			_FETCH_CMD=$_curl
+			_FETCHTOOL=2
+	else
+		if [ ! "$_aria" = "" ]; then
+				_FETCH_CMD=$_aria
+				_FETCHTOOL=3
+		fi
+	fi
+fi	
+
 type() {
-	if [ $COLOR = 1 ]; then
+	if [ $_COLOR = 1 ]; then
 		echo -ne "\x1b[$1m"
-	elif [ $COLOR = 2 ]; then
+	elif [ $_COLOR = 2 ]; then
 		if [ $1 = 0 ]; then
 			tput sgr0
 		elif [ $1 = 1 ]; then
@@ -39,15 +97,15 @@ type() {
 }
 
 color() { 
-	if [ $COLOR = 1 ]; then
+	if [ $_COLOR = 1 ]; then
 		echo -ne "\x1b[3$1m"
-	elif [ $COLOR = 2 ]; then
+	elif [ $_COLOR = 2 ]; then
 		tput setaf $1
 	fi
 }
 
 cbz_make() {
-	echo -ne "[Post] Making CBZ..."
+	echo -e "[Post] Making CBZ..."
 
 	# Check and make sure the folder has something, and is actually a folder.
 	if [ ! -d "$1" ]; then
@@ -63,26 +121,14 @@ cbz_make() {
 	zip -r "$1.zip" "$1" > /dev/null 2>&1
 	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
 	
-	echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Post] Cleanup..."
+	echo -e "[Post] Cleanup..."
 	rm -rf "$1"
-	echo -e "\b\b\b\b\b\b\b\b\b\bFinished.    "
+	echo -e "[Post] Finished!"
 }
 
 # Checks if an image is uncorrupted. If you don't have the tools, this never happens.
 	# Returns 0 on OK / no tool
-	# Returns code on corrupt
-_identify=$(which identify 2>/dev/null)
-CHECK_VALID=0
-if [ -f "$_identify" ]; then
-	CHECK_VALID=1
-fi
-
-_convert=$(which convert 2>/dev/null)
-HAVE_IMAGICK=0
-if [ -f "$_identify" ]; then
-	HAVE_IMAGICK=1
-fi
-
+	# Returns error code on corrupt
 verify() {
 	if [ -f $_identify ]; then
 		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
@@ -93,10 +139,6 @@ verify() {
 	return 0
 }
 
-_SPINNER_CHAR="|"
-_NUM=0
-_FIRST=1
-message=""
 spinner() {
 	if [ $_FIRST = 1 ]; then
 		_FIRST=0
@@ -128,51 +170,17 @@ spinner() {
 	done
 }
 
-done_spin() {
+spinner_done() {
 	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
-	echo -e "\b\b\b[OK]"
+	echo -e "\b\b\b[OK]  "
 }
 
 mimetype() {
 	echo "$(file --mime-type "$1" | sed 's/.* //g')"
 }
 
-FETCH_RESULT="0"
-FETCH_CMD=""
-_FETCHTOOL=0
-_BUSYBOX=0
-fetch_detect() {
-	_wget="$(which wget 2>/dev/null)"
-	_curl="$(which curl 2>/dev/null)"
-	_aria="$(which aria2c 2>/dev/null)"
-
-	if [ ! "$_wget" = "" ]; then
-		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
-
-		if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
-			echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
-			common_opts=" -q -c -U \"Mozilla/4.0\""
-			_BUSYBOX=1
-		fi
-
-		FETCH_CMD="$_wget $common_opts"
-		_FETCHTOOL=1
-	else
-		if [ ! "$_curl" = "" ]; then
-				FETCH_CMD=$_curl
-				_FETCHTOOL=2
-		else
-			if [ ! "$_aria" = "" ]; then
-					FETCH_CMD=$_aria
-					_FETCHTOOL=3
-			fi
-		fi
-	fi
-
-	return $FETCH_RESULT	
-}
 
 # This creates a cookie jar.
 # $1 - Username field
@@ -180,21 +188,21 @@ fetch_detect() {
 # $3 - Username
 # $4 - Password
 # $5 - URL
-
-COOKIES=0
-COOKIEJAR=$(pwd)/cookiejar
+# $6 - extra shit
 s_login() {
 	if [ $_FETCHTOOL = 1 ]; then
 		# WGET
-		_CMD="$FETCH_CMD --post-data='$1=$3&$2=$4' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O /dev/null"
+		_CMD="$_FETCH_CMD --post-data='$1=$3&$2=$4&$6' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O/dev/null"
 
 	elif [ $_FETCHTOOL = 2 ]; then
 		# CURL
-		_CMD="$FETCH_CMD -d '$1=$3&$2=$4' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
+		_CMD="$_FETCH_CMD -d '$1=$3&$2=$4&$6' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
 
 	elif [ $_FETCHTOOL = 3 ]; then
 		#ARIA2C
-		_CMD="$FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
+		# How the fuck do I post? Maybe I can't with araia2c...meh.
+		echo "[Warn] aria2c can't post at the moment; this will fail to get required cookies."
+		_CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
 
 	fi
 	
@@ -208,23 +216,23 @@ s_login() {
 fetch() {
 	if [ $_FETCHTOOL = 1 ]; then
 
-		_CMD="$FETCH_CMD \"$1\""
-		if [ $COOKIES = 1 ]; then
+		_CMD="$_FETCH_CMD \"$1\""
+		if [ $use_cookies = 1 ]; then
 			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies"
 		fi
 
-		if [ "$2" = "" ]; then
-			_CMD="$_CMD -O $(basename "$1")"
-		elif [ "$2" = "-" ]; then
+		# Wget uses content-disposition to hopefully get a good name in abscence of one.
+
+		if [ "$2" = "-" ]; then
 			_CMD="$_CMD -O -"
-		else
+		elif [ ! "$2" = "" ]; then
 			_CMD="$_CMD -O \"$2\""
 		fi
 
 	elif [ $_FETCHTOOL = 2 ]; then
 
-		_CMD="$FETCH_CMD $1"
-		if [ $COOKIES = 1 ]; then
+		_CMD="$_FETCH_CMD $1"
+		if [ $use_cookies = 1 ]; then
 			_CMD="$_CMD -b $COOKIEJAR -c $COOKIEJAR"
 		fi
 
@@ -238,8 +246,8 @@ fetch() {
 
 	elif [ $_FETCHTOOL = 3 ]; then
 
-		_CMD="$FETCH_CMD $1"
-		if [ $COOKIES = 1 ]; then
+		_CMD="$_FETCH_CMD $1"
+		if [ $use_cookies = 1 ]; then
 			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR"
 		fi
 
@@ -255,14 +263,6 @@ fetch() {
 	# echo -e "\n$_CMD"
 	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
-
-	#if [ ! $FETCH_RESULT = 0 ]; then
-		#if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
-			#echo -e "[WARN] Failed to fetch. Command was:\n$_CMD"
-		#fi
-	#elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
-		#echo "[WARN] Image failed on busybox. Cannot retry."
-	#fi
 	
 	# If this is an image, check validity.
 	MIME="$(mimetype "$_FILE")"
@@ -346,10 +346,16 @@ entity_to_char() {
 		-e "s/&hearts;/♥/g" \
 		-e "s/&#9829;/♥/g" \
 		-e "s/&diams;/♦/g" \
-		-e "s/&#9830;/♦/g" \
-		\
+		-e "s/&#9830;/♦/g"
+
+}
+
+remove_illegal() {
+
+	sed \
 		-e "s/|/-/g" \
 		-e "s|/|-|g"
+
 }
 
 reverse_lines() {
@@ -443,7 +449,7 @@ dl_batoto() {
 
 	PAGES=$(( CUR - 1 ))
 
-	done_spin
+	spinner_done
 
 	cd ..
 
@@ -592,7 +598,7 @@ dl_dynsc() {
 		CUR=$(( CUR + 1 ))
 	done
 
-	done_spin
+	spinner_done
 	
 	cd ..
 
@@ -633,7 +639,25 @@ eh_longname="E-Hentai"
 eh_url="http://e-hentai.org/"
 eh_state=1
 eh_filt=0
-eh_note="H@H is an unreliable CDN. Also, they count images by logged in IP."
+eh_note="Logging in will result in HQ images and less H@H peer-related issues =_=;"
+
+eh_uselogin=1
+
+login_eh() {
+	use_cookies=1
+
+	# Lots of extra shat they use to prevent bots. If it gets updated; let me know.
+	
+	s_login "UserName" "PassWord" "$1" "$2" "http://forums.e-hentai.org/index.php?act=Login&CODE=01" \
+		"CookieDate=1&b=&bt=&referer=http://forums.e-hentai.org/?act=idx"
+	user="$(fetch "http://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
+	if [ ! "$user" = "" ]; then
+		echo "[E-H] Logged in as: $user"
+		exit 0
+	fi
+
+	exit 1
+}
 
 auto_eh() {
 	if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -645,7 +669,21 @@ auto_eh() {
 }
 
 dl_eh() {
+	LOGGEDIN=0
+	use_cookies=0
+	if [ -e "cookiejar" ]; then
+		grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+		RES=$?
+		if [ $RES = 0 ]; then
+			echo "[E-H] We seem to have cookies...using them."
+			LOGGEDIN=1
+			use_cookies=1
+		fi
+	fi
+
 	sitepage=$1
+
+	echo "[E-H] Fetching index page..."
 
 	# This is so that we don't get the 'offensive' warning.
 	fetch "${sitepage}/?nw=always" tmp.1
@@ -653,37 +691,48 @@ dl_eh() {
 	# Unfortunately e-h has shit system. Time to code page extraction
 	# I'm using pipes for clarity.
 	# the last sed deals with names like fate/stay night which are invalid
-	folder="$(cat tmp.1 | grep 'title>' - | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
+	folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
 	mkdir -p "$folder"
 	cd "$folder"
 	
-	DATA=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/g' | sed 's/"><img alt.*//g' | grep 'url:')
+	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
+
 	rm ../tmp.1
 
-	eval "urls=(`echo $DATA | tr '\n' ' ' | sed 's/url://g'`)"
-
-	page="${urls[0]}"
-
-	echo -n "[e-h] Downloading '$folder' "
+	echo -n "[E-H] Downloading '$folder' "
+	if [ $LOGGEDIN = 1 ]; then
+		echo -n "[HQ] "
+	else
+		echo -n "[LQ] "		
+	fi
 
 	doneyet=0
 
 	CDNFAIL=0
 
-	CUR=0
+	CUR=1
 	while [ $doneyet == 0 ]; do
-		get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp'))
+		fetch "$page" "$CUR.htm"
+		lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||')
+		hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+		next_cnt=$((CUR + 1))
+		next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 
 		extra=""
 
-		if [ "${get[0]}" == "$page" ]; then
+		if [ "$next" == "" ]; then
 			doneyet=1
 		fi
 
 		if [ $CDNFAIL -ge 3 ]; then
 			FETCH_RESULT=1
 		else
-			fetch "${get[1]}" "$extra"
+			if [ $LOGGEDIN = 0 ]; then
+				fetch "$lq"
+			else
+				# HQ version; this is the 'Download source resolution' button.
+				fetch "$hq"
+			fi
 		fi
 
 		if [ ! $FETCH_RESULT = 0 ]; then
@@ -695,11 +744,19 @@ dl_eh() {
 				message=" >:("
 			fi
 
-			notload=$(fetch "$page" "-" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
-			get=($(fetch "$page?nl=${notload}" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'image.php' | entity_to_char ))
-			extra="$(echo ${get[1]} | sed 's/.*n=//')"
+			notload=$(cat $CUR.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 
-			fetch "${get[1]}" "$extra"
+			fetch "$notload" "$CUR.htm"
+			lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||')
+			hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+			next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+
+			if [ $LOGGEDIN = 0 ]; then
+				fetch "$lq"
+			else
+				fetch "$hq"
+			fi
+
 			if [ ! $FETCH_RESULT = 0 ]; then
 				message=" >:["
 			else
@@ -709,14 +766,16 @@ dl_eh() {
 			CUR=$(( CUR + 1 ))
 		fi
 
-		if [ ! "${get[0]}" = "" ]; then
-			page="${get[0]}"
+		if [ ! "$next" = "" ]; then
+			page="$next"
 		fi
+
+		rm $((CUR - 1)).htm
 
 		spinner "$CUR"
 	done
 	
-	done_spin
+	spinner_done
 
 	cd ..
 
@@ -724,7 +783,7 @@ dl_eh() {
 }
 
 scrape_eh() {
-	echo -e "[e-h] This isn't supported, considering there's really zero categorization here."
+	echo -e "[E-H] This isn't supported, considering there's really zero categorization here."
 }
 #!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
@@ -793,7 +852,7 @@ dl_fakku() {
 		CUR=$(( CUR + 1 ))
 	done
 
-	done_spin
+	spinner_done
 
 	cd ..
 	
@@ -976,7 +1035,7 @@ dl_mangabox() {
 
 	cd ..
 
-	done_spin
+	spinner_done
 
 	rm tmp.htm
 
@@ -1045,7 +1104,7 @@ dl_mpark() {
 		CUR=$(( CUR + 1 ))
 	done
 	
-	done_spin
+	spinner_done
 
 	cd ..
 
@@ -1053,7 +1112,7 @@ dl_mpark() {
 }
 
 scrape_mpark() {
-	echo -n "[Mangapark] Scraping Chapters..."
+	echo -e "[Mangapark] Scraping Chapters..."
 
 	fetch "$1" scrape.htm
 
@@ -1073,14 +1132,13 @@ scrape_mpark() {
 	sed -i "s|/6-1$||g" batch.txtr
 	sed -i "s|/10-1$||g" batch.txtr
 
-	# Lines are reverse order. tac.
-	# If whatever we're using has no tac, you're stuck with reverse order.
-	tac batch.txtr >> batch.txt || cat batch.txtr >> batch.txt
+	# Lines are reverse order.
+	cat batch.txtr | reverse_lines >> batch.txt
 
 	# We've scraped a batch file from the URL list. Clean up.
 	rm scrape.htm batch.txtr
 
-	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+	echo -e "[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 #!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
@@ -1151,7 +1209,7 @@ dl_mread() {
 
 	PAGES=$(( CUR - 1 ))
 
-	done_spin
+	spinner_done
 
 	rm *.htm
 
@@ -1189,7 +1247,7 @@ niconicoseiga_filt=0
 niconicoseiga_note="Please login first, or make a cookiejar file."
 
 # Need to login.
-niconicoseiga_loginreq=1
+niconicoseiga_uselogin=1
 
 auto_niconicoseiga() {
 	if [ -n "`echo $1 | grep 'seiga.nicovideo.jp' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -1201,18 +1259,18 @@ auto_niconicoseiga() {
 }
 
 login_niconicoseiga() {
-	COOKIES=1
+	use_cookies=1
 	s_login "mail_tel" "password" "$1" "$2" "https://secure.nicovideo.jp/secure/login"
 }
 
 dl_niconicoseiga() {
-	COOKIES=1
+	use_cookies=1
 
 	name="$(basename $1)"
 
 	fetch $1 "$name.htm"
 
-	fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char)"
+	fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char | remove_illegal)"
 
 	if [ ! -f "$name.htm" ]; then
 		echo "[Niconico] No page found, aborting."
@@ -1240,7 +1298,7 @@ dl_niconicoseiga() {
 		spinner $COUNT
 	done < ../$name.lst
 
-	done_spin
+	spinner_done
 
 	cd ..
 	rm $name.lst $name.htm
@@ -1275,8 +1333,6 @@ scrape_niconicoseiga() {
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # Determine operation.
-
-fetch_detect
 
 auto() {
 	for module in ${MODS[@]}; do
@@ -1323,7 +1379,7 @@ scrape() {
 mod_login() {
 	for module in ${MODS[@]}; do
 		if [ "$1" = "$module" ]; then
-			if [ "$( eval echo \$${module}_loginreq )" = "1" ]; then
+			if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
 				eval login_$module \"$2\" \"$3\"
 				exit 0
 			else
@@ -1472,7 +1528,7 @@ help() {
 	fi
 	echo " (wget, curl, aria2c)"
 	echo -ne "     Check broken images: "
-	if [ $CHECK_VALID = 1 ]; then
+	if [ $_CHECK_VALID = 1 ]; then
 		if [ -f $_identify ]; then
 			echo -ne "imagemagick ($_identify)"
 		fi
@@ -1481,7 +1537,7 @@ help() {
 		echo "no"
 	fi
 	echo -ne "     Color:               "
-	if [ $COLOR = 1 ]; then
+	if [ $_COLOR = 1 ]; then
 		color 1
 		echo -ne "y"
 		color 2
@@ -1502,7 +1558,7 @@ help() {
 		color 3
 		echo ")"
 		type 0
-	elif [ $COLOR = 2 ]; then
+	elif [ $_COLOR = 2 ]; then
 		color 1
 		echo -ne "y"
 		color 2
@@ -1547,6 +1603,8 @@ help() {
 	echo ""
 	echo -e "     The latest version of scangrab can always be found at the github"
 	echo -e "     page here: https://github.com/chaoskagami/scangrab"
+	echo ""
+	echo -e "     Build: $branch, $rev"
 }
 
 if [ "$1" = "auto" -o "$1" = "a" ]; then

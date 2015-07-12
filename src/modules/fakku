@@ -65,7 +65,7 @@ dl_fakku() {
 		CUR=$(( CUR + 1 ))
 	done
 
-	done_spin
+	spinner_done
 
 	cd ..
 	

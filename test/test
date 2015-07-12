@@ -26,8 +26,6 @@ cbz_make() {
 	echo -ne "[Test] Checking $1..."
 }
 
-fetch_detect
-
 # We try to use SFW stuff for NSFW scrapers, fyi.
 
 if [ "$1" = "" ]; then
@@ -57,7 +55,8 @@ if [ -f ../src/modules/eh ]; then
 	if [ ALL = 1 ] || [ "$1" = "eh" ]; then
 		source ../src/modules/eh
 		# Natural Born Darkness. Seija doujin, Non-H. Had a good damn laugh.
-		dl_eh "http://g.e-hentai.org/g/822043/3a881c225e/"
+		# Updated with a newer version (typo fix, apparently) on July 12, 2015
+		dl_eh "http://g.e-hentai.org/g/824953/944e64d3e5/"
 		cd "${CHECK_FLDR}"
 		sha512sum -c --quiet "../${CHECK_FLDR}.txt"
 		R=$?

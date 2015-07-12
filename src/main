@@ -17,8 +17,6 @@
 
 # Determine operation.
 
-fetch_detect
-
 auto() {
 	for module in ${MODS[@]}; do
 		eval auto_$module $1
@@ -64,7 +62,7 @@ scrape() {
 mod_login() {
 	for module in ${MODS[@]}; do
 		if [ "$1" = "$module" ]; then
-			if [ "$( eval echo \$${module}_loginreq )" = "1" ]; then
+			if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
 				eval login_$module \"$2\" \"$3\"
 				exit 0
 			else
@@ -213,7 +211,7 @@ help() {
 	fi
 	echo " (wget, curl, aria2c)"
 	echo -ne "     Check broken images: "
-	if [ $CHECK_VALID = 1 ]; then
+	if [ $_CHECK_VALID = 1 ]; then
 		if [ -f $_identify ]; then
 			echo -ne "imagemagick ($_identify)"
 		fi
@@ -222,7 +220,7 @@ help() {
 		echo "no"
 	fi
 	echo -ne "     Color:               "
-	if [ $COLOR = 1 ]; then
+	if [ $_COLOR = 1 ]; then
 		color 1
 		echo -ne "y"
 		color 2
@@ -243,7 +241,7 @@ help() {
 		color 3
 		echo ")"
 		type 0
-	elif [ $COLOR = 2 ]; then
+	elif [ $_COLOR = 2 ]; then
 		color 1
 		echo -ne "y"
 		color 2
@@ -288,6 +286,8 @@ help() {
 	echo ""
 	echo -e "     The latest version of scangrab can always be found at the github"
 	echo -e "     page here: https://github.com/chaoskagami/scangrab"
+	echo ""
+	echo -e "     Build: $branch, $rev"
 }
 
 if [ "$1" = "auto" -o "$1" = "a" ]; then

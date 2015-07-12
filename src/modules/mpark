@@ -55,7 +55,7 @@ dl_mpark() {
 		CUR=$(( CUR + 1 ))
 	done
 	
-	done_spin
+	spinner_done
 
 	cd ..
 
@@ -63,7 +63,7 @@ dl_mpark() {
 }
 
 scrape_mpark() {
-	echo -n "[Mangapark] Scraping Chapters..."
+	echo -e "[Mangapark] Scraping Chapters..."
 
 	fetch "$1" scrape.htm
 
@@ -83,12 +83,11 @@ scrape_mpark() {
 	sed -i "s|/6-1$||g" batch.txtr
 	sed -i "s|/10-1$||g" batch.txtr
 
-	# Lines are reverse order. tac.
-	# If whatever we're using has no tac, you're stuck with reverse order.
-	tac batch.txtr >> batch.txt || cat batch.txtr >> batch.txt
+	# Lines are reverse order.
+	cat batch.txtr | reverse_lines >> batch.txt
 
 	# We've scraped a batch file from the URL list. Clean up.
 	rm scrape.htm batch.txtr
 
-	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+	echo -e "[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

@@ -69,13 +69,18 @@ if [ -d "$TARGET" ]; then
 	exit 1
 fi
 
-if [ "$(readlink -f $TARGET)" = "$(pwd)/scangrab" ]; then
-	echo "Refusing to clobber the actual scangrab script. Why would you do that?"
+if [ "$(readlink -f $TARGET)" = "$(pwd)/scangrab" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/main" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/support" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/merge" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/rev" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/modules" ]; then
+	echo "Refusing to clobber any actual files in repo. Why would you do that?"
 	exit 1
 fi
 
-# Spit support first.
-cat support > $TARGET.tmp
+# Regenerate revision file.
+git show | head -n1 | sed -e 's|commit |rev=|' > rev
+git branch | grep '*' | sed -e 's|* |branch=|g' >> rev
+cat rev > $TARGET.tmp
+
+# Append support.
+cat support >> $TARGET.tmp
 
 # Module code.
 MODS=(`ls modules/`)
@@ -89,7 +94,7 @@ for module in ${MODS[@]}; do
 done
 
 # Actual code.
-cat core >> $TARGET.tmp
+cat main >> $TARGET.tmp
 
 if [ "$BRUTE" = "1" ]; then
 	cp $TARGET.tmp $TARGET.raw

@@ -67,7 +67,7 @@ dl_mread() {
 
 	PAGES=$(( CUR - 1 ))
 
-	done_spin
+	spinner_done
 
 	rm *.htm
 

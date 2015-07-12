@@ -18,7 +18,25 @@ eh_longname="E-Hentai"
 eh_url="http://e-hentai.org/"
 eh_state=1
 eh_filt=0
-eh_note="H@H is an unreliable CDN. Also, they count images by logged in IP."
+eh_note="Logging in will result in HQ images and less H@H peer-related issues =_=;"
+
+eh_uselogin=1
+
+login_eh() {
+	use_cookies=1
+
+	# Lots of extra shat they use to prevent bots. If it gets updated; let me know.
+	
+	s_login "UserName" "PassWord" "$1" "$2" "http://forums.e-hentai.org/index.php?act=Login&CODE=01" \
+		"CookieDate=1&b=&bt=&referer=http://forums.e-hentai.org/?act=idx"
+	user="$(fetch "http://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
+	if [ ! "$user" = "" ]; then
+		echo "[E-H] Logged in as: $user"
+		exit 0
+	fi
+
+	exit 1
+}
 
 auto_eh() {
 	if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -30,7 +48,21 @@ auto_eh() {
 }
 
 dl_eh() {
+	LOGGEDIN=0
+	use_cookies=0
+	if [ -e "cookiejar" ]; then
+		grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+		RES=$?
+		if [ $RES = 0 ]; then
+			echo "[E-H] We seem to have cookies...using them."
+			LOGGEDIN=1
+			use_cookies=1
+		fi
+	fi
+
 	sitepage=$1
+
+	echo "[E-H] Fetching index page..."
 
 	# This is so that we don't get the 'offensive' warning.
 	fetch "${sitepage}/?nw=always" tmp.1
@@ -38,37 +70,48 @@ dl_eh() {
 	# Unfortunately e-h has shit system. Time to code page extraction
 	# I'm using pipes for clarity.
 	# the last sed deals with names like fate/stay night which are invalid
-	folder="$(cat tmp.1 | grep 'title>' - | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
+	folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
 	mkdir -p "$folder"
 	cd "$folder"
 	
-	DATA=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/g' | sed 's/"><img alt.*//g' | grep 'url:')
+	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
+
 	rm ../tmp.1
 
-	eval "urls=(`echo $DATA | tr '\n' ' ' | sed 's/url://g'`)"
-
-	page="${urls[0]}"
-
-	echo -n "[e-h] Downloading '$folder' "
+	echo -n "[E-H] Downloading '$folder' "
+	if [ $LOGGEDIN = 1 ]; then
+		echo -n "[HQ] "
+	else
+		echo -n "[LQ] "		
+	fi
 
 	doneyet=0
 
 	CDNFAIL=0
 
-	CUR=0
+	CUR=1
 	while [ $doneyet == 0 ]; do
-		get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp'))
+		fetch "$page" "$CUR.htm"
+		lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||')
+		hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+		next_cnt=$((CUR + 1))
+		next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 
 		extra=""
 
-		if [ "${get[0]}" == "$page" ]; then
+		if [ "$next" == "" ]; then
 			doneyet=1
 		fi
 
 		if [ $CDNFAIL -ge 3 ]; then
 			FETCH_RESULT=1
 		else
-			fetch "${get[1]}" "$extra"
+			if [ $LOGGEDIN = 0 ]; then
+				fetch "$lq"
+			else
+				# HQ version; this is the 'Download source resolution' button.
+				fetch "$hq"
+			fi
 		fi
 
 		if [ ! $FETCH_RESULT = 0 ]; then
@@ -80,11 +123,19 @@ dl_eh() {
 				message=" >:("
 			fi
 
-			notload=$(fetch "$page" "-" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
-			get=($(fetch "$page?nl=${notload}" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'image.php' | entity_to_char ))
-			extra="$(echo ${get[1]} | sed 's/.*n=//')"
+			notload=$(cat $CUR.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 
-			fetch "${get[1]}" "$extra"
+			fetch "$notload" "$CUR.htm"
+			lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||')
+			hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+			next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+
+			if [ $LOGGEDIN = 0 ]; then
+				fetch "$lq"
+			else
+				fetch "$hq"
+			fi
+
 			if [ ! $FETCH_RESULT = 0 ]; then
 				message=" >:["
 			else
@@ -94,14 +145,16 @@ dl_eh() {
 			CUR=$(( CUR + 1 ))
 		fi
 
-		if [ ! "${get[0]}" = "" ]; then
-			page="${get[0]}"
+		if [ ! "$next" = "" ]; then
+			page="$next"
 		fi
+
+		rm $((CUR - 1)).htm
 
 		spinner "$CUR"
 	done
 	
-	done_spin
+	spinner_done
 
 	cd ..
 
@@ -109,5 +162,5 @@ dl_eh() {
 }
 
 scrape_eh() {
-	echo -e "[e-h] This isn't supported, considering there's really zero categorization here."
+	echo -e "[E-H] This isn't supported, considering there's really zero categorization here."
 }

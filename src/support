@@ -14,20 +14,76 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-COLOR=0
-_tput=$(which tput 2>/dev/null)
+# These values can be read but should not be written by a module.
+COOKIEJAR="$(pwd)/cookiejar"
+HAVE_IMAGICK=0
+FETCH_RESULT=0
+
+# These values are used by support/core but are controlled by modules.
+message=""
+use_cookies=0
+
+# Anything which starts with an underscore is internal and shouldn't be touched.
+_COLOR=0
+_FETCH_CMD=""
+_CHECK_VALID=0
+_FETCHTOOL=0
+_BUSYBOX=0
+_SPINNER_CHAR="|"
+_NUM=0
+_FIRST=1
+
+# Tools. Use these variables instead of actual command names.
+_tput="$(which tput 2>/dev/null)"
+_identify="$(which identify 2>/dev/null)"
+_convert="$(which convert 2>/dev/null)"
+_wget="$(which wget 2>/dev/null)"
+_curl="$(which curl 2>/dev/null)"
+_aria="$(which aria2c 2>/dev/null)"
+
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
-	COLOR=1
+	_COLOR=1
 	if [ -f $_tput ]; then
 		# Better method.
-		COLOR=2
+		_COLOR=2
 	fi
 fi
 
+if [ -f "$_identify" ]; then
+	_CHECK_VALID=1
+fi
+
+if [ -f "$_identify" ]; then
+	HAVE_IMAGICK=1
+fi
+
+if [ ! "$_wget" = "" ]; then
+	common_opts=" --quiet --no-cache --content-disposition --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
+
+	if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
+		echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
+		common_opts=" -q -c -U \"Mozilla/4.0\""
+		_BUSYBOX=1
+	fi
+
+	_FETCH_CMD="$_wget $common_opts"
+	_FETCHTOOL=1
+else
+	if [ ! "$_curl" = "" ]; then
+			_FETCH_CMD=$_curl
+			_FETCHTOOL=2
+	else
+		if [ ! "$_aria" = "" ]; then
+				_FETCH_CMD=$_aria
+				_FETCHTOOL=3
+		fi
+	fi
+fi	
+
 type() {
-	if [ $COLOR = 1 ]; then
+	if [ $_COLOR = 1 ]; then
 		echo -ne "\x1b[$1m"
-	elif [ $COLOR = 2 ]; then
+	elif [ $_COLOR = 2 ]; then
 		if [ $1 = 0 ]; then
 			tput sgr0
 		elif [ $1 = 1 ]; then
@@ -39,15 +95,15 @@ type() {
 }
 
 color() { 
-	if [ $COLOR = 1 ]; then
+	if [ $_COLOR = 1 ]; then
 		echo -ne "\x1b[3$1m"
-	elif [ $COLOR = 2 ]; then
+	elif [ $_COLOR = 2 ]; then
 		tput setaf $1
 	fi
 }
 
 cbz_make() {
-	echo -ne "[Post] Making CBZ..."
+	echo -e "[Post] Making CBZ..."
 
 	# Check and make sure the folder has something, and is actually a folder.
 	if [ ! -d "$1" ]; then
@@ -63,26 +119,14 @@ cbz_make() {
 	zip -r "$1.zip" "$1" > /dev/null 2>&1
 	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
 	
-	echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Post] Cleanup..."
+	echo -e "[Post] Cleanup..."
 	rm -rf "$1"
-	echo -e "\b\b\b\b\b\b\b\b\b\bFinished.    "
+	echo -e "[Post] Finished!"
 }
 
 # Checks if an image is uncorrupted. If you don't have the tools, this never happens.
 	# Returns 0 on OK / no tool
-	# Returns code on corrupt
-_identify=$(which identify 2>/dev/null)
-CHECK_VALID=0
-if [ -f "$_identify" ]; then
-	CHECK_VALID=1
-fi
-
-_convert=$(which convert 2>/dev/null)
-HAVE_IMAGICK=0
-if [ -f "$_identify" ]; then
-	HAVE_IMAGICK=1
-fi
-
+	# Returns error code on corrupt
 verify() {
 	if [ -f $_identify ]; then
 		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
@@ -93,10 +137,6 @@ verify() {
 	return 0
 }
 
-_SPINNER_CHAR="|"
-_NUM=0
-_FIRST=1
-message=""
 spinner() {
 	if [ $_FIRST = 1 ]; then
 		_FIRST=0
@@ -128,51 +168,17 @@ spinner() {
 	done
 }
 
-done_spin() {
+spinner_done() {
 	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
-	echo -e "\b\b\b[OK]"
+	echo -e "\b\b\b[OK]  "
 }
 
 mimetype() {
 	echo "$(file --mime-type "$1" | sed 's/.* //g')"
 }
 
-FETCH_RESULT="0"
-FETCH_CMD=""
-_FETCHTOOL=0
-_BUSYBOX=0
-fetch_detect() {
-	_wget="$(which wget 2>/dev/null)"
-	_curl="$(which curl 2>/dev/null)"
-	_aria="$(which aria2c 2>/dev/null)"
-
-	if [ ! "$_wget" = "" ]; then
-		common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
-
-		if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
-			echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
-			common_opts=" -q -c -U \"Mozilla/4.0\""
-			_BUSYBOX=1
-		fi
-
-		FETCH_CMD="$_wget $common_opts"
-		_FETCHTOOL=1
-	else
-		if [ ! "$_curl" = "" ]; then
-				FETCH_CMD=$_curl
-				_FETCHTOOL=2
-		else
-			if [ ! "$_aria" = "" ]; then
-					FETCH_CMD=$_aria
-					_FETCHTOOL=3
-			fi
-		fi
-	fi
-
-	return $FETCH_RESULT	
-}
 
 # This creates a cookie jar.
 # $1 - Username field
@@ -180,21 +186,21 @@ fetch_detect() {
 # $3 - Username
 # $4 - Password
 # $5 - URL
-
-COOKIES=0
-COOKIEJAR=$(pwd)/cookiejar
+# $6 - extra shit
 s_login() {
 	if [ $_FETCHTOOL = 1 ]; then
 		# WGET
-		_CMD="$FETCH_CMD --post-data='$1=$3&$2=$4' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O /dev/null"
+		_CMD="$_FETCH_CMD --post-data='$1=$3&$2=$4&$6' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O/dev/null"
 
 	elif [ $_FETCHTOOL = 2 ]; then
 		# CURL
-		_CMD="$FETCH_CMD -d '$1=$3&$2=$4' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
+		_CMD="$_FETCH_CMD -d '$1=$3&$2=$4&$6' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
 
 	elif [ $_FETCHTOOL = 3 ]; then
 		#ARIA2C
-		_CMD="$FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
+		# How the fuck do I post? Maybe I can't with araia2c...meh.
+		echo "[Warn] aria2c can't post at the moment; this will fail to get required cookies."
+		_CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
 
 	fi
 	
@@ -208,23 +214,23 @@ s_login() {
 fetch() {
 	if [ $_FETCHTOOL = 1 ]; then
 
-		_CMD="$FETCH_CMD \"$1\""
-		if [ $COOKIES = 1 ]; then
+		_CMD="$_FETCH_CMD \"$1\""
+		if [ $use_cookies = 1 ]; then
 			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies"
 		fi
 
-		if [ "$2" = "" ]; then
-			_CMD="$_CMD -O $(basename "$1")"
-		elif [ "$2" = "-" ]; then
+		# Wget uses content-disposition to hopefully get a good name in abscence of one.
+
+		if [ "$2" = "-" ]; then
 			_CMD="$_CMD -O -"
-		else
+		elif [ ! "$2" = "" ]; then
 			_CMD="$_CMD -O \"$2\""
 		fi
 
 	elif [ $_FETCHTOOL = 2 ]; then
 
-		_CMD="$FETCH_CMD $1"
-		if [ $COOKIES = 1 ]; then
+		_CMD="$_FETCH_CMD $1"
+		if [ $use_cookies = 1 ]; then
 			_CMD="$_CMD -b $COOKIEJAR -c $COOKIEJAR"
 		fi
 
@@ -238,8 +244,8 @@ fetch() {
 
 	elif [ $_FETCHTOOL = 3 ]; then
 
-		_CMD="$FETCH_CMD $1"
-		if [ $COOKIES = 1 ]; then
+		_CMD="$_FETCH_CMD $1"
+		if [ $use_cookies = 1 ]; then
 			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR"
 		fi
 
@@ -255,14 +261,6 @@ fetch() {
 	# echo -e "\n$_CMD"
 	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
-
-	#if [ ! $FETCH_RESULT = 0 ]; then
-		#if [ ! "$3" = "nowarn" ]; then # Suppress warnings.
-			#echo -e "[WARN] Failed to fetch. Command was:\n$_CMD"
-		#fi
-	#elif [ $_BUSYBOX = 1 ] && [ ! $FETCH_RESULT = 0 ]; then
-		#echo "[WARN] Image failed on busybox. Cannot retry."
-	#fi
 	
 	# If this is an image, check validity.
 	MIME="$(mimetype "$_FILE")"
@@ -346,10 +344,16 @@ entity_to_char() {
 		-e "s/&hearts;/♥/g" \
 		-e "s/&#9829;/♥/g" \
 		-e "s/&diams;/♦/g" \
-		-e "s/&#9830;/♦/g" \
-		\
+		-e "s/&#9830;/♦/g"
+
+}
+
+remove_illegal() {
+
+	sed \
 		-e "s/|/-/g" \
 		-e "s|/|-|g"
+
 }
 
 reverse_lines() {

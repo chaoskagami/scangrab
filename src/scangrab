@@ -20,6 +20,8 @@
 
 # Load support code. A few common functions.
 
+. ./rev
+
 . ./support
 
 # Load modules and index them.
@@ -32,4 +34,4 @@ done
 
 # Run main code.
 
-. ./core
+. ./main

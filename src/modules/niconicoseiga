@@ -23,7 +23,7 @@ niconicoseiga_filt=0
 niconicoseiga_note="Please login first, or make a cookiejar file."
 
 # Need to login.
-niconicoseiga_loginreq=1
+niconicoseiga_uselogin=1
 
 auto_niconicoseiga() {
 	if [ -n "`echo $1 | grep 'seiga.nicovideo.jp' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -35,18 +35,18 @@ auto_niconicoseiga() {
 }
 
 login_niconicoseiga() {
-	COOKIES=1
+	use_cookies=1
 	s_login "mail_tel" "password" "$1" "$2" "https://secure.nicovideo.jp/secure/login"
 }
 
 dl_niconicoseiga() {
-	COOKIES=1
+	use_cookies=1
 
 	name="$(basename $1)"
 
 	fetch $1 "$name.htm"
 
-	fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char)"
+	fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char | remove_illegal)"
 
 	if [ ! -f "$name.htm" ]; then
 		echo "[Niconico] No page found, aborting."
@@ -74,7 +74,7 @@ dl_niconicoseiga() {
 		spinner $COUNT
 	done < ../$name.lst
 
-	done_spin
+	spinner_done
 
 	cd ..
 	rm $name.lst $name.htm

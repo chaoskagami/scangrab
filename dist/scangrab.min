@@ -9,18 +9,63 @@ e() {
 echo -e "$@"
 }
 B="\b\b\b\b\b\b\b\b\b\b"
-COLOR=0
-_tput=$(which tput 2>/dev/null)
+rev=c51b6f694007b057ef799d606797de57c8766182
+branch=master
+COOKIEJAR="$(pwd)/cookiejar"
+HAVE_IMAGICK=0
+FETCH_RESULT=0
+message=""
+use_cookies=0
+_COLOR=0
+_FETCH_CMD=""
+_CHECK_VALID=0
+_FETCHTOOL=0
+_BUSYBOX=0
+_SC="|"
+_NUM=0
+_FIRST=1
+_tput="$(which tput 2>/dev/null)"
+_identify="$(which identify 2>/dev/null)"
+_convert="$(which convert 2>/dev/null)"
+_wget="$(which wget 2>/dev/null)"
+_curl="$(which curl 2>/dev/null)"
+_aria="$(which aria2c 2>/dev/null)"
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
-COLOR=1
+_COLOR=1
 if [ -f $_tput ]; then
-COLOR=2
+_COLOR=2
+fi
+fi
+if [ -f "$_identify" ]; then
+_CHECK_VALID=1
+fi
+if [ -f "$_identify" ]; then
+HAVE_IMAGICK=1
+fi
+if [ ! "$_wget" = "" ]; then
+common_opts=" --quiet --no-cache --content-disposition --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
+if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
+o "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
+common_opts=" -q -c -U \"Mozilla/4.0\""
+_BUSYBOX=1
+fi
+_FETCH_CMD="$_wget $common_opts"
+_FETCHTOOL=1
+else
+if [ ! "$_curl" = "" ]; then
+_FETCH_CMD=$_curl
+_FETCHTOOL=2
+else
+if [ ! "$_aria" = "" ]; then
+_FETCH_CMD=$_aria
+_FETCHTOOL=3
+fi
 fi
 fi
 type() {
-if [ $COLOR = 1 ]; then
+if [ $_COLOR = 1 ]; then
 n "\x1b[$1m"
-elif [ $COLOR = 2 ]; then
+elif [ $_COLOR = 2 ]; then
 if [ $1 = 0 ]; then
 tput sgr0
 elif [ $1 = 1 ]; then
@@ -31,14 +76,14 @@ fi
 fi
 }
 color() {
-if [ $COLOR = 1 ]; then
+if [ $_COLOR = 1 ]; then
 n "\x1b[3$1m"
-elif [ $COLOR = 2 ]; then
+elif [ $_COLOR = 2 ]; then
 tput setaf $1
 fi
 }
 cbz_make() {
-n "[Post] Making CBZ..."
+e "[Post] Making CBZ..."
 if [ ! -d "$1" ]; then
 e "\n[Error] Not a folder. Something went wrong."
 exit 1
@@ -49,20 +94,10 @@ exit 1
 fi
 zip -r "$1.zip" "$1" > /dev/null 2>&1
 mv "$1.zip" "$1.cbz" > /dev/null 2>&1
-n "$B$B\b[Post] Cleanup..."
+e "[Post] Cleanup..."
 rm -rf "$1"
-e "$BFinished.    "
+e "[Post] Finished!"
 }
-_identify=$(which identify 2>/dev/null)
-CHECK_VALID=0
-if [ -f "$_identify" ]; then
-CHECK_VALID=1
-fi
-_convert=$(which convert 2>/dev/null)
-HAVE_IMAGICK=0
-if [ -f "$_identify" ]; then
-HAVE_IMAGICK=1
-fi
 verify() {
 if [ -f $_identify ]; then
 $_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
@@ -71,10 +106,6 @@ return $_IDRES
 fi
 return 0
 }
-_SC="|"
-_NUM=0
-_FIRST=1
-message=""
 ss() {
 if [ $_FIRST = 1 ]; then
 _FIRST=0
@@ -101,74 +132,41 @@ for (( i=0 ; i < _STS ; i++ )); do
 n "\b"
 done
 }
-se() {
+ss_done() {
 for (( i=0 ; i < _NUM ; i++ )); do
 n "\b"
 done
-e "\b\b\b[OK]"
+e "\b\b\b[OK]  "
 }
 mimetype() {
 o "$(file --mime-type "$1" | sed 's/.* //g')"
 }
-FETCH_RESULT="0"
-FETCH_CMD=""
-_FETCHTOOL=0
-_BUSYBOX=0
-fetch_detect() {
-_wget="$(which wget 2>/dev/null)"
-_curl="$(which curl 2>/dev/null)"
-_aria="$(which aria2c 2>/dev/null)"
-if [ ! "$_wget" = "" ]; then
-common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
-if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
-o "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
-common_opts=" -q -c -U \"Mozilla/4.0\""
-_BUSYBOX=1
-fi
-FETCH_CMD="$_wget $common_opts"
-_FETCHTOOL=1
-else
-if [ ! "$_curl" = "" ]; then
-FETCH_CMD=$_curl
-_FETCHTOOL=2
-else
-if [ ! "$_aria" = "" ]; then
-FETCH_CMD=$_aria
-_FETCHTOOL=3
-fi
-fi
-fi
-return $FETCH_RESULT
-}
-COOKIES=0
-COOKIEJAR=$(pwd)/cookiejar
 s_login() {
 if [ $_FETCHTOOL = 1 ]; then
-_CMD="$FETCH_CMD --post-data='$1=$3&$2=$4' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O /dev/null"
+_CMD="$_FETCH_CMD --post-data='$1=$3&$2=$4&$6' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O/dev/null"
 elif [ $_FETCHTOOL = 2 ]; then
-_CMD="$FETCH_CMD -d '$1=$3&$2=$4' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
+_CMD="$_FETCH_CMD -d '$1=$3&$2=$4&$6' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
 elif [ $_FETCHTOOL = 3 ]; then
-_CMD="$FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
+o "[Warn] aria2c can't post at the moment; this will fail to get required cookies."
+_CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
 fi
 eval " $_CMD" 2>/dev/null
 FETCH_RESULT=$?
 }
 fetch() {
 if [ $_FETCHTOOL = 1 ]; then
-_CMD="$FETCH_CMD \"$1\""
-if [ $COOKIES = 1 ]; then
+_CMD="$_FETCH_CMD \"$1\""
+if [ $use_cookies = 1 ]; then
 _CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies"
 fi
-if [ "$2" = "" ]; then
-_CMD="$_CMD -O $(basename "$1")"
-elif [ "$2" = "-" ]; then
+if [ "$2" = "-" ]; then
 _CMD="$_CMD -O -"
-else
+elif [ ! "$2" = "" ]; then
 _CMD="$_CMD -O \"$2\""
 fi
 elif [ $_FETCHTOOL = 2 ]; then
-_CMD="$FETCH_CMD $1"
-if [ $COOKIES = 1 ]; then
+_CMD="$_FETCH_CMD $1"
+if [ $use_cookies = 1 ]; then
 _CMD="$_CMD -b $COOKIEJAR -c $COOKIEJAR"
 fi
 if [ "$2" = "" ]; then
@@ -179,8 +177,8 @@ else
 _CMD="$_CMD > \"$2\""
 fi
 elif [ $_FETCHTOOL = 3 ]; then
-_CMD="$FETCH_CMD $1"
-if [ $COOKIES = 1 ]; then
+_CMD="$_FETCH_CMD $1"
+if [ $use_cookies = 1 ]; then
 _CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR"
 fi
 if [ "$2" = "" ]; then
@@ -268,8 +266,10 @@ sed \
 -e "s/&hearts;/♥/g" \
 -e "s/&#9829;/♥/g" \
 -e "s/&diams;/♦/g" \
--e "s/&#9830;/♦/g" \
-\
+-e "s/&#9830;/♦/g"
+}
+remove_illegal() {
+sed \
 -e "s/|/-/g" \
 -e "s|/|-|g"
 }
@@ -319,7 +319,7 @@ rm $CUR.htm
 ss "$CUR"
 done
 PAGES=$(( CUR - 1 ))
-se
+ss_done
 cd ..
 cbz_make "$folder"
 }
@@ -387,7 +387,7 @@ fetch "http://dynasty-scans.com$image"
 ss "$CUR"
 CUR=$(( CUR + 1 ))
 done
-se
+ss_done
 cd ..
 cbz_make "$folder"
 }
@@ -406,7 +406,19 @@ eh_l="E-Hentai"
 eh_u="http://e-hentai.org/"
 eh_state=1
 eh_filt=0
-eh_note="H@H is an unreliable CDN. Also, they count images by logged in IP."
+eh_note="Logging in will result in HQ images and less H@H peer-related issues =_=;"
+eh_uselogin=1
+login_eh() {
+use_cookies=1
+s_login "UserName" "PassWord" "$1" "$2" "http://forums.e-hentai.org/index.php?act=Login&CODE=01" \
+"CookieDate=1&b=&bt=&referer=http://forums.e-hentai.org/?act=idx"
+user="$(fetch "http://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
+if [ ! "$user" = "" ]; then
+o "[E-H] Logged in as: $user"
+exit 0
+fi
+exit 1
+}
 a_eh() {
 if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 return 1
@@ -414,29 +426,52 @@ fi
 return 0
 }
 d_eh() {
+LOGGEDIN=0
+use_cookies=0
+if [ -e "cookiejar" ]; then
+grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+RES=$?
+if [ $RES = 0 ]; then
+o "[E-H] We seem to have cookies...using them."
+LOGGEDIN=1
+use_cookies=1
+fi
+fi
 sitepage=$1
+o "[E-H] Fetching index page..."
 fetch "${sitepage}/?nw=always" tmp.1
-folder="$(cat tmp.1 | grep 'title>' - | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
+folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
 mkdir -p "$folder"
 cd "$folder"
-DATA=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/g' | sed 's/"><img alt.*//g' | grep 'url:')
+page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 rm ../tmp.1
-eval "urls=(`echo $DATA | tr '\n' ' ' | sed 's/url://g'`)"
-page="${urls[0]}"
-o -n "[e-h] Downloading '$folder' "
+o -n "[E-H] Downloading '$folder' "
+if [ $LOGGEDIN = 1 ]; then
+o -n "[HQ] "
+else
+o -n "[LQ] "
+fi
 doneyet=0
 CDNFAIL=0
-CUR=0
+CUR=1
 while [ $doneyet == 0 ]; do
-get=($(fetch "$page" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'keystamp'))
+fetch "$page" "$CUR.htm"
+lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||')
+hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+next_cnt=$((CUR + 1))
+next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 extra=""
-if [ "${get[0]}" == "$page" ]; then
+if [ "$next" == "" ]; then
 doneyet=1
 fi
 if [ $CDNFAIL -ge 3 ]; then
 FETCH_RESULT=1
 else
-fetch "${get[1]}" "$extra"
+if [ $LOGGEDIN = 0 ]; then
+fetch "$lq"
+else
+fetch "$hq"
+fi
 fi
 if [ ! $FETCH_RESULT = 0 ]; then
 message=" :("
@@ -444,10 +479,16 @@ CDNFAIL=$((CDNFAIL + 1))
 if [ $CDNFAIL -ge 3 ]; then
 message=" >:("
 fi
-notload=$(fetch "$page" "-" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
-get=($(fetch "$page?nl=${notload}" "-" | tr '<' '\n' | grep -e 'a href' -e 'img src' - | sed 's/a href="//g' | sed 's/img src="//g' | sed 's/".*//g' | grep -B1 -A0 'image.php' | entity_to_char ))
-extra="$(echo ${get[1]} | sed 's/.*n=//')"
-fetch "${get[1]}" "$extra"
+notload=$(cat $CUR.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+fetch "$notload" "$CUR.htm"
+lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||')
+hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+if [ $LOGGEDIN = 0 ]; then
+fetch "$lq"
+else
+fetch "$hq"
+fi
 if [ ! $FETCH_RESULT = 0 ]; then
 message=" >:["
 else
@@ -456,17 +497,18 @@ fi
 else
 CUR=$(( CUR + 1 ))
 fi
-if [ ! "${get[0]}" = "" ]; then
-page="${get[0]}"
+if [ ! "$next" = "" ]; then
+page="$next"
 fi
+rm $((CUR - 1)).htm
 ss "$CUR"
 done
-se
+ss_done
 cd ..
 cbz_make "$folder"
 }
 s_eh() {
-e "[e-h] This isn't supported, considering there's really zero categorization here."
+e "[E-H] This isn't supported, considering there's really zero categorization here."
 }
 fakku_l="FAKKU"
 fakku_u="https://fakku.net/"
@@ -494,7 +536,7 @@ fetch "https:$image"
 ss "$CUR"
 CUR=$(( CUR + 1 ))
 done
-se
+ss_done
 cd ..
 cbz_make "$folder"
 }
@@ -587,7 +629,7 @@ ss "$NUM"
 fi
 done
 cd ..
-se
+ss_done
 rm tmp.htm
 cbz_make "$fullname"
 }
@@ -621,12 +663,12 @@ fetch "$image"
 ss "$CUR"
 CUR=$(( CUR + 1 ))
 done
-se
+ss_done
 cd ..
 cbz_make "$folder"
 }
 s_mpark() {
-o -n "[Mangapark] Scraping Chapters..."
+e "[Mangapark] Scraping Chapters..."
 fetch "$1" scrape.htm
 grep 'class="ch sts"' scrape.htm > batch.txtr
 sed -i 's|^.*href="||g' batch.txtr
@@ -638,9 +680,9 @@ sed -i "s|/1$||g" batch.txtr
 sed -i "s|/3-1$||g" batch.txtr
 sed -i "s|/6-1$||g" batch.txtr
 sed -i "s|/10-1$||g" batch.txtr
-tac batch.txtr >> batch.txt || cat batch.txtr >> batch.txt
+cat batch.txtr | reverse_lines >> batch.txt
 rm scrape.htm batch.txtr
-e "$B$B$B\b\b[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+e "[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 mread_l="Mangareader"
 mread_u="http://www.mangareader.net/"
@@ -673,7 +715,7 @@ ss
 fi
 done
 PAGES=$(( CUR - 1 ))
-se
+ss_done
 rm *.htm
 cd ..
 cbz_make "$folder"
@@ -686,7 +728,7 @@ niconicoseiga_u="http://seiga.nicovideo.jp"
 niconicoseiga_state=1
 niconicoseiga_filt=0
 niconicoseiga_note="Please login first, or make a cookiejar file."
-niconicoseiga_loginreq=1
+niconicoseiga_uselogin=1
 a_niconicoseiga() {
 if [ -n "`echo $1 | grep 'seiga.nicovideo.jp' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 return 1
@@ -694,14 +736,14 @@ fi
 return 0
 }
 login_niconicoseiga() {
-COOKIES=1
+use_cookies=1
 s_login "mail_tel" "password" "$1" "$2" "https://secure.nicovideo.jp/secure/login"
 }
 d_niconicoseiga() {
-COOKIES=1
+use_cookies=1
 name="$(basename $1)"
 fetch $1 "$name.htm"
-fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char)"
+fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char | remove_illegal)"
 if [ ! -f "$name.htm" ]; then
 o "[Niconico] No page found, aborting."
 return 1
@@ -721,7 +763,7 @@ COUNT=$((COUNT + 1))
 fetch "http://lohas.nicoseiga.jp/thumb/${ID}p" "${COUNT}.jpg"
 ss $COUNT
 done < ../$name.lst
-se
+ss_done
 cd ..
 rm $name.lst $name.htm
 cbz_make "$fullname"
@@ -732,7 +774,6 @@ o "[Niconico] Scraping chapters..."
 fetch "$1" "-" | grep 'class="episode"' | sed -e 's|.*<a href="||g' -e 's|?.*||g' -e 's|/watch|http://seiga.nicovideo.jp/watch|g' >> batch.txt
 o "[Niconico] Done."
 }
-fetch_detect
 auto() {
 for module in ${MODS[@]}; do
 eval a_$module $1
@@ -772,7 +813,7 @@ done
 mod_login() {
 for module in ${MODS[@]}; do
 if [ "$1" = "$module" ]; then
-if [ "$( eval echo \$${module}_loginreq )" = "1" ]; then
+if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
 eval login_$module \"$2\" \"$3\"
 exit 0
 else
@@ -912,7 +953,7 @@ n "no tool. Install one of: "
 fi
 o " (wget, curl, aria2c)"
 n "     Check broken images: "
-if [ $CHECK_VALID = 1 ]; then
+if [ $_CHECK_VALID = 1 ]; then
 if [ -f $_identify ]; then
 n "imagemagick ($_identify)"
 fi
@@ -921,7 +962,7 @@ else
 o "no"
 fi
 n "     Color:               "
-if [ $COLOR = 1 ]; then
+if [ $_COLOR = 1 ]; then
 color 1
 n "y"
 color 2
@@ -942,7 +983,7 @@ n "b"
 color 3
 o ")"
 type 0
-elif [ $COLOR = 2 ]; then
+elif [ $_COLOR = 2 ]; then
 color 1
 n "y"
 color 2
@@ -987,6 +1028,8 @@ e "     along with this program.  If not, see <http://www.gnu.org/licenses/>"
 o ""
 e "     The latest version of scangrab can always be found at the github"
 e "     page here: https://github.com/chaoskagami/scangrab"
+o ""
+e "     Build: $branch, $rev"
 }
 if [ "$1" = "auto" -o "$1" = "a" ]; then
 auto $2 $3
