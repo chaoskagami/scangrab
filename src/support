@@ -49,8 +49,6 @@ for ((i = 1, n = 2;; n = 1 << ++i)); do
 	fi
 done
 
-echo $MAX_INT
-
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
 	_COLOR=1
 	if [ -f $_tput ]; then
