@@ -98,7 +98,6 @@ dl_eh() {
 	while [ $doneyet == 0 ]; do
 		fetch "$page" "$CUR.htm"
 		lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-		echo $lq
 		hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
 		next_cnt=$((CUR + 1))
 		next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
@@ -112,7 +111,7 @@ dl_eh() {
 		if [ $CDNFAIL -ge 3 ]; then
 			FETCH_RESULT=1
 		else
-			if [ $LOGGEDIN = 0 ]; then
+			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
 				fetch "$lq" "$(basename $lq)"
 			else
 				# HQ version; this is the 'Download source resolution' button.
@@ -136,7 +135,7 @@ dl_eh() {
 			hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
 			next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 
-			if [ $LOGGEDIN = 0 ]; then
+			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
 				fetch "$lq"
 			else
 				fetch "$hq"
