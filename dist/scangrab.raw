@@ -1,5 +1,3 @@
-rev=137380dc4ec918365c2b9e588e12e5db9c5c0940
-branch=master
 #!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
 #
@@ -401,6 +399,8 @@ reverse_lines() {
         echo "${LINES[--I]}"
     done
 }
+rev=805a5ce4189fbe59f0d3dd6f7e82adff3e0c9199
+branch=master
 MODS=(batoto booru dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 #!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami

@@ -9,8 +9,6 @@ e() {
 echo -e "$@"
 }
 B="\b\b\b\b\b\b\b\b\b\b"
-rev=137380dc4ec918365c2b9e588e12e5db9c5c0940
-branch=master
 COOKIEJAR="$(pwd)/cookiejar"
 HAVE_IMAGICK=0
 FETCH_RESULT=0
@@ -306,6 +304,8 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
+rev=805a5ce4189fbe59f0d3dd6f7e82adff3e0c9199
+branch=master
 MODS=(batoto booru dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 batoto_l="Batoto"
 batoto_u="http://bato.to/"
