@@ -362,7 +362,7 @@ dl_booru() {
 
 	IMAGES=$COUNT
 
-	THROTTLE=1
+	THROTTLE=0
 	if (( IMAGES > 100 )); then
 		echo "[Booru] You're downloading a very large amount of images."
 		echo "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
@@ -375,12 +375,12 @@ dl_booru() {
 		url="$source$(cat $file | grep '^file-url: ' | sed 's|^file-url: ||g' | head -n1)"
 		id="$(cat $file | grep 'id: ' | sed 's|^id: ||g' | head -n1)"
 		ext="$(cat $file | grep '^file-ext: ' | sed 's|^file-ext: ||g' | head -n1)"
-		spinner "$COUNT"
+		spinner "$COUNT/$IMAGES"
 		FETCH_RESULT=1
 		while [ ! $FETCH_RESULT = 0 ]; do
 			fetch "$url" "img_${id}.${ext}"
 			if [ $THROTTLE = 1 ]; then
-				spinner "$COUNT zzz"
+				spinner "$COUNT/$IMAGES zzz"
 				sleep 5s
 			fi
 		done
@@ -389,7 +389,7 @@ dl_booru() {
 
 	spinner_done
 
-	# echo "[Booru] Done! Also, if you don't like the metadata, now would be a good time to delete it."
+	echo "[Booru] Done with download. If you don't care about the metadata, it is no longer needed."
 }
 
 scrape_booru() {
