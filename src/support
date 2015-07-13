@@ -162,22 +162,26 @@ spinner() {
 		_SPINNER_CHAR="|"
 	fi
 
-	_NUM=${#1}
-	if (( _NUM > _MOST )); then
-		_MOST=$_NUM
-	fi
-
 	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
+
+	_NUM=${#1}
+	if [ $_NUM -gt $_MOST ]; then
+		_MOST=$_NUM
+	fi
 
 	for (( i=0 ; i < _MOST ; i++ )); do
 		echo -ne " "
 	done
 
+	echo -ne "    "
+
 	for (( i=0 ; i < _MOST ; i++ )); do
 		echo -ne "\b"
 	done
+
+	echo -ne "\b\b\b\b"
 
 	echo -ne "[$1 $_SPINNER_CHAR]"
 

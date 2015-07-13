@@ -362,7 +362,7 @@ dl_booru() {
 
 	IMAGES=$COUNT
 
-	THROTTLE=0
+	THROTTLE=1
 	if (( IMAGES > 100 )); then
 		echo "[Booru] You're downloading a very large amount of images."
 		echo "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
