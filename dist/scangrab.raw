@@ -162,22 +162,26 @@ spinner() {
 		_SPINNER_CHAR="|"
 	fi
 
-	_NUM=${#1}
-	if (( _NUM > _MOST )); then
-		_MOST=$_NUM
-	fi
-
 	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
+
+	_NUM=${#1}
+	if [ $_NUM -gt $_MOST ]; then
+		_MOST=$_NUM
+	fi
 
 	for (( i=0 ; i < _MOST ; i++ )); do
 		echo -ne " "
 	done
 
+	echo -ne "    "
+
 	for (( i=0 ; i < _MOST ; i++ )); do
 		echo -ne "\b"
 	done
+
+	echo -ne "\b\b\b\b"
 
 	echo -ne "[$1 $_SPINNER_CHAR]"
 
@@ -397,7 +401,7 @@ reverse_lines() {
         echo "${LINES[--I]}"
     done
 }
-rev=97089b0dd9d7873466ce33048f5b1d64b545b36c
+rev=d97a030c44a586b4859d80a6ed6464bfc500be2c
 branch=master
 MODS=(batoto booru dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 #!/bin/bash
@@ -929,7 +933,7 @@ dl_booru() {
 
 	IMAGES=$COUNT
 
-	THROTTLE=0
+	THROTTLE=1
 	if (( IMAGES > 100 )); then
 		echo "[Booru] You're downloading a very large amount of images."
 		echo "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
