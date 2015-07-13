@@ -31,8 +31,6 @@ _FETCHTOOL=0
 _BUSYBOX=0
 _SPINNER_CHAR="|"
 _NUM=0
-_FIRST=1
-_MOST=0
 
 # Tools. Use these variables instead of actual command names.
 _tput="$(which tput 2>/dev/null)"
@@ -146,12 +144,6 @@ verify() {
 }
 
 spinner() {
-	if [ $_FIRST = 1 ]; then
-		_FIRST=0
-	else
-		echo -ne "\b\b\b\b"
-	fi
-
 	if [ "$_SPINNER_CHAR" = "|" ]; then
 		_SPINNER_CHAR="/"
 	elif [ "$_SPINNER_CHAR" = "/" ]; then
@@ -162,56 +154,42 @@ spinner() {
 		_SPINNER_CHAR="|"
 	fi
 
+	# Clear previous output
 	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
 
-	_NUM=${#1}
-	if [ $_NUM -gt $_MOST ]; then
-		_MOST=$_NUM
-	fi
-
-	for (( i=0 ; i < _MOST ; i++ )); do
+	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne " "
 	done
 
-	echo -ne "    "
-
-	for (( i=0 ; i < _MOST ; i++ )); do
+	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
 
-	echo -ne "\b\b\b\b"
+	STR="[$1 $_SPINNER_CHAR] $message"
+	_NUM="${#STR}"
 
-	echo -ne "[$1 $_SPINNER_CHAR]"
-
-	_STS=${#message[@]}
-	echo -ne "$message"
-	for (( i=1 ; i < _STS ; i++ )); do
-		echo -ne "\b"
-	done
+	echo -ne "$STR"
 }
 
 spinner_done() {
-	# Move back.
-
+	# Clear previous output
 	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
 
-	for (( i=0 ; i < _MOST ; i++ )); do
+	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne " "
 	done
 
-	for (( i=0 ; i < _MOST ; i++ )); do
+	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
 
 	_SPINNER_CHAR="|"
 	_NUM=0
-	_FIRST=1
-	_MOST=0
-	echo -e "\b\b\b\b[OK]"
+	echo -e "[OK]"
 }
 
 mimetype() {

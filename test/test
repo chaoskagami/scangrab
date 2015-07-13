@@ -135,3 +135,23 @@ if [ -f ../src/modules/mread ]; then
 		dl_mread "http://www.mangareader.net/440-27882-1/watashi-ni-xx-shinasai/chapter-1.html"
 	fi
 fi
+
+# Spinner.
+if [ "$1" = "spinner" ]; then
+	MAX=20
+	ADJ=4
+	echo -ne "[Test] Spinner test... "
+	ON=1
+	for (( spinc = 0 ; spinc < MAX ; spinc++ )); do
+		spinner "$spinc / $MAX"
+		sleep 3
+		if [ $ON = 1 ]; then
+			message="AAAAA"
+			ON=0
+		else
+			message="b"
+			ON=1
+		fi
+	done
+	spinner_done
+fi
