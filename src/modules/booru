@@ -1,0 +1,401 @@
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# This is another generic; also, there's a bit of extra here. You can provide either a URL
+# or a known Booru's name, and use the filter for a tag.
+
+# e.g. scangrab booru danbooru touhou
+# will fetch everything from the touhou tag. (which is expensive. How many damned pages are there?)
+
+# Past that, you can also specify how many pages, like so:
+#   scangrab booru danbooru touhou:50
+#   (downloads 50 pages)
+# Or how many images you want:
+#   scangrab booru danbooru touhou::100
+#   (downloads 100 images)
+# You can also specify ranges if you want to get specific; like so:
+#   scangrab booru danbooru touhou:20-30:10-150
+#   (starts at page twenty, downloads till page 30. Skips 10 images, and downloads 140.
+# Because of this, it's recommended to avoid passing URLs. They get cut up for parameters, anyways.
+
+# Danbooru also functions differently; it is the only grabber which DOES NOT zip up things.
+# By default, things are stored in folders by the tag you grab by, and named according to the image's
+# MD5 (as danbooru does.) A file is stored with it that has meta-info from danbooru.
+
+booru_longname="*Booru"
+booru_url="Generic"
+booru_state=2
+booru_filt=1
+
+auto_booru() {
+	if [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
+		# Danbooru / Safebooru
+		return 1
+	elif [ "$1" = "danbooru" ]; then
+		# Danbooru direct.
+		return 1
+	elif [ "$1" = "safebooru" ]; then
+		# Safebooru direct.
+		return 1
+	fi
+
+	return 0
+}
+
+# Fetches one page worth of images;
+booru_fetchpageworth() {
+	echo "Under construction."
+}
+
+# Because the syntax is hell.
+booru_syntax_help() {
+	echo "The booru downloader requires parameters. For reference, this is after the booru name/url:"
+	echo "    Usage: booru NAME TAGLIST SPEC [FOLDERNAME]"
+	echo "TAGLIST:"
+	echo "  Here's some quick help: after the booru name, you should specify some of these:"
+	echo "     tagname                   - Specify a tag."
+	echo "     tagname1,tagname2,...     - Specify multiple tags."
+	echo "     pool:poolname             - Download from a pool."
+	echo ""
+	echo "  The same syntax as with boorus can be used with tags. For example:"
+	echo "     art:tagname               - Search by artist."
+	echo "     char:tagname              - Search by character."
+	echo "     copy:tagname              - Search by copyright."
+	echo "     user:username             - Anything uploaded by username."
+	echo "     fav:username              - Anything favorited by username."
+	echo "     ordfav:username           - Anything favorited by username (chronological.)"
+	echo "     md5:hash                  - Posts with a specific MD5 hash."
+	echo "     rating:rate               - Safety rating, e.g. safe, questionable, explicit..."
+	echo "     And so on. See http://safebooru.donmai.us/wiki_pages/43049 for a more exhaustive reference."
+	echo ""
+	echo "  And a quick reference on modifiers:"
+	echo "     tag1,-tag2        - Anything matching tag1, but not tag2."
+	echo "     ~tag1,~tag2       - Anything marked tag1 or tag2."
+	echo "     tag1,tag2         - Anything marked with both tag1 AND tag2."
+	echo "     *tag*             - All tags containing 'tag'."
+	echo ""
+	echo "SPEC:"
+	echo "  Syntax:"
+	echo "    p10                - Download page 10."
+	echo "    l50,p10            - 50 images per page, download page 10. (This is a lowercase L if your font doesn't distinguish.)"
+	echo "    i100               - Download 100 images."
+	echo "    i5-100             - Download images 5-100."
+	echo "    p10-50             - Download from page 10 to 50 inclusive."
+	echo "    l50,p10,i100       - Pages with 50 images, save the first 100 images starting at page 10."
+	echo "    l50,p5-10,i100     - Pages with 50 images, save the first 100 images starting at page 5."
+	echo "                         This syntax is legal, but -10 is ignored."
+	echo "    pages:50           - Download 50 pages. Long syntax."
+	echo "    images:100         - Download 100 images. Long syntax."
+	echo "    limit:50           - 50 images on a page. Long syntax."
+	echo "  A minor note is that *technically* limit:N/lN is a tag for booru."
+	echo "  It can be specified as a tag, but may screw up download code, so do that here."
+	echo ""
+	echo "FOLDERNAME (optional):"
+	echo "  If not specified, it uses the format 'NAME - TAGLIST'."
+	exit 1
+}
+
+dl_booru() {
+	if [ "$1" = "" ] || [ "$2" = "" ] || [ "$3" = "" ]; then
+		booru_syntax_help
+	fi
+
+	source=""
+	if [ -n "$(echo $1 | grep 'safebooru.donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "safebooru" ]; then
+		# Safebooru directly. NEVER MOVE THIS CHECK BENEATH DANBOORU. THE GREP FOR DANBOORU WILL MATCH.
+		source="http://safebooru.donmai.us"
+		name="safebooru"
+	elif [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "danbooru" ]; then
+		# Danbooru
+		source="http://danbooru.donmai.us"
+		name="danbooru"
+	else
+		# Unknown, but apparently a booru.
+		source="$1"
+		echo "[Booru] This type of Booru isn't specified as supported."
+		echo "[Booru] It may work, or it may completely bomb out."
+		echo "[Booru] If it works, please submit a bug report so I can add it to the supported list."
+		name="$(echo $1 | sed -e 's|https://||g' -e 's|http://||g' -e 's|/.*||g')"
+	fi
+
+	# Example URL transform: danbooru / touhou,highres / l50,10-20
+	#   BASE_URL=danbooru.donmai.us/posts?tags=touhou+highres+limit%3A50&page=
+	#   START_INDEX=10
+	#   END_INDEX=20
+
+	shift
+
+	declare -a tagarray
+	declare -a sizearray
+	tagarray=($(echo "$1" | tr ',' ' '))
+	sizearray=($(echo "$2" | tr ',' ' '))
+
+	declare -a final
+	page_index=0
+	# URL
+	final[0]="$source/posts?utf8=✓&tags="
+	# Tags
+	final[1]=""
+	# Images per page. Blank if no.
+	final[2]=""
+	# page=
+	final[3]="&page="
+	# Page Number
+	final[4]=1
+
+	# Range to download.
+	declare -a pagerange
+	pagerange[0]=1
+	pagerange[1]=1
+	declare -a imagerange
+
+	# Paged mode by default.
+	# 1=paged, 2=images
+	mode=1
+
+	TAGCOUNT=0
+	# Tag array can be pasted together.
+	for (( i=0 ; i < ${#tagarray[@]} ; i++ )); do
+		if [ ! "$i" = "0" ] && [ ! "$((i + 1))" = "${#tagarray}" ]; then
+			final[1]="${final[1]}+"
+		fi
+		tag="$(echo ${tagarray[i]} | sed -e 's|:|%3A|g')"
+		final[1]="${final[1]}${tag}"
+		if [[ ! "$tag" == *:* ]]; then
+			TAGCOUNT=$((TAGCOUNT + 1))
+		fi
+	done
+
+	for (( i=0 ; i < ${#sizearray[@]} ; i++ )); do
+		if [[ "${sizearray[i]}" == pages:* ]] || [[ "${sizearray[i]}" == p* ]]; then
+			pagerange=($(echo "${sizearray[i]}" | tr -d 'p' | tr '-' ' '))
+			if [ "${pagerange[1]}" = "" ]; then
+				pagerange[1]=${pagerange[0]}
+			fi
+			final[4]=${pagerange[0]}
+		elif [[ "${sizearray[i]}" == limit:* ]] || [[ "${sizearray[i]}" == l* ]]; then
+			if [[ ! "${sizearray[i]}" == "limit:*" ]]; then
+				final[2]="+$(echo ${sizearray[i]} | sed 's|l|limit:|')"
+			else
+				final[2]="+${sizearray[i]}"
+			fi
+			final[2]="$(echo ${final[2]} | sed -e 's|:|%3A|g')"
+		elif [[ "${sizearray[i]}" == images:* ]] || [[ "${sizearray[i]}" == i* ]]; then
+			imagerange=($(echo "${sizearray[i]}" | tr -d 'i' | tr '-' ' '))
+			if [ "${imagerange[1]}" = "" ]; then
+				imagerange[1]=${imagerange[0]}
+				imagerange[0]=1
+			fi
+			mode=2
+		elif [[ "${sizearray[i]}" == "all" ]]; then
+			# 1st page.
+			pagerange[0]=1
+			# Arbitrarily high number that will never be reached. Maybe. Dunno.
+			# Point is, we stop when no images can be extracted from the page.
+			pagerange[1]=$MAX_INT
+
+			final[4]=${pagerange[0]}
+		fi
+	done
+
+	echo "[Booru] Info:"
+	echo "[Booru]   Fetching URL $(echo ${final[0]}${final[1]}${final[2]}${final[3]} | tr -d ' ')"
+	echo -n "[Booru]   Will download "
+	if [ $mode = 1 ]; then
+		if [ "${pagerange[0]}" = "${pagerange[1]}" ]; then
+			echo "page ${pagerange[0]}."
+		else
+			TO=${pagerange[1]}
+			if [ $TO = $MAX_INT ]; then
+				TO="Max"
+			fi
+			echo "pages ${pagerange[0]} to $TO."
+		fi
+	else
+		# XXX - Why in god's name would a user do this? Dunno, but handle their idiocy anyways.
+		if [ "${imagerange[0]}" = "${imagerange[1]}" ]; then
+			echo -n "image ${imagerange[0]}"
+		else
+			echo -n "images ${imagerange[0]} to ${imagerange[1]}"
+		fi
+		echo ", starting from page ${pagerange[1]}."
+	fi
+
+	if [ ! "${final[2]}" = "" ]; then
+		echo "[Booru]   Requesting $(echo ${final[2]} | sed 's|+limit%3A||') images per page."
+	fi
+	if (( $TAGCOUNT >= 2 )); then
+		echo "[Booru]   Warning, more than two normal tags. Some boorus don't like this."
+	fi
+
+
+	if [ ! "$3" = "" ]; then
+		tagdir="$3"
+	else
+		tagdir="$name - $1"
+	fi
+
+	echo "[Booru]   Output to folder '$tagdir'."
+
+	mkdir -p "$tagdir"
+	cd "$tagdir"
+
+	echo -n "[Booru] Fetching pages... "
+
+	if [ $mode = 1 ]; then
+		echo -n '' > meta.txt
+
+		for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
+			final[4]=$range
+
+			spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
+
+			FETCH_RESULT=1
+			FAILS=0
+			while [ ! $FETCH_RESULT = 0 ]; do
+				fetch "$(echo ${final[@]} | tr -d ' ')" "page${range}.htm"
+				
+				if [ ! $FETCH_RESULT = 0 ]; then
+					FAILS=$((FAILS + 1))
+					message=" :<"
+					spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
+					if (( $FAILS >= 5 )); then
+						echo -e "\n[Booru] Too many failures. Aborting, sorry."
+						exit 1
+					fi
+				fi
+			done
+
+			BEFORE=$(wc -l meta.txt | sed 's| .*||g')
+			grep '<article id' -A19 "page${range}.htm" | sed -e 's|="|: |g' -e 's|data-||g' -e 's|".*||g' -e 's|^[[:space:]]*||g' -e '/<article id/d' -e '/--/d' >> meta.txt
+			rm "page${range}.htm"
+			AFTER=$(wc -l meta.txt | sed 's| .*||g')
+			
+			if (( BEFORE == AFTER )); then
+				break
+			fi
+		done
+
+		spinner_done
+	elif [ $mode = 2 ]; then
+		echo -n '' > meta-tmp.txt
+
+		quit=0
+		for (( range=${pagerange[0]} ; quit == 0 ; range++ )); do
+			final[4]=$range
+
+			TO=${pagerange[1]}
+			if [ $TO = $MAX_INT ]; then
+				TO="Max"
+			fi
+			spinner "${range} -> ${pagerange[0]}/$TO"
+
+			FETCH_RESULT=1
+			FAILS=0
+			while [ ! $FETCH_RESULT = 0 ]; do
+				fetch "$(echo ${final[@]} | tr -d ' ')" "page${range}.htm"
+				
+				if [ ! $FETCH_RESULT = 0 ]; then
+					FAILS=$((FAILS + 1))
+					message=" :<"
+					spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
+					if (( $FAILS >= 5 )); then
+						echo -e "\n[Booru] Too many failures. Aborting, sorry."
+						exit 1
+					fi
+				fi
+			done
+
+			BEFORE=$(wc -l meta-tmp.txt | sed 's| .*||g')
+
+			grep '<article id' -A19 "page${range}.htm" | sed -e 's|="|: |g' -e 's|data-||g' -e 's|".*||g' -e 's|^[[:space:]]*||g' -e '/<article id/d' -e '/--/d' >> meta-tmp.txt
+			rm "page${range}.htm"
+			
+			lines=$(wc -l meta-tmp.txt | sed 's| .*||g')
+
+			if (( BEFORE == lines )); then
+				quit=1
+			fi
+			
+			lines=$((lines / 19))
+
+			if (( $lines >= ${imagerange[1]} )); then
+				quit=1
+			fi
+		done
+
+		spinner_done
+
+		echo "[Booru] Downloaded pages, processing..."
+		min=${imagerange[0]}
+		min=$((min - 1))
+		min=$((min * 19))
+		max=${imagerange[1]}
+		max=$((max - min))
+		max=$((max * 19))
+		cat meta-tmp.txt | tail -n +${min} | head -n ${max} > meta.txt
+	fi
+
+	echo "[Booru] Splitting metadata file... "
+	split -l19 -d meta.txt meta
+
+	rm meta.txt
+
+	echo -n "[Booru] Renaming metadata files to match Booru IDs... "
+	COUNT=1
+	for file in meta*; do
+		id="$(cat $file | grep 'id: ' | sed 's|^id: ||g' | head -n1)"
+		spinner "$COUNT"
+		mv "$file" "meta_${id}.txt" 2>/dev/null
+		COUNT=$((COUNT + 1))
+	done
+
+	spinner_done
+
+	IMAGES=$COUNT
+
+	if (( IMAGES > 100 )); then
+		echo "[Booru] You're downloading a very large amount of images."
+		echo "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
+		THROTTLE=1
+	fi
+
+	echo -n "[Booru] Metadata set up. Downloading images now... "
+	COUNT=1
+	for file in meta_*.txt; do
+		url="$source$(cat $file | grep '^file-url: ' | sed 's|^file-url: ||g' | head -n1)"
+		id="$(cat $file | grep 'id: ' | sed 's|^id: ||g' | head -n1)"
+		ext="$(cat $file | grep '^file-ext: ' | sed 's|^file-ext: ||g' | head -n1)"
+		spinner "$COUNT"
+		FETCH_RESULT=1
+		while [ ! $FETCH_RESULT = 0 ]; do
+			fetch "$url" "img_${id}.${ext}"
+			if [ $THROTTLE = 1 ]; then
+				spinner "$COUNT zzz"
+				sleep 5s
+			fi
+		done
+		COUNT=$((COUNT + 1))
+	done
+
+	spinner_done
+
+	# echo "[Booru] Done! Also, if you don't like the metadata, now would be a good time to delete it."
+}
+
+scrape_booru() {
+	exit 1
+}

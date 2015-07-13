@@ -32,6 +32,7 @@ _BUSYBOX=0
 _SPINNER_CHAR="|"
 _NUM=0
 _FIRST=1
+_MOST=0
 
 # Tools. Use these variables instead of actual command names.
 _tput="$(which tput 2>/dev/null)"
@@ -40,6 +41,15 @@ _convert="$(which convert 2>/dev/null)"
 _wget="$(which wget 2>/dev/null)"
 _curl="$(which curl 2>/dev/null)"
 _aria="$(which aria2c 2>/dev/null)"
+
+for ((i = 1, n = 2;; n = 1 << ++i)); do
+	if [[ ${n:0:1} == '-' ]]; then
+		MAX_INT=$(((1 << i) - 1))
+		break
+	fi
+done
+
+echo $MAX_INT
 
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
 	_COLOR=1
@@ -144,10 +154,6 @@ spinner() {
 		echo -ne "\b\b\b\b"
 	fi
 
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne "\b"
-	done
-
 	if [ "$_SPINNER_CHAR" = "|" ]; then
 		_SPINNER_CHAR="/"
 	elif [ "$_SPINNER_CHAR" = "/" ]; then
@@ -159,20 +165,51 @@ spinner() {
 	fi
 
 	_NUM=${#1}
+	if (( _NUM > _MOST )); then
+		_MOST=$_NUM
+	fi
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+
+	for (( i=0 ; i < _MOST ; i++ )); do
+		echo -ne " "
+	done
+
+	for (( i=0 ; i < _MOST ; i++ )); do
+		echo -ne "\b"
+	done
+
 	echo -ne "[$1 $_SPINNER_CHAR]"
 
-	_STS=${#message}
+	_STS=${#message[@]}
 	echo -ne "$message"
-	for (( i=0 ; i < _STS ; i++ )); do
+	for (( i=1 ; i < _STS ; i++ )); do
 		echo -ne "\b"
 	done
 }
 
 spinner_done() {
+	# Move back.
+
 	for (( i=0 ; i < _NUM ; i++ )); do
 		echo -ne "\b"
 	done
-	echo -e "\b\b\b[OK]  "
+
+	for (( i=0 ; i < _MOST ; i++ )); do
+		echo -ne " "
+	done
+
+	for (( i=0 ; i < _MOST ; i++ )); do
+		echo -ne "\b"
+	done
+
+	_SPINNER_CHAR="|"
+	_NUM=0
+	_FIRST=1
+	_MOST=0
+	echo -e "\b\b\b\b[OK]"
 }
 
 mimetype() {
