@@ -74,13 +74,13 @@ if [ "$(readlink -f $TARGET)" = "$(pwd)/scangrab" ] || [ "$(readlink -f $TARGET)
 	exit 1
 fi
 
+# Append support.
+cat support > $TARGET.tmp
+
 # Regenerate revision file.
 git show | head -n1 | sed -e 's|commit |rev=|' > rev
 git branch | grep '*' | sed -e 's|* |branch=|g' >> rev
-cat rev > $TARGET.tmp
-
-# Append support.
-cat support >> $TARGET.tmp
+cat rev >> $TARGET.tmp
 
 # Module code.
 MODS=(`ls modules/`)
