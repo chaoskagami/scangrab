@@ -49,8 +49,6 @@ for ((i = 1, n = 2;; n = 1 << ++i)); do
 	fi
 done
 
-echo $MAX_INT
-
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
 	_COLOR=1
 	if [ -f $_tput ]; then
@@ -399,7 +397,7 @@ reverse_lines() {
         echo "${LINES[--I]}"
     done
 }
-rev=805a5ce4189fbe59f0d3dd6f7e82adff3e0c9199
+rev=97089b0dd9d7873466ce33048f5b1d64b545b36c
 branch=master
 MODS=(batoto booru dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 #!/bin/bash
@@ -622,11 +620,6 @@ auto_booru() {
 	fi
 
 	return 0
-}
-
-# Fetches one page worth of images;
-booru_fetchpageworth() {
-	echo "Under construction."
 }
 
 # Because the syntax is hell.
@@ -936,6 +929,7 @@ dl_booru() {
 
 	IMAGES=$COUNT
 
+	THROTTLE=0
 	if (( IMAGES > 100 )); then
 		echo "[Booru] You're downloading a very large amount of images."
 		echo "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
@@ -1784,10 +1778,10 @@ scrape_niconicoseiga() {
 
 auto() {
 	for module in ${MODS[@]}; do
-		eval auto_$module "$@"
+		auto_${module} "$@"
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
-			eval dl_$module "$@"
+			dl_${module} "$@"
 			exit 0
 		fi
 	done
@@ -1800,7 +1794,7 @@ batch() {
 	for chunk in "${LINES[@]}"; do
 		NEW="$NEW$0 $chunk ;"
 	done
-	eval $NEW
+	$NEW
 }
 
 autobatch() {
@@ -1810,15 +1804,15 @@ autobatch() {
 	for chunk in "${LINES[@]}"; do
 		NEW="$NEW$0 auto $chunk ;"
 	done
-	eval $NEW
+	$NEW
 }
 
 scrape() {
 	for module in ${MODS[@]}; do
-		eval auto_$module "$@"
+		auto_${module} "$@"
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
-			eval scrape_$module "$@"
+			scrape_${module} "$@"
 			exit 0
 		fi
 	done
@@ -1842,7 +1836,7 @@ mod_login() {
 					echo -ne "[$module] Password for $username (will not echo): "
 					read -s password
 				fi
-				eval login_$module \"$username\" \"$password\"
+				login_${module} "$username" "$password"
 				exit 0
 			else
 				echo "$module does not need login."
@@ -2092,24 +2086,22 @@ elif [ "$1" = "login" -o "$1" = "u" ]; then
 	# Site login.
 	shift
 	mod_login "$@"
-else # Not a common operation - either invalid or a module-op.
+else
+	# Not a common operation - either invalid, a module, or a lazy URL.
 
-	# Detect whether it is a module operation.
-
+	# Detect whether it is a module operation
 	MATCH=""
-
 	for module in ${MODS[@]}; do
 		if [ "$1" = "$module" ]; then
 			shift
-			MATCH="dl_$module \"$@\""
+			dl_${module} "$@"
+			exit 0
 		fi
 	done
 
-	if [ "$MATCH" = "" ]; then # All checks failed. Usage~
-		# URL as $1. Do auto. This won't return if it finds a module.
-		auto "$@"
-		help
-	else # Module operation.
-		eval $MATCH
-	fi
+	# Try to see if this was a lazy URL as first parameter.
+	auto "$@"
+
+	# All checks failed. Usage~
+	help
 fi

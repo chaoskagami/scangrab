@@ -35,7 +35,6 @@ MAX_INT=$(((1 << i) - 1))
 break
 fi
 done
-o $MAX_INT
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
 _COLOR=1
 if [ -f $_tput ]; then
@@ -304,7 +303,7 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-rev=805a5ce4189fbe59f0d3dd6f7e82adff3e0c9199
+rev=97089b0dd9d7873466ce33048f5b1d64b545b36c
 branch=master
 MODS=(batoto booru dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 batoto_l="Batoto"
@@ -402,9 +401,6 @@ elif [ "$1" = "safebooru" ]; then
 return 1
 fi
 return 0
-}
-booru_fetchpageworth() {
-o "Under construction."
 }
 booru_syntax_help() {
 o "The booru downloader requires parameters. For reference, this is after the booru name/url:"
@@ -648,6 +644,7 @@ COUNT=$((COUNT + 1))
 done
 ss_done
 IMAGES=$COUNT
+THROTTLE=0
 if (( IMAGES > 100 )); then
 o "[Booru] You're downloading a very large amount of images."
 o "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
@@ -1099,10 +1096,10 @@ o "[Niconico] Done."
 }
 auto() {
 for module in ${MODS[@]}; do
-eval a_$module "$@"
+a_${module} "$@"
 RETCHECK=$?
 if [ $RETCHECK = 1 ]; then
-eval d_$module "$@"
+d_${module} "$@"
 exit 0
 fi
 done
@@ -1113,7 +1110,7 @@ NEW=""
 for chunk in "${LINES[@]}"; do
 NEW="$NEW$0 $chunk ;"
 done
-eval $NEW
+$NEW
 }
 autobatch() {
 IFS=$'\n' read -d '' -r -a LINES < $1
@@ -1121,14 +1118,14 @@ NEW=""
 for chunk in "${LINES[@]}"; do
 NEW="$NEW$0 auto $chunk ;"
 done
-eval $NEW
+$NEW
 }
 scrape() {
 for module in ${MODS[@]}; do
-eval a_$module "$@"
+a_${module} "$@"
 RETCHECK=$?
 if [ $RETCHECK = 1 ]; then
-eval s_$module "$@"
+s_${module} "$@"
 exit 0
 fi
 done
@@ -1151,7 +1148,7 @@ read username
 n "[$module] Password for $username (will not echo): "
 read -s password
 fi
-eval login_$module \"$username\" \"$password\"
+login_${module} "$username" "$password"
 exit 0
 else
 o "$module does not need login."
@@ -1386,18 +1383,15 @@ scrape "$@"
 elif [ "$1" = "login" -o "$1" = "u" ]; then
 shift
 mod_login "$@"
-else # Not a common operation - either invalid or a module-op.
+else
 MATCH=""
 for module in ${MODS[@]}; do
 if [ "$1" = "$module" ]; then
 shift
-MATCH="d_$module \"$@\""
+d_${module} "$@"
+exit 0
 fi
 done
-if [ "$MATCH" = "" ]; then # All checks failed. Usage~
 auto "$@"
 help
-else # Module operation.
-eval $MATCH
-fi
 fi
