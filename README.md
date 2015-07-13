@@ -3,52 +3,38 @@ scangrab
 
 tl;dr - To install, fetch whatever blob floats your boat from the dist folder and put it somewhere as +x. If you need to report an issue, please use the scangrab.raw version - line numbers are fucked in the min, and even worse in sfx.
 
-Eventually, I became sick of the lack of manga downloading tools that were simple and well documented.
+NOW OFFICIALLY DUE FOR A RENAME. It supports danbooru now, so it's better than just a scangrabber. ;P
 
-To use this, you'll need the following incredibly common tools:
+The reason for this tool's existence is that I became sick of the lack of manga downloading tools that were simple and well documented.
 
- * grep
- * sed
- * wget
- * file
- * gunzip
- * zip
+To use this, you'll need GNU coreutils, as well as grep and sed. You'll also need a downloader tool, like wget, curl or aria2 (but caveat, posting with aria2 doesn't work so logins fail.)
 
-If you don't have these...well, try not running it on android or a netgear router. :P I also assume the GNU versions, so it may not work right on a mac.
+If you don't have these...well, try not running it on android or a netgear router. For mac people - I'm not testing it there, but if you can submit a PR with notes on how to do stuff so it works there, I'll take note of it for the future. For now, this tool is Linux/Cygwin/Macports only.
 
-I removed 'bash' from the tools list since the scripts are bash and zsh compatible (mostly. I test it once in a while to make sure.) If you want to use zsh, just change the shebang. However, it's still not POSIX, so dash probably will not work. Also, /bin/sh is a bad idea.
+I removed 'bash' from the tools list since the scripts are bash and zsh compatible (mostly. I test it once in a while to make sure. Wish there was a way to use checkbashisms to check zsh compatibility.) If you want to use zsh, just change the shebang. THIS SCRIPT IS NOT POSIX /bin/sh COMPLIANT. dash, mksh, tcsh and any other random not-bash or zsh shells will fail.
 
-Scangrab is incredibly simplistic, unlike a number of alternatives. It consists of multiple shell scripts, and that's it. Want one script? I've coded up the multiple scripts so they can all be clunked together into one script. Each module is isolated, and core shouldn't need to be adjusted much.
+Scangrab is incredibly simplistic, unlike a number of alternatives. It consists of multiple shell scripts, and that's it. All of them can be (and are, in dist) easily merged into a single monolithic script that can be moved around.
 
-Here's the list of sites it currently handles (with scraper indicating it can generate a series batch file, official indicating that it is not a scanlation site, but either an official source or localization, and weird requiring special syntax):
+Here's the list of sites it currently handles:
 
  * Mangareader
- * [scraper] Mangapark
- * [scraper] Batoto
- * [scraper] Dynasty Scans
- * [scraper] Fakku
- * [scraper] Most FoolSlide Sites (foolrulez, vortex-scans, etc)
- * [official, scraper] Niconico Seiga (Manga)
- * [official] MangaBox
- * [weird] *Booru (documented working: Danbooru, Safebooru)
+ * Mangapark
+ * Batoto
+ * Dynasty Scans
+ * Fakku
+ * Most FoolSlide Sites (working: foolrulez, vortex-scans, etc)
+ * Niconico Seiga (Manga)
+ * MangaBox
+ * Boorus (working: Danbooru, Safebooru)
  * E-H (Yeah, I know, I know...)
 
-Some of the scrapers accept an extra parameter of a filter. The modules supporting this:
+Some of the modules don't provide a scrape operation (read: E-H, Booru). Some of them support more advanced filters (like Batoto - language) and some of them are just plain syntactically weird (Booru)
 
- * Batoto (Extra: Language. Try 'English', 'Chinese', 'Russian', 'French', etc.)
+This is open source software relased under the terms of GPLv3. Read COPYING. Please pay heed to your local laws and don't redistribute anything you download. And support authors you like, obviously. That said, this software itself contains no content from any site and I'm not responsible for how you (ab)use it. Treat it like youtube-dl in terms of legality. It's grey. Plain slate grey.
 
-This is open source software relased under the terms of GPLv3. Read COPYING. Please pay heed to your local laws and don't redistribute anything you download. That said, this software itself contains no content and I'm not responsible for how you (ab)use it. Treat it like youtube-dl in terms of legality.
+The reason I originally coded this was Dynasty Scans' nonsense "five zips a day" limit. By viewing the images standalone, I'm already downloading more data than the zip. Also, disatisfaction in general with hakuneko - Adding more sources is impossible, because it consists of far too much GUI code. And other tools are windows-only, or batch unfriendly, or don't properly do titles. I made this originally as a crap shell script that was inflexible and somehow over the course of this repo's life it has become infinitely more flexible and smart. Originally, it wasn't even capable of checking whether a download succeeded. Seriously.
 
-To be honest, the reason I originally coded this was Dynasty Scans' nonsense "five zips a day" limit. By viewing the images standalone, I'm already downloading more data than the zip. Also, disatisfaction in general with hakuneko - Adding more sources is impossible, because it consists of far too much GUI code. And other tools are windows-only, or batch unfriendly, or don't properly do titles.
-
-The 'merge' script will merge all of the shell scripts into a more permanent and standalone scangrab.min. This can be dropped anywhere, say, /usr/local/bin. Merge's behavior can be adjusted, but the default is to minify and create an xz self-decompressing shell script. This is desirable because minifying shaves off 4k, and compressing cuts that down to a fourth. I'm a size-optimization freak. In detail, size comparisons are roughly:
-
- * Raw                        Same as git, add sizes.
- * Minified                   Roughly 1/2 Raw
- * Self-decompressing (gzip)  Roughly 1/5 Raw
- * Self-decompressing (bz2)   Roughly 1/5 Raw (10 bytes less than gz, give or take)
- * Self-decompressing (xz)    Roughly 1/5 Raw (200 bytes less than bz2, give or take)
-
+You may have noticed that I'm a size optimization freak, by the various versions in dist. The shxz, shgz, shbz is the scangrab.min file compressed into an archive, with an decompress to stdout and eval payload. They're compressed and only require the compression tools to execute. If you're running this somewhere that can't run xz, for example, you can pick the shgz variant or shbz2. Also, the scangrab.min file is minified - a lot of things are replaced with garbage equivalents. This works much like a javascript minifier. Why isn't there a bash minifier?
 
 A lot of temporary files may show up with some sites. This is normal. I may rewrite to use eval later everywhere.
 
