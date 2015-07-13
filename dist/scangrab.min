@@ -21,8 +21,6 @@ _FETCHTOOL=0
 _BUSYBOX=0
 _SC="|"
 _NUM=0
-_FIRST=1
-_MOST=0
 _tput="$(which tput 2>/dev/null)"
 _identify="$(which identify 2>/dev/null)"
 _convert="$(which convert 2>/dev/null)"
@@ -112,11 +110,6 @@ fi
 return 0
 }
 ss() {
-if [ $_FIRST = 1 ]; then
-_FIRST=0
-else
-n "\b\b\b\b"
-fi
 if [ "$_SC" = "|" ]; then
 _SC="/"
 elif [ "$_SC" = "/" ]; then
@@ -129,40 +122,29 @@ fi
 for (( i=0 ; i < _NUM ; i++ )); do
 n "\b"
 done
-_NUM=${#1}
-if [ $_NUM -gt $_MOST ]; then
-_MOST=$_NUM
-fi
-for (( i=0 ; i < _MOST ; i++ )); do
+for (( i=0 ; i < _NUM ; i++ )); do
 n " "
 done
-n "    "
-for (( i=0 ; i < _MOST ; i++ )); do
+for (( i=0 ; i < _NUM ; i++ )); do
 n "\b"
 done
-n "\b\b\b\b"
-n "[$1 $_SC]"
-_STS=${#message[@]}
-n "$message"
-for (( i=1 ; i < _STS ; i++ )); do
-n "\b"
-done
+STR="[$1 $_SC] $message"
+_NUM="${#STR}"
+n "$STR"
 }
 ss_done() {
 for (( i=0 ; i < _NUM ; i++ )); do
 n "\b"
 done
-for (( i=0 ; i < _MOST ; i++ )); do
+for (( i=0 ; i < _NUM ; i++ )); do
 n " "
 done
-for (( i=0 ; i < _MOST ; i++ )); do
+for (( i=0 ; i < _NUM ; i++ )); do
 n "\b"
 done
 _SC="|"
 _NUM=0
-_FIRST=1
-_MOST=0
-e "\b\b\b\b[OK]"
+e "[OK]"
 }
 mimetype() {
 o "$(file --mime-type "$1" | sed 's/.* //g')"
@@ -305,7 +287,7 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-rev=7089eac164f955e629422540130e80a9c3a1b2ca
+rev=410a196cc4d4748df2826e629ff69d313952e1ea
 branch=master
 MODS=(batoto booru dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 batoto_l="Batoto"
