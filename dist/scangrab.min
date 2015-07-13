@@ -305,7 +305,7 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-rev=6d3e5d9fc632479e812fad9b80c106e98843f460
+rev=fac56c48a25df3384e576ab6d6c8ca2ec44f5463
 branch=master
 MODS=(batoto booru dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 batoto_l="Batoto"
@@ -646,7 +646,7 @@ COUNT=$((COUNT + 1))
 done
 ss_done
 IMAGES=$COUNT
-THROTTLE=1
+THROTTLE=0
 if (( IMAGES > 100 )); then
 o "[Booru] You're downloading a very large amount of images."
 o "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
@@ -658,18 +658,19 @@ for file in meta_*.txt; do
 url="$source$(cat $file | grep '^file-url: ' | sed 's|^file-url: ||g' | head -n1)"
 id="$(cat $file | grep 'id: ' | sed 's|^id: ||g' | head -n1)"
 ext="$(cat $file | grep '^file-ext: ' | sed 's|^file-ext: ||g' | head -n1)"
-ss "$COUNT"
+ss "$COUNT/$IMAGES"
 FETCH_RESULT=1
 while [ ! $FETCH_RESULT = 0 ]; do
 fetch "$url" "img_${id}.${ext}"
 if [ $THROTTLE = 1 ]; then
-ss "$COUNT zzz"
+ss "$COUNT/$IMAGES zzz"
 sleep 5s
 fi
 done
 COUNT=$((COUNT + 1))
 done
 ss_done
+o "[Booru] Done with download. If you don't care about the metadata, it is no longer needed."
 }
 s_booru() {
 exit 1
