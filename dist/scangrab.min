@@ -9,7 +9,7 @@ e() {
 echo -e "$@"
 }
 B="\b\b\b\b\b\b\b\b\b\b"
-rev=acaa3739268015a919c474c765d937ab5d74135b
+rev=137380dc4ec918365c2b9e588e12e5db9c5c0940
 branch=master
 COOKIEJAR="$(pwd)/cookiejar"
 HAVE_IMAGICK=0
@@ -24,12 +24,20 @@ _BUSYBOX=0
 _SC="|"
 _NUM=0
 _FIRST=1
+_MOST=0
 _tput="$(which tput 2>/dev/null)"
 _identify="$(which identify 2>/dev/null)"
 _convert="$(which convert 2>/dev/null)"
 _wget="$(which wget 2>/dev/null)"
 _curl="$(which curl 2>/dev/null)"
 _aria="$(which aria2c 2>/dev/null)"
+for ((i = 1, n = 2;; n = 1 << ++i)); do
+if [[ ${n:0:1} == '-' ]]; then
+MAX_INT=$(((1 << i) - 1))
+break
+fi
+done
+o $MAX_INT
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
 _COLOR=1
 if [ -f $_tput ]; then
@@ -112,9 +120,6 @@ _FIRST=0
 else
 n "\b\b\b\b"
 fi
-for (( i=0 ; i < _NUM ; i++ )); do
-n "\b"
-done
 if [ "$_SC" = "|" ]; then
 _SC="/"
 elif [ "$_SC" = "/" ]; then
@@ -125,10 +130,22 @@ elif [ "$_SC" = "\\" ]; then
 _SC="|"
 fi
 _NUM=${#1}
+if (( _NUM > _MOST )); then
+_MOST=$_NUM
+fi
+for (( i=0 ; i < _NUM ; i++ )); do
+n "\b"
+done
+for (( i=0 ; i < _MOST ; i++ )); do
+n " "
+done
+for (( i=0 ; i < _MOST ; i++ )); do
+n "\b"
+done
 n "[$1 $_SC]"
-_STS=${#message}
+_STS=${#message[@]}
 n "$message"
-for (( i=0 ; i < _STS ; i++ )); do
+for (( i=1 ; i < _STS ; i++ )); do
 n "\b"
 done
 }
@@ -136,7 +153,17 @@ ss_done() {
 for (( i=0 ; i < _NUM ; i++ )); do
 n "\b"
 done
-e "\b\b\b[OK]  "
+for (( i=0 ; i < _MOST ; i++ )); do
+n " "
+done
+for (( i=0 ; i < _MOST ; i++ )); do
+n "\b"
+done
+_SC="|"
+_NUM=0
+_FIRST=1
+_MOST=0
+e "\b\b\b\b[OK]"
 }
 mimetype() {
 o "$(file --mime-type "$1" | sed 's/.* //g')"
@@ -279,7 +306,7 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-MODS=(batoto dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
+MODS=(batoto booru dynsc eh fakku foolsl mangabox mpark mread niconicoseiga)
 batoto_l="Batoto"
 batoto_u="http://bato.to/"
 batoto_state=1
@@ -362,6 +389,292 @@ en '\b'
 done
 e " Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
+booru_l="*Booru"
+booru_u="Generic"
+booru_state=2
+booru_filt=1
+a_booru() {
+if [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
+return 1
+elif [ "$1" = "danbooru" ]; then
+return 1
+elif [ "$1" = "safebooru" ]; then
+return 1
+fi
+return 0
+}
+booru_fetchpageworth() {
+o "Under construction."
+}
+booru_syntax_help() {
+o "The booru downloader requires parameters. For reference, this is after the booru name/url:"
+o "    Usage: booru NAME TAGLIST SPEC [FOLDERNAME]"
+o "TAGLIST:"
+o "  Here's some quick help: after the booru name, you should specify some of these:"
+o "     tagname                   - Specify a tag."
+o "     tagname1,tagname2,...     - Specify multiple tags."
+o "     pool:poolname             - Download from a pool."
+o ""
+o "  The same syntax as with boorus can be used with tags. For example:"
+o "     art:tagname               - Search by artist."
+o "     char:tagname              - Search by character."
+o "     copy:tagname              - Search by copyright."
+o "     user:username             - Anything uploaded by username."
+o "     fav:username              - Anything favorited by username."
+o "     ordfav:username           - Anything favorited by username (chronological.)"
+o "     md5:hash                  - Posts with a specific MD5 hash."
+o "     rating:rate               - Safety rating, e.g. safe, questionable, explicit..."
+o "     And so on. See http://safebooru.donmai.us/wiki_pages/43049 for a more exhaustive reference."
+o ""
+o "  And a quick reference on modifiers:"
+o "     tag1,-tag2        - Anything matching tag1, but not tag2."
+o "     ~tag1,~tag2       - Anything marked tag1 or tag2."
+o "     tag1,tag2         - Anything marked with both tag1 AND tag2."
+o "     *tag*             - All tags containing 'tag'."
+o ""
+o "SPEC:"
+o "  Syntax:"
+o "    p10                - Download page 10."
+o "    l50,p10            - 50 images per page, download page 10. (This is a lowercase L if your font doesn't distinguish.)"
+o "    i100               - Download 100 images."
+o "    i5-100             - Download images 5-100."
+o "    p10-50             - Download from page 10 to 50 inclusive."
+o "    l50,p10,i100       - Pages with 50 images, save the first 100 images starting at page 10."
+o "    l50,p5-10,i100     - Pages with 50 images, save the first 100 images starting at page 5."
+o "                         This syntax is legal, but -10 is ignored."
+o "    pages:50           - Download 50 pages. Long syntax."
+o "    images:100         - Download 100 images. Long syntax."
+o "    limit:50           - 50 images on a page. Long syntax."
+o "  A minor note is that *technically* limit:N/lN is a tag for booru."
+o "  It can be specified as a tag, but may screw up download code, so do that here."
+o ""
+o "FOLDERNAME (optional):"
+o "  If not specified, it uses the format 'NAME - TAGLIST'."
+exit 1
+}
+d_booru() {
+if [ "$1" = "" ] || [ "$2" = "" ] || [ "$3" = "" ]; then
+booru_syntax_help
+fi
+source=""
+if [ -n "$(echo $1 | grep 'safebooru.donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "safebooru" ]; then
+source="http://safebooru.donmai.us"
+name="safebooru"
+elif [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "danbooru" ]; then
+source="http://danbooru.donmai.us"
+name="danbooru"
+else
+source="$1"
+o "[Booru] This type of Booru isn't specified as supported."
+o "[Booru] It may work, or it may completely bomb out."
+o "[Booru] If it works, please submit a bug report so I can add it to the supported list."
+name="$(echo $1 | sed -e 's|https://||g' -e 's|http://||g' -e 's|/.*||g')"
+fi
+shift
+declare -a tagarray
+declare -a sizearray
+tagarray=($(echo "$1" | tr ',' ' '))
+sizearray=($(echo "$2" | tr ',' ' '))
+declare -a final
+page_index=0
+final[0]="$source/posts?utf8=✓&tags="
+final[1]=""
+final[2]=""
+final[3]="&page="
+final[4]=1
+declare -a pagerange
+pagerange[0]=1
+pagerange[1]=1
+declare -a imagerange
+mode=1
+TAGCOUNT=0
+for (( i=0 ; i < ${#tagarray[@]} ; i++ )); do
+if [ ! "$i" = "0" ] && [ ! "$((i + 1))" = "${#tagarray}" ]; then
+final[1]="${final[1]}+"
+fi
+tag="$(echo ${tagarray[i]} | sed -e 's|:|%3A|g')"
+final[1]="${final[1]}${tag}"
+if [[ ! "$tag" == *:* ]]; then
+TAGCOUNT=$((TAGCOUNT + 1))
+fi
+done
+for (( i=0 ; i < ${#sizearray[@]} ; i++ )); do
+if [[ "${sizearray[i]}" == pages:* ]] || [[ "${sizearray[i]}" == p* ]]; then
+pagerange=($(echo "${sizearray[i]}" | tr -d 'p' | tr '-' ' '))
+if [ "${pagerange[1]}" = "" ]; then
+pagerange[1]=${pagerange[0]}
+fi
+final[4]=${pagerange[0]}
+elif [[ "${sizearray[i]}" == limit:* ]] || [[ "${sizearray[i]}" == l* ]]; then
+if [[ ! "${sizearray[i]}" == "limit:*" ]]; then
+final[2]="+$(echo ${sizearray[i]} | sed 's|l|limit:|')"
+else
+final[2]="+${sizearray[i]}"
+fi
+final[2]="$(echo ${final[2]} | sed -e 's|:|%3A|g')"
+elif [[ "${sizearray[i]}" == images:* ]] || [[ "${sizearray[i]}" == i* ]]; then
+imagerange=($(echo "${sizearray[i]}" | tr -d 'i' | tr '-' ' '))
+if [ "${imagerange[1]}" = "" ]; then
+imagerange[1]=${imagerange[0]}
+imagerange[0]=1
+fi
+mode=2
+elif [[ "${sizearray[i]}" == "all" ]]; then
+pagerange[0]=1
+pagerange[1]=$MAX_INT
+final[4]=${pagerange[0]}
+fi
+done
+o "[Booru] Info:"
+o "[Booru]   Fetching URL $(echo ${final[0]}${final[1]}${final[2]}${final[3]} | tr -d ' ')"
+o -n "[Booru]   Will download "
+if [ $mode = 1 ]; then
+if [ "${pagerange[0]}" = "${pagerange[1]}" ]; then
+o "page ${pagerange[0]}."
+else
+TO=${pagerange[1]}
+if [ $TO = $MAX_INT ]; then
+TO="Max"
+fi
+o "pages ${pagerange[0]} to $TO."
+fi
+else
+if [ "${imagerange[0]}" = "${imagerange[1]}" ]; then
+o -n "image ${imagerange[0]}"
+else
+o -n "images ${imagerange[0]} to ${imagerange[1]}"
+fi
+o ", starting from page ${pagerange[1]}."
+fi
+if [ ! "${final[2]}" = "" ]; then
+o "[Booru]   Requesting $(echo ${final[2]} | sed 's|+limit%3A||') images per page."
+fi
+if (( $TAGCOUNT >= 2 )); then
+o "[Booru]   Warning, more than two normal tags. Some boorus don't like this."
+fi
+if [ ! "$3" = "" ]; then
+tagdir="$3"
+else
+tagdir="$name - $1"
+fi
+o "[Booru]   Output to folder '$tagdir'."
+mkdir -p "$tagdir"
+cd "$tagdir"
+o -n "[Booru] Fetching pages... "
+if [ $mode = 1 ]; then
+o -n '' > meta.txt
+for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
+final[4]=$range
+ss "${range} -> ${pagerange[0]}/${pagerange[1]}"
+FETCH_RESULT=1
+FAILS=0
+while [ ! $FETCH_RESULT = 0 ]; do
+fetch "$(echo ${final[@]} | tr -d ' ')" "page${range}.htm"
+if [ ! $FETCH_RESULT = 0 ]; then
+FAILS=$((FAILS + 1))
+message=" :<"
+ss "${range} -> ${pagerange[0]}/${pagerange[1]}"
+if (( $FAILS >= 5 )); then
+e "\n[Booru] Too many failures. Aborting, sorry."
+exit 1
+fi
+fi
+done
+BEFORE=$(wc -l meta.txt | sed 's| .*||g')
+grep '<article id' -A19 "page${range}.htm" | sed -e 's|="|: |g' -e 's|data-||g' -e 's|".*||g' -e 's|^[[:space:]]*||g' -e '/<article id/d' -e '/--/d' >> meta.txt
+rm "page${range}.htm"
+AFTER=$(wc -l meta.txt | sed 's| .*||g')
+if (( BEFORE == AFTER )); then
+break
+fi
+done
+ss_done
+elif [ $mode = 2 ]; then
+o -n '' > meta-tmp.txt
+quit=0
+for (( range=${pagerange[0]} ; quit == 0 ; range++ )); do
+final[4]=$range
+TO=${pagerange[1]}
+if [ $TO = $MAX_INT ]; then
+TO="Max"
+fi
+ss "${range} -> ${pagerange[0]}/$TO"
+FETCH_RESULT=1
+FAILS=0
+while [ ! $FETCH_RESULT = 0 ]; do
+fetch "$(echo ${final[@]} | tr -d ' ')" "page${range}.htm"
+if [ ! $FETCH_RESULT = 0 ]; then
+FAILS=$((FAILS + 1))
+message=" :<"
+ss "${range} -> ${pagerange[0]}/${pagerange[1]}"
+if (( $FAILS >= 5 )); then
+e "\n[Booru] Too many failures. Aborting, sorry."
+exit 1
+fi
+fi
+done
+BEFORE=$(wc -l meta-tmp.txt | sed 's| .*||g')
+grep '<article id' -A19 "page${range}.htm" | sed -e 's|="|: |g' -e 's|data-||g' -e 's|".*||g' -e 's|^[[:space:]]*||g' -e '/<article id/d' -e '/--/d' >> meta-tmp.txt
+rm "page${range}.htm"
+lines=$(wc -l meta-tmp.txt | sed 's| .*||g')
+if (( BEFORE == lines )); then
+quit=1
+fi
+lines=$((lines / 19))
+if (( $lines >= ${imagerange[1]} )); then
+quit=1
+fi
+done
+ss_done
+o "[Booru] Downloaded pages, processing..."
+min=${imagerange[0]}
+min=$((min - 1))
+min=$((min * 19))
+max=${imagerange[1]}
+max=$((max - min))
+max=$((max * 19))
+cat meta-tmp.txt | tail -n +${min} | head -n ${max} > meta.txt
+fi
+o "[Booru] Splitting metadata file... "
+split -l19 -d meta.txt meta
+rm meta.txt
+o -n "[Booru] Renaming metadata files to match Booru IDs... "
+COUNT=1
+for file in meta*; do
+id="$(cat $file | grep 'id: ' | sed 's|^id: ||g' | head -n1)"
+ss "$COUNT"
+mv "$file" "meta_${id}.txt" 2>/dev/null
+COUNT=$((COUNT + 1))
+done
+ss_done
+IMAGES=$COUNT
+if (( IMAGES > 100 )); then
+o "[Booru] You're downloading a very large amount of images."
+o "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
+THROTTLE=1
+fi
+o -n "[Booru] Metadata set up. Downloading images now... "
+COUNT=1
+for file in meta_*.txt; do
+url="$source$(cat $file | grep '^file-url: ' | sed 's|^file-url: ||g' | head -n1)"
+id="$(cat $file | grep 'id: ' | sed 's|^id: ||g' | head -n1)"
+ext="$(cat $file | grep '^file-ext: ' | sed 's|^file-ext: ||g' | head -n1)"
+ss "$COUNT"
+FETCH_RESULT=1
+while [ ! $FETCH_RESULT = 0 ]; do
+fetch "$url" "img_${id}.${ext}"
+if [ $THROTTLE = 1 ]; then
+ss "$COUNT zzz"
+sleep 5s
+fi
+done
+COUNT=$((COUNT + 1))
+done
+ss_done
+}
+s_booru() {
+exit 1
+}
 dynsc_l="Dynasty Scans"
 dynsc_u="http://dynasty-scans.com/"
 dynsc_state=1
@@ -440,6 +753,10 @@ fi
 sitepage=$1
 o "[E-H] Fetching index page..."
 fetch "${sitepage}/?nw=always" tmp.1
+while [ ! $FETCH_RESULT = 0 ]; do
+o "[E-H] Whoa. Failed to download index. Going again..."
+fetch "${sitepage}/?nw=always" tmp.1
+done
 folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
 mkdir -p "$folder"
 cd "$folder"
@@ -456,7 +773,8 @@ CDNFAIL=0
 CUR=1
 while [ $doneyet == 0 ]; do
 fetch "$page" "$CUR.htm"
-lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||')
+lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+o $lq
 hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
 next_cnt=$((CUR + 1))
 next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
@@ -468,7 +786,7 @@ if [ $CDNFAIL -ge 3 ]; then
 FETCH_RESULT=1
 else
 if [ $LOGGEDIN = 0 ]; then
-fetch "$lq"
+fetch "$lq" "$(basename $lq)"
 else
 fetch "$hq"
 fi
@@ -480,27 +798,32 @@ if [ $CDNFAIL -ge 3 ]; then
 message=" >:("
 fi
 notload=$(cat $CUR.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
-fetch "$notload" "$CUR.htm"
-lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||')
-hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+fetch "$page?nl=$notload" "${CUR}nl.htm"
+lq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 if [ $LOGGEDIN = 0 ]; then
 fetch "$lq"
 else
 fetch "$hq"
 fi
+rm "${CUR}nl.htm"
 if [ ! $FETCH_RESULT = 0 ]; then
 message=" >:["
 else
+rm $CUR.htm
 CUR=$(( CUR + 1 ))
-fi
-else
-CUR=$(( CUR + 1 ))
-fi
 if [ ! "$next" = "" ]; then
 page="$next"
 fi
-rm $((CUR - 1)).htm
+fi
+else
+rm $CUR.htm
+CUR=$(( CUR + 1 ))
+if [ ! "$next" = "" ]; then
+page="$next"
+fi
+fi
 ss "$CUR"
 done
 ss_done
@@ -554,7 +877,7 @@ rm scrape.htm batch.txtf
 e "$B$B$B\b\b[Fakku] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 foolsl_l="FoolSlide"
-foolsl_u="Generic, n/a."
+foolsl_u="Generic"
 foolsl_state=1
 foolsl_filt=0
 a_foolsl() {
@@ -776,10 +1099,10 @@ o "[Niconico] Done."
 }
 auto() {
 for module in ${MODS[@]}; do
-eval a_$module $1
+eval a_$module "$@"
 RETCHECK=$?
 if [ $RETCHECK = 1 ]; then
-eval d_$module $1
+eval d_$module "$@"
 exit 0
 fi
 done
@@ -802,10 +1125,10 @@ eval $NEW
 }
 scrape() {
 for module in ${MODS[@]}; do
-eval a_$module $1
+eval a_$module "$@"
 RETCHECK=$?
 if [ $RETCHECK = 1 ]; then
-eval s_$module $1 $2
+eval s_$module "$@"
 exit 0
 fi
 done
@@ -814,7 +1137,21 @@ mod_login() {
 for module in ${MODS[@]}; do
 if [ "$1" = "$module" ]; then
 if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
-eval login_$module \"$2\" \"$3\"
+if [ ! "$3" = "" ]; then
+o "[Warn] Caveat; you probably need to wipe your shell history now. Try not to do it like this."
+username="$2"
+password="$3"
+elif [ ! "$2" = "" ]; then
+username="$2"
+n "[$module] Password for $username (will not echo): "
+read -s password
+else
+n "[$module] $username for site: "
+read username
+n "[$module] Password for $username (will not echo): "
+read -s password
+fi
+eval login_$module \"$username\" \"$password\"
 exit 0
 else
 o "$module does not need login."
@@ -892,6 +1229,9 @@ n "          Site(s) Current state: "
 if [ "$broke" = "1" ]; then
 color 2
 e "Works"
+elif [ "$broke" = "2" ]; then
+color 3
+e "InDev"
 else
 color 1
 e "Broken"
@@ -1032,28 +1372,31 @@ o ""
 e "     Build: $branch, $rev"
 }
 if [ "$1" = "auto" -o "$1" = "a" ]; then
-auto $2 $3
+shift
+auto "$@"
 elif [ "$1" = "batch" -o "$1" = "l" ]; then
-batch $2 $3
+shift
+batch "$@"
 elif [ "$1" = "autobatch" -o "$1" = "b" ]; then
-autobatch $2 $3
+shift
+autobatch "$@"
 elif [ "$1" = "scrape" -o "$1" = "s" ]; then
-scrape $2 $3
+shift
+scrape "$@"
 elif [ "$1" = "login" -o "$1" = "u" ]; then
-mod_login $2 $3 $4
+shift
+mod_login "$@"
 else # Not a common operation - either invalid or a module-op.
 MATCH=""
 for module in ${MODS[@]}; do
 if [ "$1" = "$module" ]; then
-MATCH="d_$module $2"
+shift
+MATCH="d_$module \"$@\""
 fi
 done
 if [ "$MATCH" = "" ]; then # All checks failed. Usage~
-if [ ! "$(echo "$1" | grep http)" = "" ]; then
-auto $1 $2
-else
+auto "$@"
 help
-fi
 else # Module operation.
 eval $MATCH
 fi
