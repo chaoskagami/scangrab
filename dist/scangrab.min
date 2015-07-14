@@ -584,7 +584,7 @@ e "     page here: https://github.com/chaoskagami/scangrab"
 o ""
 e "     Build: $branch, $rev"
 }
-rev=04acb31a59522927fb6a849c76b0f3ddefb73fc7
+rev=1ee858fb9b426f655c4a22bd2a7bc4956abf6d6a
 branch=master
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mpark booru)
 mangabox_l="Mangabox"
@@ -1086,6 +1086,8 @@ if [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'
 return 1
 elif [ "$1" = "danbooru" ]; then
 return 1
+elif [ "$1" = "testbooru" ]; then
+return 1
 elif [ "$1" = "safebooru" ]; then
 return 1
 fi
@@ -1231,13 +1233,17 @@ done
 FAILS=0
 }
 dl_booru() {
-if [ "$1" = "" ] || [ "$2" = "" ] || [ "$3" = "" ]; then
+if [ "$2" = "" ] && [ "$3" = "" ] || [ "$1" = "" ]; then
 booru_syntax_help
 fi
 if [ -n "$(echo $1 | grep 'safebooru.donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "safebooru" ]; then
 source="http://safebooru.donmai.us"
 name="danbooru"
 site="safebooru"
+elif [ -n "$(echo $1 | grep 'testbooru.donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "testbooru" ]; then
+source="http://testbooru.donmai.us"
+name="danbooru"
+site="testbooru"
 elif [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "danbooru" ]; then
 source="http://danbooru.donmai.us"
 name="danbooru"
@@ -1277,6 +1283,19 @@ else
 o -n "images ${imagerange[0]} to ${imagerange[1]}"
 fi
 o ", starting from page ${pagerange[1]}."
+fi
+if [ $TAGCOUNT = 0 ] && [ ${pagerange[1]} == $MAX_INT ]; then
+o "[Booru] Holy fucking shit. You're telling me to download a whole booru? Are you insane?"
+o "[Booru] Not to mention, I didn't even DOCUMENT this syntax on purpose."
+o "[Booru] Type 'Yes, I am sane.' after the colon if you really meant to do this."
+o -n "[Booru] You sane? : "
+read sanequery
+if [ "$sanequery" = "Yes, I am sane." ]; then
+o "[Booru] Okay, nutjob, if you say so. Don't come complaining later."
+else
+o "[Booru] Yeah, thought so. Whew~"
+exit 1
+fi
 fi
 if [ ! "${final[2]}" = "" ]; then
 o "[Booru]   Requesting $(echo ${final[2]} | sed 's|+limit%3A||') images per page."
