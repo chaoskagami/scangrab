@@ -252,7 +252,7 @@ dl_booru() {
 		site="$source"
 	fi
 
-	dl_booru_${name}_init
+	booru_${name}_init
 
 	shift
 
@@ -309,7 +309,7 @@ dl_booru() {
 
 	for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
 		spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
-		dl_booru_${name}_page "$range"
+		booru_${name}_page "$range"
 		R=$?
 
 		lines=$(wc -l meta.txt | sed 's| .*||g')
@@ -351,7 +351,7 @@ dl_booru() {
 		fi
 
 		spinner "${DONE} -> ${LINES}"
-		dl_booru_${name}_data "$meta_id"
+		booru_${name}_data "$meta_id"
 
 		DONE=$((DONE + 1))
 	done < meta.txt

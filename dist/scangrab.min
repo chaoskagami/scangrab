@@ -287,11 +287,11 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-rev=fbc8d45a7099454ce7aa9e969d514112547239bd
+rev=d5d438150fd6b57f87630f1039fa54bad7bdf2ec
 branch=master
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mread mpark booru)
 mangabox_l="Mangabox"
-mangabox_u="https://www.mangabox.me/"
+mangabox_url="https://www.mangabox.me/"
 mangabox_state=1
 mangabox_filt=0
 mangabox_note="Automatically splits pages with IM. The PC webpage is broken badly. Don't report it."
@@ -301,7 +301,7 @@ return 1
 fi
 return 0
 }
-d_mangabox() {
+dl_mangabox() {
 o "[MangaBox] Getting list of pages..."
 fetch "$1" "tmp.htm"
 fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char)"
@@ -341,7 +341,7 @@ o "[MangaBox] Not yet supported, sorry."
 exit 1
 }
 batoto_l="Batoto"
-batoto_u="http://bato.to/"
+batoto_url="http://bato.to/"
 batoto_state=1
 batoto_filt=1
 batoto_note="Their page template is highly unstable."
@@ -351,7 +351,7 @@ return 1
 fi
 return 0
 }
-d_batoto() {
+dl_batoto() {
 folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
 mkdir -p "$folder"
 cd "$folder"
@@ -423,7 +423,7 @@ done
 e " Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 niconicoseiga_l="Niconico Seiga"
-niconicoseiga_u="http://seiga.nicovideo.jp"
+niconicoseiga_url="http://seiga.nicovideo.jp"
 niconicoseiga_state=1
 niconicoseiga_filt=0
 niconicoseiga_note="Please login first, or make a cookiejar file."
@@ -438,7 +438,7 @@ login_niconicoseiga() {
 use_cookies=1
 s_login "mail_tel" "password" "$1" "$2" "https://secure.nicovideo.jp/secure/login"
 }
-d_niconicoseiga() {
+dl_niconicoseiga() {
 use_cookies=1
 name="$(basename $1)"
 fetch $1 "$name.htm"
@@ -474,7 +474,7 @@ fetch "$1" "-" | grep 'class="episode"' | sed -e 's|.*<a href="||g' -e 's|?.*||g
 o "[Niconico] Done."
 }
 eh_l="E-Hentai"
-eh_u="http://e-hentai.org/"
+eh_url="http://e-hentai.org/"
 eh_state=1
 eh_filt=0
 eh_note="Logging in will result in HQ images and less H@H peer-related issues =_=;"
@@ -496,7 +496,7 @@ return 1
 fi
 return 0
 }
-d_eh() {
+dl_eh() {
 LOGGEDIN=0
 use_cookies=0
 if [ -e "cookiejar" ]; then
@@ -591,7 +591,7 @@ s_eh() {
 e "[E-H] This isn't supported, considering there's really zero categorization here."
 }
 fakku_l="FAKKU"
-fakku_u="https://fakku.net/"
+fakku_url="https://fakku.net/"
 fakku_state=1
 fakku_filt=0
 fakku_note="They've been shuffling things around recently."
@@ -601,7 +601,7 @@ return 1
 fi
 return 0
 }
-d_fakku() {
+dl_fakku() {
 PAGE="$(fetch "$1/read" "-")"
 PAGEDATA="$(echo "$PAGE" | grep "window.params.thumbs =" | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
 DATA="$(printf "$PAGEDATA")"
@@ -634,7 +634,7 @@ rm scrape.htm batch.txtf
 e "$B$B$B\b\b[Fakku] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 dynsc_l="Dynasty Scans"
-dynsc_u="http://dynasty-scans.com/"
+dynsc_url="http://dynasty-scans.com/"
 dynsc_state=1
 dynsc_filt=0
 a_dynsc() {
@@ -643,7 +643,7 @@ return 1
 fi
 return 0
 }
-d_dynsc() {
+dl_dynsc() {
 PAGEDATA="$(fetch "$1" "-")"
 folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
 mkdir -p "$folder"
@@ -674,7 +674,7 @@ sed -e 's|^.*href="||g' 	\
 e "$B$B$B\b\b[DynastyScans] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 foolsl_l="FoolSlide"
-foolsl_u="Generic"
+foolsl_url="Generic"
 foolsl_state=1
 foolsl_filt=0
 a_foolsl() {
@@ -685,7 +685,7 @@ return 1
 fi
 return 0
 }
-d_foolsl() {
+dl_foolsl() {
 LAZYURL=`echo $1 | sed "s|/read/|/download/|g"`
 o -n "[FoolSlide] Attempting Lazy Download..."
 FAILED=0
@@ -708,7 +708,7 @@ reverse_lines >> batch.txt
 e "$B$B$B\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 mread_l="Mangareader"
-mread_u="http://www.mangareader.net/"
+mread_url="http://www.mangareader.net/"
 mread_state=0
 mread_filt=0
 a_mread() {
@@ -717,7 +717,7 @@ return 1
 fi
 return 0
 }
-d_mread() {
+dl_mread() {
 folder="$(echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|www\.mangareader\.net\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
 mkdir -p "$folder"
 cd "$folder"
@@ -747,7 +747,7 @@ s_mread() {
 o "[MangaReader] NYI, sorry."
 }
 mpark_l="MangaPark"
-mpark_u="http://mangapark.me/"
+mpark_url="http://mangapark.me/"
 mpark_state=1
 mpark_filt=0
 a_mpark() {
@@ -756,7 +756,7 @@ return 1
 fi
 return 0
 }
-d_mpark() {
+dl_mpark() {
 sitepage="$1"
 sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
 FETCH="$(fetch "$sitepage" "-")"
@@ -794,12 +794,12 @@ rm scrape.htm batch.txtr
 e "[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 booru_MODS=(danbooru)
-d_booru_danbooru_init() {
+booru_danbooru_init() {
 final[0]="$source/posts.json?tags="
 }
-d_booru_danbooru_page() {
+booru_danbooru_page() {
 final[4]=$1
-d_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
+dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
 BEFORE=$(wc -l meta.txt | sed 's| .*||g')
 cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
 AFTER=$(wc -l meta.txt | sed 's| .*||g')
@@ -809,17 +809,17 @@ return 1
 fi
 return 0
 }
-d_booru_danbooru_data() {
+booru_danbooru_data() {
 declare -a base
 base[0]="$source/posts/"
 base[1]="${1}.json"
-d_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
-url_img="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_u"' | sed -e 's|.*:||g' -e "s|\"||g")"
+dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
+url_img="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
 file_ext="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
-d_booru_page "${source}${url_img}" "image_${1}.${file_ext}"
+dl_booru_page "${source}${url_img}" "image_${1}.${file_ext}"
 }
 booru_l="*Booru"
-booru_u="Generic"
+booru_url="Generic"
 booru_state=2
 booru_filt=1
 a_booru() {
@@ -951,7 +951,7 @@ final[4]=${pagerange[0]}
 fi
 done
 }
-d_booru_page() {
+dl_booru_page() {
 url="$1"
 name_out="$2"
 FETCH_RESULT=1
@@ -971,7 +971,7 @@ fi
 done
 FAILS=0
 }
-d_booru() {
+dl_booru() {
 if [ "$1" = "" ] || [ "$2" = "" ] || [ "$3" = "" ]; then
 booru_syntax_help
 fi
@@ -992,7 +992,7 @@ o "[Booru] so I can add it to the supported list."
 name="unknown"
 site="$source"
 fi
-d_booru_${name}_init
+booru_${name}_init
 shift
 tagarray=($(echo "$1" | tr ',' ' '))
 sizearray=($(echo "$2" | tr ',' ' '))
@@ -1037,7 +1037,7 @@ o -n "[Booru] Fetching pages... "
 o -n '' > meta.txt
 for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
 ss "${range} -> ${pagerange[0]}/${pagerange[1]}"
-d_booru_${name}_page "$range"
+booru_${name}_page "$range"
 R=$?
 lines=$(wc -l meta.txt | sed 's| .*||g')
 if [ $mode = 2 ] && (( $lines > ${imagerange[1]} )); then
@@ -1071,7 +1071,7 @@ else
 TOTAL="$LINES"
 fi
 ss "${DONE} -> ${LINES}"
-d_booru_${name}_data "$meta_id"
+booru_${name}_data "$meta_id"
 DONE=$((DONE + 1))
 done < meta.txt
 rm meta.txt
@@ -1086,7 +1086,7 @@ for module in ${MODS[@]}; do
 a_${module} "$@"
 RETCHECK=$?
 if [ $RETCHECK = 1 ]; then
-d_${module} "$@"
+dl_${module} "$@"
 exit 0
 fi
 done
@@ -1192,7 +1192,7 @@ e "Download Modules:"
 type 0
 for mod in "${MODS[@]}"; do
 longname=$(temp=\$${mod}_l && eval echo $temp)
-url=$(temp=\$${mod}_u && eval echo $temp)
+url=$(temp=\$${mod}_url && eval echo $temp)
 broke=$(temp=\$${mod}_state && eval echo $temp)
 filter=$(temp=\$${mod}_filt && eval echo $temp)
 note=$(temp=\$${mod}_note && eval echo $temp)
@@ -1375,7 +1375,7 @@ MATCH=""
 for module in ${MODS[@]}; do
 if [ "$1" = "$module" ]; then
 shift
-d_${module} "$@"
+dl_${module} "$@"
 exit 0
 fi
 done

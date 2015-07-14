@@ -16,7 +16,7 @@
 
 # This should set up any variables needed by this module.
 
-dl_booru_danbooru_init() {
+booru_danbooru_init() {
 	final[0]="$source/posts.json?tags="
 }
 
@@ -24,7 +24,7 @@ dl_booru_danbooru_init() {
 # This should build a URL which can download a page; call dl_booru_page,
 # And then extract the pages. It should not itself do the download.
 
-dl_booru_danbooru_page() {
+booru_danbooru_page() {
 	final[4]=$1
 
 	dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
@@ -46,7 +46,7 @@ dl_booru_danbooru_page() {
 
 # This should download a page, image, and possibly metadata, given a line from meta.txt.
 
-dl_booru_danbooru_data() {
+booru_danbooru_data() {
 	declare -a base
 	base[0]="$source/posts/"
 	base[1]="${1}.json"
@@ -54,7 +54,6 @@ dl_booru_danbooru_data() {
 	dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
 
 	url_img="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
-
 	file_ext="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
 
 	dl_booru_page "${source}${url_img}" "image_${1}.${file_ext}"

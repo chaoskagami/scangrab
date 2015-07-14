@@ -166,12 +166,14 @@ if [ "$MINIFY" = "1" ]; then
 	# Some function names and etc can be simplified.
 	sed -i "s/auto_/a_/g" $TARGET
 	sed -i "s/scrape_/s_/g" $TARGET
-	sed -i "s/dl_/d_/g" $TARGET
-	sed -i "s/_url/_u/g" $TARGET
+	# At this point; this is a micro optimization. It's useless.
+	#sed -i "s/dl_/d_/g" $TARGET
+	# This rule creates more problems than are needed.
+	#sed -i "s/_url/_u/g" $TARGET
 	sed -i "s/_longname/_l/g" $TARGET
 	sed -i "s/_SPINNER_CHAR/_SC/g" $TARGET
 	sed -i "s/spinner/ss/g" $TARGET
-	sed -i "s/done_spin/se/g" $TARGET
+	sed -i "s/spinner_done/sd/g" $TARGET
 
 	# Remove tmp.
 	rm $TARGET.{fun,tmp}
