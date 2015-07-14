@@ -105,6 +105,8 @@ booru_syntax_help() {
 	echo "    pages:50           - Download 50 pages. Long syntax."
 	echo "    images:100         - Download 100 images. Long syntax."
 	echo "    limit:50           - 50 images on a page. Long syntax."
+	echo "    resume             - Resume a previous Ctrl+C'd download."
+	echo "    r                  - Short for resume."
 	echo "  A minor note is that *technically* limit:N/lN is a tag for booru."
 	echo "  It can be specified as a tag, but may screw up download code, so do that here."
 	echo ""
@@ -134,7 +136,6 @@ declare -a tagarray
 declare -a sizearray
 declare -a final
 TAGCOUNT=0
-THROTTLE=0
 page_index=0
 # base URL
 final[0]="$source/posts?tags="
@@ -146,6 +147,7 @@ final[2]=""
 final[3]="&page="
 # Page Number
 final[4]=1
+RESUME=0
 
 pagerange[0]=1
 pagerange[1]=1
@@ -201,6 +203,9 @@ booru_size_crunch() {
 			pagerange[1]=$MAX_INT
 
 			final[4]=${pagerange[0]}
+		elif [[ "${sizearray[i]}" == "resume" ]] || [[ "${sizearray[i]}" == "r" ]]; then
+			# Resume.
+			RESUME=1
 		fi
 	done
 }
@@ -216,15 +221,27 @@ dl_booru_page() {
 		if [ ! $FETCH_RESULT = 0 ]; then
 			FAILS=$((FAILS + 1))
 			message=" :<"
-			if (( $FAILS >= 5 )); then
-				echo -e "\n[Booru] Too many failures. Sitting around for a good ten seconds."
-				sleep 10s
+			if [ ! $FAILS = 0 ]; then
+				spinner_done "!!!"
+
+				echo -en "[Booru] Server refused us. Waiting a bit... "
+				SLEEP=$((60 * FAILS))
+				while [ ! $SLEEP = 0 ]; do
+					sleep 1s
+					spinner "${SLEEP}s"
+					SLEEP=$((SLEEP - 1))
+				done
+				
+				spinner_done "DONE"
+
+				echo -en "[Booru] Continuing... "
 			fi
 		fi
-
-		if [ $THROTTLE = 1 ]; then
-			sleep 3s
-		fi
+		
+		# This is for safety.
+		# A lot of boorus get mad at you for hammering the database repeatedly and punish you
+		# by denying connections for a while. This ensures we aren't hammering *too* hard.
+		sleep 2s
 	done
 	FAILS=0
 }
@@ -328,38 +345,46 @@ dl_booru() {
 	mkdir -p "$tagdir"
 	cd "$tagdir"
 
-	echo -n "[Booru] Fetching pages... "
+	mkdir -p meta content
 
-	echo -n '' > meta.txt
+	# The first file is expected to be in the root tagdir.
 
-	for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
-		spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
-		booru_${name}_page "$range"
-		R=$?
+	# Download page data and make a list of IDs.
+	# Also, ideally, extract metadata.
+	if [ $RESUME = 0 ]; then
+		echo -n '' > meta.txt
+		echo -n "[Booru] Fetching pages... "
+		for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
+			spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
+			booru_${name}_page "$range"
+			R=$?
 
-		lines=$(wc -l meta.txt | sed 's| .*||g')
-		if [ $mode = 2 ] && (( $lines > ${imagerange[1]} )); then
-			break
-		fi
+			lines=$(wc -l meta.txt | sed 's| .*||g')
+			if [ $mode = 2 ] && (( $lines > ${imagerange[1]} )); then
+				break
+			fi
 
-		if [ $R = 1 ]; then
-			break
-		fi
-	done
+			if [ $R = 1 ]; then
+				break
+			fi
+		done
+	fi
 
 	spinner_done
 
 	lines=$(wc -l meta.txt | sed 's| .*||g')
-	if (( $lines > 100 )); then
-		echo "[Booru] You're going to download a very large amount of images."
-		echo "[Booru] I'm throttling to one fetch every 3s. You don't want to get ip banned, do you?"
-		THROTTLE=1
-	fi
-
-	echo -n "[Booru] Downloading metadata and images... "
 
 	DONE=0
 	LINES=$(wc -l meta.txt | sed 's| .*||g')
+
+	# All metadata files should be placed in tagdir/meta.
+
+	cd meta
+
+	echo -n "[Booru] Checking metadata... "
+
+	# Ideally metadata should have been taken care of above.
+	# Some sites don't provide all info in a page API query though.
 	while read meta_id; do
 		SKIP=0
 		if [ $mode = 2 ]; then
@@ -371,15 +396,56 @@ dl_booru() {
 				break
 			fi
 			TOTAL="$RANGE"
+		elif [ $RESUME = 1 ]; then
+			DONE=$((DONE - 1))
+			if [ $DONE = 0 ]; then
+				RESUME=0
+				DONE=$PRE
+			fi 
 		else
 			TOTAL="$LINES"
+			spinner "${DONE} -> ${LINES}"
+			booru_${name}_meta "$meta_id"
+			DONE=$((DONE + 1))
 		fi
+	done < ../meta.txt
 
-		spinner "${DONE} -> ${LINES}"
-		booru_${name}_data "$meta_id"
+	spinner_done
 
-		DONE=$((DONE + 1))
-	done < meta.txt
+	echo -n "[Booru] Downloading content... "
+
+	META_DIR="$(pwd)"
+
+	# All images should be in tagdir/content
+	cd ../content
+
+	DONE=0
+
+	# Download images.
+	while read meta_id; do
+		SKIP=0
+		if [ $mode = 2 ]; then
+			if (( $DONE < ${imagerange[0]} )); then
+				SKIP=1
+			fi
+
+			if (( $DONE > ${imagerange[1]} )); then
+				break
+			fi
+			TOTAL="$RANGE"
+		elif [ $RESUME = 1 ]; then
+			DONE=$((DONE - 1))
+			if [ $DONE = 0 ]; then
+				RESUME=0
+				DONE=$PRE
+			fi 
+		else
+			TOTAL="$LINES"
+			spinner "${DONE} -> ${LINES}"
+			booru_${name}_content "$meta_id"
+			DONE=$((DONE + 1))
+		fi
+	done < ../meta.txt
 
 	rm meta.txt
 

@@ -203,7 +203,11 @@ spinner_done() {
 
 	_SPINNER_CHAR="|"
 	_NUM=0
-	echo -e "[OK]"
+	_MESG="OK"
+	if [ ! "$1" = "" ]; then
+		_MESG="$1"
+	fi
+	echo -e "[$_MESG]"
 }
 
 mimetype() {
