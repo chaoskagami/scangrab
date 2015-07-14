@@ -75,7 +75,7 @@ dl_eh() {
 	# Unfortunately e-h has shit system. Time to code page extraction
 	# I'm using pipes for clarity.
 	# the last sed deals with names like fate/stay night which are invalid
-	folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
+	folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char | remove_illegal)"
 	mkdir -p "$folder"
 	cd "$folder"
 	
