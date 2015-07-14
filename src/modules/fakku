@@ -33,6 +33,9 @@ auto_fakku() {
 }
 
 dl_fakku() {
+	# They don't play well with content disposition. Actually; they reply 404.
+	SAFETY_HACKS=1
+
 	PAGE="$(fetch "$1/read" "-")"
 
 	# First. Escape fixups. Nuke escaped forward slashes
