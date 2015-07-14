@@ -54,6 +54,9 @@ auto_booru() {
 	elif [ "$1" = "danbooru" ]; then
 		# Danbooru direct.
 		return 1
+	elif [ "$1" = "testbooru" ]; then
+		# Danbooru direct.
+		return 1
 	elif [ "$1" = "safebooru" ]; then
 		# Safebooru direct.
 		return 1
@@ -227,7 +230,7 @@ dl_booru_page() {
 }
 
 dl_booru() {
-	if [ "$1" = "" ] || [ "$2" = "" ] || [ "$3" = "" ]; then
+	if [ "$2" = "" ] && [ "$3" = "" ] || [ "$1" = "" ]; then
 		booru_syntax_help
 	fi
 
@@ -236,6 +239,11 @@ dl_booru() {
 		source="http://safebooru.donmai.us"
 		name="danbooru"
 		site="safebooru"
+	elif [ -n "$(echo $1 | grep 'testbooru.donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "testbooru" ]; then
+		# Testbooru (which has four images and is a good test.) NEVER MOVE THIS CHECK BENEATH DANBOORU. THE GREP FOR DANBOORU WILL MATCH.
+		source="http://testbooru.donmai.us"
+		name="danbooru"
+		site="testbooru"
 	elif [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "danbooru" ]; then
 		# Danbooru
 		source="http://danbooru.donmai.us"
@@ -283,6 +291,23 @@ dl_booru() {
 			echo -n "images ${imagerange[0]} to ${imagerange[1]}"
 		fi
 		echo ", starting from page ${pagerange[1]}."
+	fi
+
+	if [ $TAGCOUNT = 0 ] && [ ${pagerange[1]} == $MAX_INT ]; then
+		# Holy fucking shit. The user is nuts. Downloading a whole booru? WTF?
+		# Ask them to make damn well sure that they meant that.
+
+		echo "[Booru] Holy fucking shit. You're telling me to download a whole booru? Are you insane?"
+		echo "[Booru] Not to mention, I didn't even DOCUMENT this syntax on purpose."
+		echo "[Booru] Type 'Yes, I am sane.' after the colon if you really meant to do this."
+		echo -n "[Booru] You sane? : "
+		read sanequery
+		if [ "$sanequery" = "Yes, I am sane." ]; then
+			echo "[Booru] Okay, nutjob, if you say so. Don't come complaining later."
+		else
+			echo "[Booru] Yeah, thought so. Whew~"
+			exit 1
+		fi
 	fi
 
 	if [ ! "${final[2]}" = "" ]; then
