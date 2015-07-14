@@ -287,7 +287,7 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-rev=4ef2e35f58f2808b662a8ee137b5bf6ef09f8bca
+rev=fbc8d45a7099454ce7aa9e969d514112547239bd
 branch=master
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mread mpark booru)
 mangabox_l="Mangabox"
@@ -961,14 +961,15 @@ if [ ! $FETCH_RESULT = 0 ]; then
 FAILS=$((FAILS + 1))
 message=" :<"
 if (( $FAILS >= 5 )); then
-e "\n[Booru] Too many failures. Aborting, sorry."
-exit 1
+e "\n[Booru] Too many failures. Sitting around for a good ten seconds."
+sleep 10s
 fi
 fi
 if [ $THROTTLE = 1 ]; then
 sleep 3s
 fi
 done
+FAILS=0
 }
 d_booru() {
 if [ "$1" = "" ] || [ "$2" = "" ] || [ "$3" = "" ]; then
@@ -977,9 +978,11 @@ fi
 if [ -n "$(echo $1 | grep 'safebooru.donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "safebooru" ]; then
 source="http://safebooru.donmai.us"
 name="danbooru"
+site="safebooru"
 elif [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "danbooru" ]; then
 source="http://danbooru.donmai.us"
 name="danbooru"
+site="danbooru"
 else
 source="$1"
 o "[Booru] This type of Booru isn't specified as supported."
@@ -987,6 +990,7 @@ o "[Booru] It may work, depending on whether the autodetect picks up a valid sch
 o "[Booru] or it may completely bomb out. If it works, please submit a bug report"
 o "[Booru] so I can add it to the supported list."
 name="unknown"
+site="$source"
 fi
 d_booru_${name}_init
 shift
@@ -1024,7 +1028,7 @@ fi
 if [ ! "$3" = "" ]; then
 tagdir="$3"
 else
-tagdir="$name - $1"
+tagdir="$site - $1"
 fi
 o "[Booru]   Output to folder '$tagdir'."
 mkdir -p "$tagdir"
