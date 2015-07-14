@@ -46,7 +46,7 @@ dl_niconicoseiga() {
 
 	fetch $1 "$name.htm"
 
-	fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e 's|".*||g' | entity_to_char | remove_illegal)"
+	fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
 
 	if [ ! -f "$name.htm" ]; then
 		echo "[Niconico] No page found, aborting."

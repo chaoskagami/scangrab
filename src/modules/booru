@@ -40,6 +40,13 @@ booru_url="Generic"
 booru_state=2
 booru_filt=1
 
+#####@MERGE_DEL 1
+MODS_booru=($(find modules/booru.mods/ -maxdepth 1 -type f | sed 's|modules/booru.mods/||g'))
+for module in ${MODS_booru[@]}; do
+	. modules/booru.mods/$module
+done
+#####@MERGE_DEL 0
+
 auto_booru() {
 	if [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
 		# Danbooru / Safebooru
@@ -100,68 +107,54 @@ booru_syntax_help() {
 	echo ""
 	echo "FOLDERNAME (optional):"
 	echo "  If not specified, it uses the format 'NAME - TAGLIST'."
+	echo ""
+	echo "Also, please note that the following sites are either alternate source bases or NOT boorus,"
+	echo "but will eventually be supported here due to some structural similiarities:"
+	echo " Moebooru-based (https://github.com/moebooru/moebooru)"
+	echo "   yande.re (yandere)"
+	echo "   konachan.com (konachan_g) / konachan.net (konachan)"
+	echo " Shimmie-based (https://github.com/shish/shimmie2)"
+	echo "   shimmie.katawa-shoujo.com (mishimme)"
+	echo " Custom / Needs research"
+	echo "   zerochan.net (zerochan)"
+	echo " All the same, dunno what they run"
+	echo "   *.booru.net (Many different things)"
+	echo "   safebooru.net (Not the same as safebooru)"
+	echo "   gelbooru.net"
 	exit 1
 }
 
-dl_booru() {
-	if [ "$1" = "" ] || [ "$2" = "" ] || [ "$3" = "" ]; then
-		booru_syntax_help
-	fi
+# Range to download.
+declare -a pagerange
+declare -a imagerange
+declare -a tagarray
+declare -a sizearray
+declare -a final
+TAGCOUNT=0
+THROTTLE=0
+page_index=0
+# base URL
+final[0]="$source/posts?tags="
+# Tags
+final[1]=""
+# Images per page. Blank if no.
+final[2]=""
+# page=
+final[3]="&page="
+# Page Number
+final[4]=1
 
-	source=""
-	if [ -n "$(echo $1 | grep 'safebooru.donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "safebooru" ]; then
-		# Safebooru directly. NEVER MOVE THIS CHECK BENEATH DANBOORU. THE GREP FOR DANBOORU WILL MATCH.
-		source="http://safebooru.donmai.us"
-		name="safebooru"
-	elif [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "danbooru" ]; then
-		# Danbooru
-		source="http://danbooru.donmai.us"
-		name="danbooru"
-	else
-		# Unknown, but apparently a booru.
-		source="$1"
-		echo "[Booru] This type of Booru isn't specified as supported."
-		echo "[Booru] It may work, or it may completely bomb out."
-		echo "[Booru] If it works, please submit a bug report so I can add it to the supported list."
-		name="$(echo $1 | sed -e 's|https://||g' -e 's|http://||g' -e 's|/.*||g')"
-	fi
+pagerange[0]=1
+pagerange[1]=1
 
-	# Example URL transform: danbooru / touhou,highres / l50,10-20
-	#   BASE_URL=danbooru.donmai.us/posts?tags=touhou+highres+limit%3A50&page=
-	#   START_INDEX=10
-	#   END_INDEX=20
+# Paged mode by default.
+# 1=paged, 2=images
+mode=1
+source=""
+name=""
 
-	shift
-
-	declare -a tagarray
-	declare -a sizearray
-	tagarray=($(echo "$1" | tr ',' ' '))
-	sizearray=($(echo "$2" | tr ',' ' '))
-
-	declare -a final
-	page_index=0
-	# URL
-	final[0]="$source/posts?utf8=✓&tags="
-	# Tags
-	final[1]=""
-	# Images per page. Blank if no.
-	final[2]=""
-	# page=
-	final[3]="&page="
-	# Page Number
-	final[4]=1
-
-	# Range to download.
-	declare -a pagerange
-	pagerange[0]=1
-	pagerange[1]=1
-	declare -a imagerange
-
-	# Paged mode by default.
-	# 1=paged, 2=images
-	mode=1
-
-	TAGCOUNT=0
+# Computes final tags.
+booru_tag_crunch() {
 	# Tag array can be pasted together.
 	for (( i=0 ; i < ${#tagarray[@]} ; i++ )); do
 		if [ ! "$i" = "0" ] && [ ! "$((i + 1))" = "${#tagarray}" ]; then
@@ -173,7 +166,9 @@ dl_booru() {
 			TAGCOUNT=$((TAGCOUNT + 1))
 		fi
 	done
+}
 
+booru_size_crunch() {
 	for (( i=0 ; i < ${#sizearray[@]} ; i++ )); do
 		if [[ "${sizearray[i]}" == pages:* ]] || [[ "${sizearray[i]}" == p* ]]; then
 			pagerange=($(echo "${sizearray[i]}" | tr -d 'p' | tr '-' ' '))
@@ -205,6 +200,63 @@ dl_booru() {
 			final[4]=${pagerange[0]}
 		fi
 	done
+}
+
+dl_booru_page() {
+	url="$1"
+	name_out="$2"
+
+	FETCH_RESULT=1
+	while [ ! $FETCH_RESULT = 0 ]; do
+		fetch "$url" "$name_out"
+
+		if [ ! $FETCH_RESULT = 0 ]; then
+			FAILS=$((FAILS + 1))
+			message=" :<"
+			if (( $FAILS >= 5 )); then
+				echo -e "\n[Booru] Too many failures. Aborting, sorry."
+					exit 1
+			fi
+		fi
+
+		if [ $THROTTLE = 1 ]; then
+			sleep 3s
+		fi
+	done
+}
+
+dl_booru() {
+	if [ "$1" = "" ] || [ "$2" = "" ] || [ "$3" = "" ]; then
+		booru_syntax_help
+	fi
+
+	if [ -n "$(echo $1 | grep 'safebooru.donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "safebooru" ]; then
+		# Safebooru directly. NEVER MOVE THIS CHECK BENEATH DANBOORU. THE GREP FOR DANBOORU WILL MATCH.
+		source="http://safebooru.donmai.us"
+		name="danbooru"
+	elif [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ] || [ "$1" = "danbooru" ]; then
+		# Danbooru
+		source="http://danbooru.donmai.us"
+		name="danbooru"
+	else
+		# Unknown, but apparently a booru.
+		source="$1"
+		echo "[Booru] This type of Booru isn't specified as supported."
+		echo "[Booru] It may work, depending on whether the autodetect picks up a valid scheme,"
+		echo "[Booru] or it may completely bomb out. If it works, please submit a bug report"
+		echo "[Booru] so I can add it to the supported list."
+		name="unknown"
+	fi
+
+	dl_booru_${name}_init
+
+	shift
+
+	tagarray=($(echo "$1" | tr ',' ' '))
+	sizearray=($(echo "$2" | tr ',' ' '))
+
+	booru_tag_crunch
+	booru_size_crunch
 
 	echo "[Booru] Info:"
 	echo "[Booru]   Fetching URL $(echo ${final[0]}${final[1]}${final[2]}${final[3]} | tr -d ' ')"
@@ -236,7 +288,6 @@ dl_booru() {
 		echo "[Booru]   Warning, more than two normal tags. Some boorus don't like this."
 	fi
 
-
 	if [ ! "$3" = "" ]; then
 		tagdir="$3"
 	else
@@ -250,142 +301,58 @@ dl_booru() {
 
 	echo -n "[Booru] Fetching pages... "
 
-	if [ $mode = 1 ]; then
-		echo -n '' > meta.txt
+	echo -n '' > meta.txt
 
-		for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
-			final[4]=$range
+	for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
+		spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
+		dl_booru_${name}_page "$range"
+		R=$?
 
-			spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
+		lines=$(wc -l meta.txt | sed 's| .*||g')
+		if [ $mode = 2 ] && (( $lines > ${imagerange[1]} )); then
+			break
+		fi
 
-			FETCH_RESULT=1
-			FAILS=0
-			while [ ! $FETCH_RESULT = 0 ]; do
-				fetch "$(echo ${final[@]} | tr -d ' ')" "page${range}.htm"
-				
-				if [ ! $FETCH_RESULT = 0 ]; then
-					FAILS=$((FAILS + 1))
-					message=" :<"
-					spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
-					if (( $FAILS >= 5 )); then
-						echo -e "\n[Booru] Too many failures. Aborting, sorry."
-						exit 1
-					fi
-				fi
-			done
-
-			BEFORE=$(wc -l meta.txt | sed 's| .*||g')
-			grep '<article id' -A19 "page${range}.htm" | sed -e 's|="|: |g' -e 's|data-||g' -e 's|".*||g' -e 's|^[[:space:]]*||g' -e '/<article id/d' -e '/--/d' >> meta.txt
-			rm "page${range}.htm"
-			AFTER=$(wc -l meta.txt | sed 's| .*||g')
-			
-			if (( BEFORE == AFTER )); then
-				break
-			fi
-		done
-
-		spinner_done
-	elif [ $mode = 2 ]; then
-		echo -n '' > meta-tmp.txt
-
-		quit=0
-		for (( range=${pagerange[0]} ; quit == 0 ; range++ )); do
-			final[4]=$range
-
-			TO=${pagerange[1]}
-			if [ $TO = $MAX_INT ]; then
-				TO="Max"
-			fi
-			spinner "${range} -> ${pagerange[0]}/$TO"
-
-			FETCH_RESULT=1
-			FAILS=0
-			while [ ! $FETCH_RESULT = 0 ]; do
-				fetch "$(echo ${final[@]} | tr -d ' ')" "page${range}.htm"
-				
-				if [ ! $FETCH_RESULT = 0 ]; then
-					FAILS=$((FAILS + 1))
-					message=" :<"
-					spinner "${range} -> ${pagerange[0]}/${pagerange[1]}"
-					if (( $FAILS >= 5 )); then
-						echo -e "\n[Booru] Too many failures. Aborting, sorry."
-						exit 1
-					fi
-				fi
-			done
-
-			BEFORE=$(wc -l meta-tmp.txt | sed 's| .*||g')
-
-			grep '<article id' -A19 "page${range}.htm" | sed -e 's|="|: |g' -e 's|data-||g' -e 's|".*||g' -e 's|^[[:space:]]*||g' -e '/<article id/d' -e '/--/d' >> meta-tmp.txt
-			rm "page${range}.htm"
-			
-			lines=$(wc -l meta-tmp.txt | sed 's| .*||g')
-
-			if (( BEFORE == lines )); then
-				quit=1
-			fi
-			
-			lines=$((lines / 19))
-
-			if (( $lines >= ${imagerange[1]} )); then
-				quit=1
-			fi
-		done
-
-		spinner_done
-
-		echo "[Booru] Downloaded pages, processing..."
-		min=${imagerange[0]}
-		min=$((min - 1))
-		min=$((min * 19))
-		max=${imagerange[1]}
-		max=$((max - min))
-		max=$((max * 19))
-		cat meta-tmp.txt | tail -n +${min} | head -n ${max} > meta.txt
-	fi
-
-	echo "[Booru] Splitting metadata file... "
-	split -l19 -d meta.txt meta
-
-	rm meta.txt
-
-	echo -n "[Booru] Renaming metadata files to match Booru IDs... "
-	COUNT=1
-	for file in meta*; do
-		id="$(cat $file | grep 'id: ' | sed 's|^id: ||g' | head -n1)"
-		spinner "$COUNT"
-		mv "$file" "meta_${id}.txt" 2>/dev/null
-		COUNT=$((COUNT + 1))
+		if [ $R = 1 ]; then
+			break
+		fi
 	done
 
 	spinner_done
 
-	IMAGES=$COUNT
-
-	THROTTLE=0
-	if (( IMAGES > 100 )); then
-		echo "[Booru] You're downloading a very large amount of images."
-		echo "[Booru] I'm throttling to one fetch attempt every 5s. You don't want to get ip banned, do you?"
+	lines=$(wc -l meta.txt | sed 's| .*||g')
+	if (( $lines > 100 )); then
+		echo "[Booru] You're going to download a very large amount of images."
+		echo "[Booru] I'm throttling to one fetch every 3s. You don't want to get ip banned, do you?"
 		THROTTLE=1
 	fi
 
-	echo -n "[Booru] Metadata set up. Downloading images now... "
-	COUNT=1
-	for file in meta_*.txt; do
-		url="$source$(cat $file | grep '^file-url: ' | sed 's|^file-url: ||g' | head -n1)"
-		id="$(cat $file | grep 'id: ' | sed 's|^id: ||g' | head -n1)"
-		ext="$(cat $file | grep '^file-ext: ' | sed 's|^file-ext: ||g' | head -n1)"
-		spinner "$COUNT/$IMAGES"
-		FETCH_RESULT=1
-		while [ ! $FETCH_RESULT = 0 ]; do
-			fetch "$url" "img_${id}.${ext}"
-			if [ $THROTTLE = 1 ]; then
-				spinner "$COUNT/$IMAGES zzz"
-				sleep 5s
+	echo "[Booru] Downloading images and metadata... "
+
+	DONE=0
+	LINES=$(wc -l meta.txt | sed 's| .*||g')
+	while read meta_id; do
+		SKIP=0
+		if [ $mode = 2 ]; then
+			if (( $DONE < ${imagerange[0]} )); then
+				SKIP=1
 			fi
-		done
-		COUNT=$((COUNT + 1))
-	done
+
+			if (( $DONE > ${imagerange[1]} )); then
+				break
+			fi
+			TOTAL="$RANGE"
+		else
+			TOTAL="$LINES"
+		fi
+
+		spinner "${DONE} -> ${LINES}"
+		dl_booru_${name}_data "$meta_id"
+
+		DONE=$((DONE + 1))
+	done < meta.txt
+
+	rm meta.txt
 
 	spinner_done
 

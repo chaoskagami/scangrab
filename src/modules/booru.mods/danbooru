@@ -1,0 +1,61 @@
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# This should set up any variables needed by this module.
+
+dl_booru_danbooru_init() {
+	final[0]="$source/posts.json?tags="
+}
+
+
+# This should build a URL which can download a page; call dl_booru_page,
+# And then extract the pages. It should not itself do the download.
+
+dl_booru_danbooru_page() {
+	final[4]=$1
+
+	dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
+
+	BEFORE=$(wc -l meta.txt | sed 's| .*||g')
+	cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
+	AFTER=$(wc -l meta.txt | sed 's| .*||g')
+	
+	rm "page${range}.json"
+
+	# No more pages.
+	if (( BEFORE == AFTER )); then
+		return 1
+	fi
+
+	# Still more.
+	return 0
+}
+
+# This should download a page, image, and possibly metadata, given a line from meta.txt.
+
+dl_booru_danbooru_data() {
+	declare -a base
+	base[0]="$source/posts/"
+	base[1]="${1}.json"
+
+	dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
+
+	url_img="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
+
+	file_ext="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
+
+	dl_booru_page "${source}${url_img}" "image_${1}.${file_ext}"
+}
