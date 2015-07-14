@@ -287,7 +287,7 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-rev=8f4576fd2bdb59f284ced304223d13d2fc675c6e
+rev=4ef2e35f58f2808b662a8ee137b5bf6ef09f8bca
 branch=master
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mread mpark booru)
 mangabox_l="Mangabox"
