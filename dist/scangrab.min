@@ -12,8 +12,12 @@ B="\b\b\b\b\b\b\b\b\b\b"
 COOKIEJAR="$(pwd)/cookiejar"
 HAVE_IMAGICK=0
 FETCH_RESULT=0
+if [ "$VERBOSE" = "" ]; then
+VERBOSE=0
+fi
 message=""
 use_cookies=0
+SAFETY_HACKS=0
 _COLOR=0
 _FETCH_CMD=""
 _CHECK_VALID=0
@@ -46,7 +50,7 @@ if [ -f "$_identify" ]; then
 HAVE_IMAGICK=1
 fi
 if [ ! "$_wget" = "" ]; then
-common_opts=" --quiet --no-cache --content-disposition --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
+common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
 if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
 o "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
 common_opts=" -q -c -U \"Mozilla/4.0\""
@@ -110,6 +114,10 @@ fi
 return 0
 }
 ss() {
+if [ $VERBOSE = 1 ]; then
+o "Status: $1 - $message"
+return
+fi
 if [ "$_SC" = "|" ]; then
 _SC="/"
 elif [ "$_SC" = "/" ]; then
@@ -133,6 +141,10 @@ _NUM="${#STR}"
 n "$STR"
 }
 ss_done() {
+if [ $VERBOSE = 1 ]; then
+o "Status: $1 - $message"
+return
+fi
 for (( i=0 ; i < _NUM ; i++ )); do
 n "\b"
 done
@@ -158,12 +170,20 @@ elif [ $_FETCHTOOL = 3 ]; then
 o "[Warn] aria2c can't post at the moment; this will fail to get required cookies."
 _CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
 fi
+if [ $VERBOSE = 1 ]; then
+e "\n$_CMD"
+return
+fi
 eval " $_CMD" 2>/dev/null
 FETCH_RESULT=$?
 }
 fetch() {
 if [ $_FETCHTOOL = 1 ]; then
+if [ $SAFETY_HACKS = 1 ]; then
 _CMD="$_FETCH_CMD \"$1\""
+else
+_CMD="$_FETCH_CMD --content-disposition \"$1\""
+fi
 if [ $use_cookies = 1 ]; then
 _CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies"
 fi
@@ -196,6 +216,9 @@ _CMD="$_CMD -o -"
 else
 _CMD="$_CMD -o \"$2\""
 fi
+fi
+if [ $VERBOSE = 1 ]; then
+e "\n$_CMD"
 fi
 eval " $_CMD" 2>/dev/null
 FETCH_RESULT=$?
@@ -287,9 +310,283 @@ for (( I = ${#LINES[@]}; I; )); do
 o "${LINES[--I]}"
 done
 }
-rev=d5d438150fd6b57f87630f1039fa54bad7bdf2ec
+auto() {
+for module in ${MODS[@]}; do
+a_${module} "$@"
+RETCHECK=$?
+if [ $RETCHECK = 1 ]; then
+dl_${module} "$@"
+exit 0
+fi
+done
+}
+batch() {
+IFS=$'\n' read -d '' -r -a LINES < $1
+NEW=""
+for chunk in "${LINES[@]}"; do
+NEW="$NEW$0 $chunk ;"
+done
+$NEW
+}
+autobatch() {
+IFS=$'\n' read -d '' -r -a LINES < $1
+NEW=""
+for chunk in "${LINES[@]}"; do
+NEW="$NEW$0 auto $chunk ;"
+done
+$NEW
+}
+scrape() {
+for module in ${MODS[@]}; do
+a_${module} "$@"
+RETCHECK=$?
+if [ $RETCHECK = 1 ]; then
+s_${module} "$@"
+exit 0
+fi
+done
+}
+mod_login() {
+for module in ${MODS[@]}; do
+if [ "$1" = "$module" ]; then
+if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
+if [ ! "$3" = "" ]; then
+o "[Warn] Caveat; you probably need to wipe your shell history now. Try not to do it like this."
+username="$2"
+password="$3"
+elif [ ! "$2" = "" ]; then
+username="$2"
+n "[$module] Password for $username (will not echo): "
+read -s password
+else
+n "[$module] $username for site: "
+read username
+n "[$module] Password for $username (will not echo): "
+read -s password
+fi
+login_${module} "$username" "$password"
+exit 0
+else
+o "$module does not need login."
+exit 0
+fi
+fi
+done
+o "No such module."
+exit 1
+}
+help() {
+type 1
+e "Usage:"
+type 0
+n "     $0     "
+color 3
+n "OPERATION     "
+color 5
+e "[PARAMS]"
+type 0
+type 1
+e "Operations:"
+type 0
+color 3
+e "     auto (a)"
+type 0
+e "          Chooses module based on URL"
+color 3
+e "     batch (l)"
+type 0
+e "          Takes a file with a list of types and URLs"
+color 3
+e "     autobatch (b)"
+type 0
+e "          Takes a file with URLs which will be run with auto."
+color 3
+e "     scrape (s)"
+type 0
+e "          Will take a manga's page and scrape chapters to"
+e "          a file named batch.txt"
+color 3
+e "     login (u)"
+type 0
+e "          Pass the module name, your username and password."
+e "          This will generate a cookie jar as ./cookiejar"
+o ""
+e "     You can also specify a module name followed by"
+e "     the URL instead of using the auto-detect."
+o ""
+e "     If you don't specify an operation and pass only a URL"
+e "     then we assume you want auto (a)."
+type 1
+e "Download Modules:"
+type 0
+for mod in "${MODS[@]}"; do
+longname=$(temp=\$${mod}_l && eval echo $temp)
+url=$(temp=\$${mod}_url && eval echo $temp)
+broke=$(temp=\$${mod}_state && eval echo $temp)
+filter=$(temp=\$${mod}_filt && eval echo $temp)
+note=$(temp=\$${mod}_note && eval echo $temp)
+n "     Module Name:                "
+color 3
+e "$mod"
+type 0
+n "          Long Name:             "
+color 4
+e "$longname"
+type 0
+n "          Site(s) Used with:     "
+color 5
+e "$url"
+type 0
+type 0
+n "          Site(s) Current state: "
+if [ "$broke" = "1" ]; then
+color 2
+e "Works"
+elif [ "$broke" = "2" ]; then
+color 3
+e "InDev"
+else
+color 1
+e "Broken"
+fi
+if [ ! "$note" = "" ]; then
+type 0
+e "          Site Note:             $note"
+fi
+type 0
+if [ "$filter" = "1" ]; then
+e "          Supports filters for scrape"
+fi
+o ""
+done
+type 1
+e "Misc Info"
+type 0
+e "     If you see an emote in the output, it means we had to deal"
+e "     with a retrieval quirk."
+e "\n     [ :/ ]       Given GZip'd data even though we said it wasn't"
+e "                  supported in the GET."
+type 2
+e "                  This happens frequently with batoto when doing"
+e "                  multiple fetches. :/"
+type 0
+e "\n     [ :( ]       Site didn't respond and so the DL failed"
+e "                  We had to revert to a fallback method."
+e "\n     [ >:( ]      Too many normal requests failed; we reverted"
+e "                  to using entirely the fallback method."
+o ""
+e "     Some modules accept an extra parameter. Usually, this"
+e "     is a filter. Try values like 'English' or 'French'."
+type 1
+e "System Tools"
+type 0
+if [ ! "$_wget" = "" ]; then
+e "     wget:                $_wget"
+fi
+if [ ! "$_curl" = "" ]; then
+e "     curl:                $_curl"
+fi
+if [ ! "$_aria" = "" ]; then
+e "     aria2c:              $_aria"
+fi
+n "     Will use:            "
+if [ $_FETCHTOOL = 1 ]; then
+n "wget"
+if [ $_BUSYBOX = 1 ]; then
+n ", busybox"
+else
+n ""
+fi
+elif [ $_FETCHTOOL = 2 ]; then
+n "curl"
+elif [ $_FETCHTOOL = 3 ]; then
+n "aria2c"
+else
+n "no tool. Install one of: "
+fi
+o " (wget, curl, aria2c)"
+n "     Check broken images: "
+if [ $_CHECK_VALID = 1 ]; then
+if [ -f $_identify ]; then
+n "imagemagick ($_identify)"
+fi
+o ""
+else
+o "no"
+fi
+n "     Color:               "
+if [ $_COLOR = 1 ]; then
+color 1
+n "y"
+color 2
+n "e"
+color 3
+n "s"
+color 4
+n " "
+n "("
+color 5
+n "d"
+color 6
+n "u"
+color 1
+n "m"
+color 2
+n "b"
+color 3
+o ")"
+type 0
+elif [ $_COLOR = 2 ]; then
+color 1
+n "y"
+color 2
+n "e"
+color 3
+n "s"
+color 4
+n " "
+n "("
+color 5
+n "t"
+color 6
+n "p"
+color 1
+n "u"
+color 2
+n "t"
+color 3
+o ")"
+type 0
+else
+o "no (TERM='$TERM')"
+fi
+type 1
+n "License / Info"
+type 0
+o ""
+e "     Copyright (C) 2015     Jon Feldman/@chaoskagami"
+o ""
+e "     This program is free software: you can redistribute it and/or modify"
+e "     it under the terms of the GNU General Public License as published by"
+e "     the Free Software Foundation, either version 3 of the License, or"
+e "     (at your option) any later version."
+o ""
+e "     This program is distributed in the hope that it will be useful,"
+e "     but WITHOUT ANY WARRANTY; without even the implied warranty of"
+e "     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+e "     GNU General Public License for more details."
+o ""
+e "     You should have received a copy of the GNU General Public License"
+e "     along with this program.  If not, see <http://www.gnu.org/licenses/>"
+o ""
+e "     The latest version of scangrab can always be found at the github"
+e "     page here: https://github.com/chaoskagami/scangrab"
+o ""
+e "     Build: $branch, $rev"
+}
+rev=04acb31a59522927fb6a849c76b0f3ddefb73fc7
 branch=master
-MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mread mpark booru)
+MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mpark booru)
 mangabox_l="Mangabox"
 mangabox_url="https://www.mangabox.me/"
 mangabox_state=1
@@ -602,6 +899,7 @@ fi
 return 0
 }
 dl_fakku() {
+SAFETY_HACKS=1
 PAGE="$(fetch "$1/read" "-")"
 PAGEDATA="$(echo "$PAGE" | grep "window.params.thumbs =" | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
 DATA="$(printf "$PAGEDATA")"
@@ -706,45 +1004,6 @@ sed -e 's|<div class="title"><a href="||g'	\
 -e "s/[[:space:]]*$//"					  | \
 reverse_lines >> batch.txt
 e "$B$B$B\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
-}
-mread_l="Mangareader"
-mread_url="http://www.mangareader.net/"
-mread_state=0
-mread_filt=0
-a_mread() {
-if [ -n "`echo $1 | grep 'mangareader.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
-return 1
-fi
-return 0
-}
-dl_mread() {
-folder="$(echo $1 | sed -e "s|http\:\/\/||g" | sed -e "s|www\.mangareader\.net\/||g" | sed -e "s|\/|-|g" | entity_to_char)"
-mkdir -p "$folder"
-cd "$folder"
-o -n "[Mangareader] Blindly Downloading '$folder' "
-IS_404=0
-CUR=0
-PAGES=0
-while [ $IS_404 = 0 ]; do
-CUR=$(( CUR + 1 ))
-PAGEDATA=$(fetch "$1/$CUR" "$CUR.htm")
-IS_404=$?
-if [ $IS_404 = 0 ]; then
-src=`grep '<div id="imgholder">' $CUR.htm | sed "s/^.*src=\"//g" | sed "s/\" alt=.*//g"`
-o $src
-EXT="${src##*.}"
-fetch "$src" "$CUR.$EXT"
-ss
-fi
-done
-PAGES=$(( CUR - 1 ))
-ss_done
-rm *.htm
-cd ..
-cbz_make "$folder"
-}
-s_mread() {
-o "[MangaReader] NYI, sorry."
 }
 mpark_l="MangaPark"
 mpark_url="http://mangapark.me/"
@@ -1054,7 +1313,7 @@ o "[Booru] You're going to download a very large amount of images."
 o "[Booru] I'm throttling to one fetch every 3s. You don't want to get ip banned, do you?"
 THROTTLE=1
 fi
-o "[Booru] Downloading images and metadata... "
+o -n "[Booru] Downloading metadata and images... "
 DONE=0
 LINES=$(wc -l meta.txt | sed 's| .*||g')
 while read meta_id; do
@@ -1080,280 +1339,6 @@ o "[Booru] Done with download. If you don't care about the metadata, it is no lo
 }
 s_booru() {
 exit 1
-}
-auto() {
-for module in ${MODS[@]}; do
-a_${module} "$@"
-RETCHECK=$?
-if [ $RETCHECK = 1 ]; then
-dl_${module} "$@"
-exit 0
-fi
-done
-}
-batch() {
-IFS=$'\n' read -d '' -r -a LINES < $1
-NEW=""
-for chunk in "${LINES[@]}"; do
-NEW="$NEW$0 $chunk ;"
-done
-$NEW
-}
-autobatch() {
-IFS=$'\n' read -d '' -r -a LINES < $1
-NEW=""
-for chunk in "${LINES[@]}"; do
-NEW="$NEW$0 auto $chunk ;"
-done
-$NEW
-}
-scrape() {
-for module in ${MODS[@]}; do
-a_${module} "$@"
-RETCHECK=$?
-if [ $RETCHECK = 1 ]; then
-s_${module} "$@"
-exit 0
-fi
-done
-}
-mod_login() {
-for module in ${MODS[@]}; do
-if [ "$1" = "$module" ]; then
-if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
-if [ ! "$3" = "" ]; then
-o "[Warn] Caveat; you probably need to wipe your shell history now. Try not to do it like this."
-username="$2"
-password="$3"
-elif [ ! "$2" = "" ]; then
-username="$2"
-n "[$module] Password for $username (will not echo): "
-read -s password
-else
-n "[$module] $username for site: "
-read username
-n "[$module] Password for $username (will not echo): "
-read -s password
-fi
-login_${module} "$username" "$password"
-exit 0
-else
-o "$module does not need login."
-exit 0
-fi
-fi
-done
-o "No such module."
-exit 1
-}
-help() {
-type 1
-e "Usage:"
-type 0
-n "     $0     "
-color 3
-n "OPERATION     "
-color 5
-e "[PARAMS]"
-type 0
-type 1
-e "Operations:"
-type 0
-color 3
-e "     auto (a)"
-type 0
-e "          Chooses module based on URL"
-color 3
-e "     batch (l)"
-type 0
-e "          Takes a file with a list of types and URLs"
-color 3
-e "     autobatch (b)"
-type 0
-e "          Takes a file with URLs which will be run with auto."
-color 3
-e "     scrape (s)"
-type 0
-e "          Will take a manga's page and scrape chapters to"
-e "          a file named batch.txt"
-color 3
-e "     login (u)"
-type 0
-e "          Pass the module name, your username and password."
-e "          This will generate a cookie jar as ./cookiejar"
-o ""
-e "     You can also specify a module name followed by"
-e "     the URL instead of using the auto-detect."
-o ""
-e "     If you don't specify an operation and pass only a URL"
-e "     then we assume you want auto (a)."
-type 1
-e "Download Modules:"
-type 0
-for mod in "${MODS[@]}"; do
-longname=$(temp=\$${mod}_l && eval echo $temp)
-url=$(temp=\$${mod}_url && eval echo $temp)
-broke=$(temp=\$${mod}_state && eval echo $temp)
-filter=$(temp=\$${mod}_filt && eval echo $temp)
-note=$(temp=\$${mod}_note && eval echo $temp)
-n "     Module Name:                "
-color 3
-e "$mod"
-type 0
-n "          Long Name:             "
-color 4
-e "$longname"
-type 0
-n "          Site(s) Used with:     "
-color 5
-e "$url"
-type 0
-type 0
-n "          Site(s) Current state: "
-if [ "$broke" = "1" ]; then
-color 2
-e "Works"
-elif [ "$broke" = "2" ]; then
-color 3
-e "InDev"
-else
-color 1
-e "Broken"
-fi
-if [ ! "$note" = "" ]; then
-type 0
-e "          Site Note:             $note"
-fi
-type 0
-if [ "$filter" = "1" ]; then
-e "          Supports filters for scrape"
-fi
-o ""
-done
-type 1
-e "Misc Info"
-type 0
-e "     If you see an emote in the output, it means we had to deal"
-e "     with a retrieval quirk."
-e "\n     [ :/ ]       Given GZip'd data even though we said it wasn't"
-e "                  supported in the GET."
-type 2
-e "                  This happens frequently with batoto when doing"
-e "                  multiple fetches. :/"
-type 0
-e "\n     [ :( ]       Site didn't respond and so the DL failed"
-e "                  We had to revert to a fallback method."
-e "\n     [ >:( ]      Too many normal requests failed; we reverted"
-e "                  to using entirely the fallback method."
-o ""
-e "     Some modules accept an extra parameter. Usually, this"
-e "     is a filter. Try values like 'English' or 'French'."
-type 1
-e "System Tools"
-type 0
-if [ ! "$_wget" = "" ]; then
-e "     wget:                $_wget"
-fi
-if [ ! "$_curl" = "" ]; then
-e "     curl:                $_curl"
-fi
-if [ ! "$_aria" = "" ]; then
-e "     aria2c:              $_aria"
-fi
-n "     Will use:            "
-if [ $_FETCHTOOL = 1 ]; then
-n "wget"
-if [ $_BUSYBOX = 1 ]; then
-n ", busybox"
-else
-n ""
-fi
-elif [ $_FETCHTOOL = 2 ]; then
-n "curl"
-elif [ $_FETCHTOOL = 3 ]; then
-n "aria2c"
-else
-n "no tool. Install one of: "
-fi
-o " (wget, curl, aria2c)"
-n "     Check broken images: "
-if [ $_CHECK_VALID = 1 ]; then
-if [ -f $_identify ]; then
-n "imagemagick ($_identify)"
-fi
-o ""
-else
-o "no"
-fi
-n "     Color:               "
-if [ $_COLOR = 1 ]; then
-color 1
-n "y"
-color 2
-n "e"
-color 3
-n "s"
-color 4
-n " "
-n "("
-color 5
-n "d"
-color 6
-n "u"
-color 1
-n "m"
-color 2
-n "b"
-color 3
-o ")"
-type 0
-elif [ $_COLOR = 2 ]; then
-color 1
-n "y"
-color 2
-n "e"
-color 3
-n "s"
-color 4
-n " "
-n "("
-color 5
-n "t"
-color 6
-n "p"
-color 1
-n "u"
-color 2
-n "t"
-color 3
-o ")"
-type 0
-else
-o "no (TERM='$TERM')"
-fi
-type 1
-n "License / Info"
-type 0
-o ""
-e "     Copyright (C) 2015     Jon Feldman/@chaoskagami"
-o ""
-e "     This program is free software: you can redistribute it and/or modify"
-e "     it under the terms of the GNU General Public License as published by"
-e "     the Free Software Foundation, either version 3 of the License, or"
-e "     (at your option) any later version."
-o ""
-e "     This program is distributed in the hope that it will be useful,"
-e "     but WITHOUT ANY WARRANTY; without even the implied warranty of"
-e "     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
-e "     GNU General Public License for more details."
-o ""
-e "     You should have received a copy of the GNU General Public License"
-e "     along with this program.  If not, see <http://www.gnu.org/licenses/>"
-o ""
-e "     The latest version of scangrab can always be found at the github"
-e "     page here: https://github.com/chaoskagami/scangrab"
-o ""
-e "     Build: $branch, $rev"
 }
 if [ "$1" = "auto" -o "$1" = "a" ]; then
 shift
