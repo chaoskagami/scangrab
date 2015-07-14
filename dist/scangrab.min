@@ -156,7 +156,11 @@ n "\b"
 done
 _SC="|"
 _NUM=0
-e "[OK]"
+_MESG="OK"
+if [ ! "$1" = "" ]; then
+_MESG="$1"
+fi
+e "[$_MESG]"
 }
 mimetype() {
 o "$(file --mime-type "$1" | sed 's/.* //g')"
@@ -584,7 +588,7 @@ e "     page here: https://github.com/chaoskagami/scangrab"
 o ""
 e "     Build: $branch, $rev"
 }
-rev=1ee858fb9b426f655c4a22bd2a7bc4956abf6d6a
+rev=655ddd2dff97dfbc9d323d80dace1e20eef5d214
 branch=master
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mpark booru)
 mangabox_l="Mangabox"
@@ -812,7 +816,7 @@ while [ ! $FETCH_RESULT = 0 ]; do
 o "[E-H] Whoa. Failed to download index. Going again..."
 fetch "${sitepage}/?nw=always" tmp.1
 done
-folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char)"
+folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char | remove_illegal)"
 mkdir -p "$folder"
 cd "$folder"
 page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
@@ -1058,24 +1062,57 @@ final[0]="$source/posts.json?tags="
 }
 booru_danbooru_page() {
 final[4]=$1
+if [ $RESUME = 1 ]; then
+return 1
+fi
 dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
 BEFORE=$(wc -l meta.txt | sed 's| .*||g')
 cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
 AFTER=$(wc -l meta.txt | sed 's| .*||g')
+if [ "$BEFORE" = '' ]; then
+BEFORE=0
+fi
+PAGE_SIZE=$((AFTER - BEFORE))
+sed -i "s|},{|}]\n[{|g" "page${range}.json"
+o '' >> "page${range}.json"
+LEN=0
+while read line; do
+FIRST=$((PAGE_SIZE - LEN))
+id="$(cat meta.txt | tail -n $FIRST | head -n 1)"
+o "$line" > meta/meta_${id}.json
+LEN=$((LEN + 1))
+done < "page${range}.json"
 rm "page${range}.json"
 if (( BEFORE == AFTER )); then
 return 1
 fi
 return 0
 }
-booru_danbooru_data() {
+booru_danbooru_meta() {
 declare -a base
 base[0]="$source/posts/"
 base[1]="${1}.json"
+if [ ! -e "meta_${base[1]}" ]; then
+ss_done
+o "[Booru] No metadata for ID:${1}. Refetch... "
 dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
-url_img="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
-file_ext="$(cat "meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
+o "[Booru] Continuing... "
+fi
+}
+booru_danbooru_content() {
+declare -a base
+base[0]="$source/posts/"
+base[1]="${1}.json"
+url_img="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
+file_ext="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
+if [ "$file_ext" = "" ] || [ "$url_img" = "" ]; then
+ss_done
+o "[Booru] ID:${1} appears to be deleted/hidden. Skipping."
+return
+fi
+if [ ! -e "image_${1}.${file_ext}" ]; then
 dl_booru_page "${source}${url_img}" "image_${1}.${file_ext}"
+fi
 }
 booru_l="*Booru"
 booru_url="Generic"
@@ -1132,6 +1169,8 @@ o "                         This syntax is legal, but -10 is ignored."
 o "    pages:50           - Download 50 pages. Long syntax."
 o "    images:100         - Download 100 images. Long syntax."
 o "    limit:50           - 50 images on a page. Long syntax."
+o "    resume             - Resume a previous Ctrl+C'd download."
+o "    r                  - Short for resume."
 o "  A minor note is that *technically* limit:N/lN is a tag for booru."
 o "  It can be specified as a tag, but may screw up download code, so do that here."
 o ""
@@ -1159,13 +1198,13 @@ declare -a tagarray
 declare -a sizearray
 declare -a final
 TAGCOUNT=0
-THROTTLE=0
 page_index=0
 final[0]="$source/posts?tags="
 final[1]=""
 final[2]=""
 final[3]="&page="
 final[4]=1
+RESUME=0
 pagerange[0]=1
 pagerange[1]=1
 mode=1
@@ -1209,6 +1248,8 @@ elif [[ "${sizearray[i]}" == "all" ]]; then
 pagerange[0]=1
 pagerange[1]=$MAX_INT
 final[4]=${pagerange[0]}
+elif [[ "${sizearray[i]}" == "resume" ]] || [[ "${sizearray[i]}" == "r" ]]; then
+RESUME=1
 fi
 done
 }
@@ -1221,14 +1262,20 @@ fetch "$url" "$name_out"
 if [ ! $FETCH_RESULT = 0 ]; then
 FAILS=$((FAILS + 1))
 message=" :<"
-if (( $FAILS >= 5 )); then
-e "\n[Booru] Too many failures. Sitting around for a good ten seconds."
-sleep 10s
+if [ ! $FAILS = 0 ]; then
+ss_done "!!!"
+en "[Booru] Server refused us. Waiting a bit... "
+SLEEP=$((60 * FAILS))
+while [ ! $SLEEP = 0 ]; do
+sleep 1s
+ss "${SLEEP}s"
+SLEEP=$((SLEEP - 1))
+done
+ss_done "DONE"
+en "[Booru] Continuing... "
 fi
 fi
-if [ $THROTTLE = 1 ]; then
-sleep 3s
-fi
+sleep 2s
 done
 FAILS=0
 }
@@ -1311,8 +1358,10 @@ fi
 o "[Booru]   Output to folder '$tagdir'."
 mkdir -p "$tagdir"
 cd "$tagdir"
-o -n "[Booru] Fetching pages... "
+mkdir -p meta content
+if [ $RESUME = 0 ]; then
 o -n '' > meta.txt
+o -n "[Booru] Fetching pages... "
 for (( range=${pagerange[0]} ; range <= ${pagerange[1]} ; range++ )); do
 ss "${range} -> ${pagerange[0]}/${pagerange[1]}"
 booru_${name}_page "$range"
@@ -1325,16 +1374,13 @@ if [ $R = 1 ]; then
 break
 fi
 done
+fi
 ss_done
 lines=$(wc -l meta.txt | sed 's| .*||g')
-if (( $lines > 100 )); then
-o "[Booru] You're going to download a very large amount of images."
-o "[Booru] I'm throttling to one fetch every 3s. You don't want to get ip banned, do you?"
-THROTTLE=1
-fi
-o -n "[Booru] Downloading metadata and images... "
 DONE=0
 LINES=$(wc -l meta.txt | sed 's| .*||g')
+cd meta
+o -n "[Booru] Checking metadata... "
 while read meta_id; do
 SKIP=0
 if [ $mode = 2 ]; then
@@ -1345,13 +1391,47 @@ if (( $DONE > ${imagerange[1]} )); then
 break
 fi
 TOTAL="$RANGE"
+elif [ $RESUME = 1 ]; then
+DONE=$((DONE - 1))
+if [ $DONE = 0 ]; then
+RESUME=0
+DONE=$PRE
+fi
 else
 TOTAL="$LINES"
-fi
 ss "${DONE} -> ${LINES}"
-booru_${name}_data "$meta_id"
+booru_${name}_meta "$meta_id"
 DONE=$((DONE + 1))
-done < meta.txt
+fi
+done < ../meta.txt
+ss_done
+o -n "[Booru] Downloading content... "
+META_DIR="$(pwd)"
+cd ../content
+DONE=0
+while read meta_id; do
+SKIP=0
+if [ $mode = 2 ]; then
+if (( $DONE < ${imagerange[0]} )); then
+SKIP=1
+fi
+if (( $DONE > ${imagerange[1]} )); then
+break
+fi
+TOTAL="$RANGE"
+elif [ $RESUME = 1 ]; then
+DONE=$((DONE - 1))
+if [ $DONE = 0 ]; then
+RESUME=0
+DONE=$PRE
+fi
+else
+TOTAL="$LINES"
+ss "${DONE} -> ${LINES}"
+booru_${name}_content "$meta_id"
+DONE=$((DONE + 1))
+fi
+done < ../meta.txt
 rm meta.txt
 ss_done
 o "[Booru] Done with download. If you don't care about the metadata, it is no longer needed."
