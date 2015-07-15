@@ -63,6 +63,8 @@ dl_eh() {
 				echo "yes"
 				use_cookies=1
 				echo -ne "[E-H] Checking for access..."
+
+				# This is a good way of checking if it succeeded.
 				fetch "exhentai.org" "-" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
 				RES=$?
 				if [ ! $RES = 0 ]; then
@@ -135,6 +137,8 @@ dl_eh() {
 	
 	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 
+	MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
+
 	rm ../tmp.1
 
 	echo -n "[E-H] Downloading '$folder' "
@@ -149,8 +153,19 @@ dl_eh() {
 	CDNFAIL=0
 
 	CUR=1
-	while [ $doneyet == 0 ]; do
+	while [ $doneyet = 0 ]; do
+
 		fetch "$page" "$CUR.htm"
+		while [ ! $FETCH_RESULT = 0 ]; do
+			# For the most part, we'll not hit this unless there's network issues.
+			# However, it can cause a failed fetch to go uncaught, causing next to be ''
+			# And if the next loop "succeeds" with a zero length page, it will propogate
+			# to next, and the 'done' check will trigger incorrectly.
+			message=":O"
+			spinner "Get $CUR / $MAXPAGES"
+			fetch "$page" "$CUR.htm"
+		done
+
 		lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
 		hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
 		next_cnt=$((CUR + 1))
@@ -158,10 +173,7 @@ dl_eh() {
 
 		extra=""
 
-		if [ "$next" == "" ]; then
-			doneyet=1
-		fi
-
+		spinner "IMG $CUR / $MAXPAGES"
 		if [ $CDNFAIL -ge 3 ]; then
 			FETCH_RESULT=1
 		else
@@ -181,30 +193,39 @@ dl_eh() {
 			if [ $CDNFAIL -ge 3 ]; then
 				message=" >:("
 			fi
-
-			notload=$(cat $CUR.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 			
-			fetch "$page?nl=$notload" "${CUR}nl.htm"
-			lq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-			hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-			next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+			mv "$CUR.htm" "${CUR}nl.htm"
 
-			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
-				fetch "$lq"
-			else
-				fetch "$hq"
-			fi
+			while [ ! $FETCH_RESULT = 0 ]; do
+				notload=$(cat ${CUR}nl.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+
+				fetch "$page?nl=$notload" "${CUR}nl.htm"
+
+				while [ ! $FETCH_RESULT = 0 ]; do
+					CLOBBER=1
+					message=":O"
+					spinner "FAL $CUR / $MAXPAGES"
+					fetch "$page?nl=$notload" "${CUR}nl.htm"
+					CLOBBER=0
+				done
+
+				lq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+				hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+				next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+
+				spinner "IMG $CUR / $MAXPAGES"
+				if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
+					fetch "$lq"
+				else
+					fetch "$hq"
+				fi
+			done
 
 			rm "${CUR}nl.htm"
 
-			if [ ! $FETCH_RESULT = 0 ]; then
-				message=" >:["
-			else
-				rm $CUR.htm
-				CUR=$(( CUR + 1 ))
-				if [ ! "$next" = "" ]; then
-					page="$next"
-				fi
+			CUR=$(( CUR + 1 ))
+			if [ ! "$next" = "" ]; then
+				page="$next"
 			fi
 		else
 			rm $CUR.htm
@@ -214,7 +235,12 @@ dl_eh() {
 			fi
 		fi
 
-		spinner "$CUR"
+		# This is a much saner condition than checking if next is null.
+		if (( $CUR > $MAXPAGES )); then
+			break
+		fi
+
+		spinner "$CUR / $MAXPAGES"
 	done
 	
 	spinner_done

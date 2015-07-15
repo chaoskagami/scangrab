@@ -27,6 +27,7 @@ fi
 message=""
 use_cookies=0
 SAFETY_HACKS=0
+CLOBBER=1
 
 # Anything which starts with an underscore is internal and shouldn't be touched.
 _COLOR=0
@@ -69,11 +70,11 @@ if [ -f "$_identify" ]; then
 fi
 
 if [ ! "$_wget" = "" ]; then
-	common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
+	common_opts=" --quiet --no-cache --user-agent=\"Mozilla/5.0\" -t 1 -T 10 --random-wait "
 
 	if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
 		echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
-		common_opts=" -q -c -U \"Mozilla/4.0\""
+		common_opts=" -q -U \"Mozilla/5.0\""
 		_BUSYBOX=1
 	fi
 
@@ -258,6 +259,10 @@ fetch() {
 			_CMD="$_FETCH_CMD --content-disposition \"$1\""
 		fi
 
+		if [ ! $CLOBBER = 1 ]; then
+			_CMD="$_FETCH_CMD -c \"$1\""
+		fi
+
 		if [ $use_cookies = 1 ]; then
 			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies"
 		fi
@@ -305,9 +310,24 @@ fetch() {
 	if [ $VERBOSE = 1 ]; then
 		echo -e "\n$_CMD"
 	fi
+
+	# Wget doesn't have an option to clobber forcibly
+	# with content disposition on. I'm so bemused by this
+	# that I'm not even sure what to say.
+	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ]; then
+		mkdir -p "wget.tmp" 2>/dev/null
+		cd wget.tmp
+	fi
+
 	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
 	
+	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ]; then
+		mv ./* ../
+		cd ..
+		rm -rf wget.tmp
+	fi
+
 	# If this is an image, check validity.
 	MIME="$(mimetype "$_FILE")"
 	if [ "$MIME" = "image/jpeg" ] || [ "$MIME" = "image/png" ] || [ "$MIME" = "image/gif" ] || [ "$MIME" = "image/bmp" ]; then
@@ -468,7 +488,7 @@ mod_login() {
 					echo -ne "[$module] Password for $username (will not echo): "
 					read -s password
 				else
-					echo -ne "[$module] $username for site: "
+					echo -ne "[$module] Username: "
 					read username
 					echo -ne "[$module] Password for $username (will not echo): "
 					read -s password
