@@ -18,6 +18,7 @@ fi
 message=""
 use_cookies=0
 SAFETY_HACKS=0
+CLOBBER=1
 _COLOR=0
 _FETCH_CMD=""
 _CHECK_VALID=0
@@ -50,10 +51,10 @@ if [ -f "$_identify" ]; then
 HAVE_IMAGICK=1
 fi
 if [ ! "$_wget" = "" ]; then
-common_opts=" --quiet --no-cache --user-agent=\"Mozilla/4.0\" -c -t 1 -T 10 --random-wait "
+common_opts=" --quiet --no-cache --user-agent=\"Mozilla/5.0\" -t 1 -T 10 --random-wait "
 if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
 o "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
-common_opts=" -q -c -U \"Mozilla/4.0\""
+common_opts=" -q -U \"Mozilla/5.0\""
 _BUSYBOX=1
 fi
 _FETCH_CMD="$_wget $common_opts"
@@ -188,6 +189,9 @@ _CMD="$_FETCH_CMD \"$1\""
 else
 _CMD="$_FETCH_CMD --content-disposition \"$1\""
 fi
+if [ ! $CLOBBER = 1 ]; then
+_CMD="$_FETCH_CMD -c \"$1\""
+fi
 if [ $use_cookies = 1 ]; then
 _CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies"
 fi
@@ -224,8 +228,17 @@ fi
 if [ $VERBOSE = 1 ]; then
 e "\n$_CMD"
 fi
+if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ]; then
+mkdir -p "wget.tmp" 2>/dev/null
+cd wget.tmp
+fi
 eval " $_CMD" 2>/dev/null
 FETCH_RESULT=$?
+if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ]; then
+mv ./* ../
+cd ..
+rm -rf wget.tmp
+fi
 MIME="$(mimetype "$_FILE")"
 if [ "$MIME" = "image/jpeg" ] || [ "$MIME" = "image/png" ] || [ "$MIME" = "image/gif" ] || [ "$MIME" = "image/bmp" ]; then
 verify "$_FILE"
@@ -364,7 +377,7 @@ username="$2"
 n "[$module] Password for $username (will not echo): "
 read -s password
 else
-n "[$module] $username for site: "
+n "[$module] Username: "
 read username
 n "[$module] Password for $username (will not echo): "
 read -s password
@@ -589,7 +602,7 @@ e "     page here: https://github.com/chaoskagami/scangrab"
 o ""
 e "     Build: $branch, $rev"
 }
-rev=f9cb50ac3f721ea882a657d5d92259401cc99900
+rev=e284c870f9f54320cac8da3edf1b96236e5b45b2
 branch=master
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mpark booru)
 mangabox_l="Mangabox"
@@ -872,6 +885,7 @@ folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g'
 mkdir -p "$folder"
 cd "$folder"
 page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
+MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
 rm ../tmp.1
 o -n "[E-H] Downloading '$folder' "
 if [ $LOGGEDIN = 1 ]; then
@@ -882,16 +896,19 @@ fi
 doneyet=0
 CDNFAIL=0
 CUR=1
-while [ $doneyet == 0 ]; do
+while [ $doneyet = 0 ]; do
 fetch "$page" "$CUR.htm"
+while [ ! $FETCH_RESULT = 0 ]; do
+message=":O"
+ss "Get $CUR / $MAXPAGES"
+fetch "$page" "$CUR.htm"
+done
 lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
 hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
 next_cnt=$((CUR + 1))
 next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 extra=""
-if [ "$next" == "" ]; then
-doneyet=1
-fi
+ss "IMG $CUR / $MAXPAGES"
 if [ $CDNFAIL -ge 3 ]; then
 FETCH_RESULT=1
 else
@@ -907,19 +924,32 @@ CDNFAIL=$((CDNFAIL + 1))
 if [ $CDNFAIL -ge 3 ]; then
 message=" >:("
 fi
-notload=$(cat $CUR.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+mv "$CUR.htm" "${CUR}nl.htm"
+while [ ! $FETCH_RESULT = 0 ]; do
+notload=$(cat ${CUR}nl.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 fetch "$page?nl=$notload" "${CUR}nl.htm"
+while [ ! $FETCH_RESULT = 0 ]; do
+CLOBBER=1
+message=":O"
+ss "FAL $CUR / $MAXPAGES"
+fetch "$page?nl=$notload" "${CUR}nl.htm"
+CLOBBER=0
+done
 lq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
 hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
 next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+ss "IMG $CUR / $MAXPAGES"
 if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
 fetch "$lq"
 else
 fetch "$hq"
 fi
+done
 rm "${CUR}nl.htm"
-if [ ! $FETCH_RESULT = 0 ]; then
-message=" >:["
+CUR=$(( CUR + 1 ))
+if [ ! "$next" = "" ]; then
+page="$next"
+fi
 else
 rm $CUR.htm
 CUR=$(( CUR + 1 ))
@@ -927,14 +957,10 @@ if [ ! "$next" = "" ]; then
 page="$next"
 fi
 fi
-else
-rm $CUR.htm
-CUR=$(( CUR + 1 ))
-if [ ! "$next" = "" ]; then
-page="$next"
+if (( $CUR > $MAXPAGES )); then
+break
 fi
-fi
-ss "$CUR"
+ss "$CUR / $MAXPAGES"
 done
 ss_done
 cd ..
