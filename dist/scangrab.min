@@ -306,7 +306,8 @@ sed \
 remove_illegal() {
 sed \
 -e "s/|/-/g" \
--e "s|/|-|g"
+-e "s|/|-|g" \
+-e "s|?|？|g"
 }
 reverse_lines() {
 readarray -t LINES
@@ -588,7 +589,7 @@ e "     page here: https://github.com/chaoskagami/scangrab"
 o ""
 e "     Build: $branch, $rev"
 }
-rev=686fa9c22474154d1f52de9e057f35f422f2f672
+rev=f9cb50ac3f721ea882a657d5d92259401cc99900
 branch=master
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mpark booru)
 mangabox_l="Mangabox"
