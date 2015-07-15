@@ -394,11 +394,15 @@ entity_to_char() {
 
 }
 
+# Known fixed snafus.
+# Remove pipe, slash.
+# Replace question mark with fullwidth question mark.
 remove_illegal() {
 
 	sed \
 		-e "s/|/-/g" \
-		-e "s|/|-|g"
+		-e "s|/|-|g" \
+		-e "s|?|？|g"
 
 }
 
