@@ -25,7 +25,7 @@ Here's the list of sites it currently handles:
  * Niconico Seiga (Manga)
  * MangaBox
  * Boorus (working: Danbooru, Safebooru)
- * E-H (Yeah, I know, I know...)
+ * E{-,x}H (Expand the expression. Latter requires login. Also, auto-edits cookies.)
 
 Some of the modules don't provide a scrape operation (read: E-H, Booru). Some of them support more advanced filters (like Batoto - language) and some of them are just plain syntactically weird (Booru)
 

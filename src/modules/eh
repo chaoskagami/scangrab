@@ -43,6 +43,10 @@ auto_eh() {
 		# E-H
 		return 1
 	fi
+	if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Ex
+		return 1
+	fi
 
 	return 0
 }
@@ -51,13 +55,62 @@ dl_eh() {
 	LOGGEDIN=0
 	use_cookies=0
 	if [ -e "cookiejar" ]; then
-		grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
-		RES=$?
-		if [ $RES = 0 ]; then
-			echo "[E-H] We seem to have cookies...using them."
-			LOGGEDIN=1
-			use_cookies=1
+		if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+			echo -ne "[E-H] Checking for Ex cookies..."
+			grep 'exhentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+			RES=$?
+			if [ $RES = 0 ]; then
+				echo "yes"
+				use_cookies=1
+				echo -ne "[E-H] Checking for access..."
+				fetch "exhentai.org" "-" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+				RES=$?
+				if [ ! $RES = 0 ]; then
+					echo "panda. Dying."
+					exit 1
+				else
+					LOGGEDIN=1
+					echo "yes"
+				fi
+			else
+				echo "no"
+				echo -ne "[E-H] Checking for E-H cookies..."
+				grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+				RES=$?
+				if [ $RES = 0 ]; then
+					echo "yes, copying them"
+					grep 'e-hentai.org' $COOKIEJAR >> cookiejar.edit
+					sed 's|e-hentai.org|exhentai.org|g' cookiejar.edit >> cookiejar
+					rm cookiejar.edit
+
+					echo -ne "[E-H] Fixed cookies. Checking for access..."
+					use_cookies=1
+					fetch "exhentai.org" "-" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+					RES=$?
+					if [ ! $RES = 0 ]; then
+						echo "panda. Dying."
+						exit 1
+					else
+						LOGGEDIN=1
+						echo "yes"
+					fi
+				else
+					echo "no."
+					echo "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
+				fi
+			fi
+		else
+			grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+			RES=$?
+			if [ $RES = 0 ]; then
+				echo "[E-H] We seem to have cookies...using them."
+				LOGGEDIN=1
+				use_cookies=1
+			fi
 		fi
+	elif [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		echo "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
+		exit 1
 	fi
 
 	sitepage=$1
@@ -65,6 +118,7 @@ dl_eh() {
 	echo "[E-H] Fetching index page..."
 
 	# This is so that we don't get the 'offensive' warning.
+	# XXX - Is this needed for Ex?
 	fetch "${sitepage}/?nw=always" tmp.1
 
 	while [ ! $FETCH_RESULT = 0 ]; do
@@ -75,7 +129,7 @@ dl_eh() {
 	# Unfortunately e-h has shit system. Time to code page extraction
 	# I'm using pipes for clarity.
 	# the last sed deals with names like fate/stay night which are invalid
-	folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char | remove_illegal)"
+	folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
 	mkdir -p "$folder"
 	cd "$folder"
 	

@@ -151,9 +151,9 @@ if [ "$MINIFY" = "1" ]; then
 	echo -e "e() {\necho -e \"\$@\"\n}" >> $TARGET.fun
 
 	# Now repl.
-	sed -i "s/^echo -e/e/g" $TARGET.tmp
 	sed -i "s/^echo -ne/n/g" $TARGET.tmp
 	sed -i "s/^echo -en/n/g" $TARGET.tmp
+	sed -i "s/^echo -e/e/g" $TARGET.tmp
 	sed -i "s/^echo/o/g" $TARGET.tmp
 
 	# More miscellaneous stripdowns.
