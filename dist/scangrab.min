@@ -588,7 +588,7 @@ e "     page here: https://github.com/chaoskagami/scangrab"
 o ""
 e "     Build: $branch, $rev"
 }
-rev=655ddd2dff97dfbc9d323d80dace1e20eef5d214
+rev=686fa9c22474154d1f52de9e057f35f422f2f672
 branch=master
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mpark booru)
 mangabox_l="Mangabox"
@@ -717,9 +717,9 @@ sed -ni '0~2p' batch.txtf2
 cat batch.txtf2 >> batch.txt
 fi
 rm scrape.htm batch.txtr batch.txtf*
-en "$B$B$B\b"
+n "$B$B$B\b"
 for ((n=0;n < ${#2}; n++)); do
-en '\b'
+n '\b'
 done
 e " Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
@@ -795,12 +795,59 @@ a_eh() {
 if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 return 1
 fi
+if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+return 1
+fi
 return 0
 }
 dl_eh() {
 LOGGEDIN=0
 use_cookies=0
 if [ -e "cookiejar" ]; then
+if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+n "[E-H] Checking for Ex cookies..."
+grep 'exhentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+RES=$?
+if [ $RES = 0 ]; then
+o "yes"
+use_cookies=1
+n "[E-H] Checking for access..."
+fetch "exhentai.org" "-" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+RES=$?
+if [ ! $RES = 0 ]; then
+o "panda. Dying."
+exit 1
+else
+LOGGEDIN=1
+o "yes"
+fi
+else
+o "no"
+n "[E-H] Checking for E-H cookies..."
+grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+RES=$?
+if [ $RES = 0 ]; then
+o "yes, copying them"
+grep 'e-hentai.org' $COOKIEJAR >> cookiejar.edit
+sed 's|e-hentai.org|exhentai.org|g' cookiejar.edit >> cookiejar
+rm cookiejar.edit
+n "[E-H] Fixed cookies. Checking for access..."
+use_cookies=1
+fetch "exhentai.org" "-" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+RES=$?
+if [ ! $RES = 0 ]; then
+o "panda. Dying."
+exit 1
+else
+LOGGEDIN=1
+o "yes"
+fi
+else
+o "no."
+o "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
+fi
+fi
+else
 grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
 RES=$?
 if [ $RES = 0 ]; then
@@ -809,6 +856,10 @@ LOGGEDIN=1
 use_cookies=1
 fi
 fi
+elif [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+o "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
+exit 1
+fi
 sitepage=$1
 o "[E-H] Fetching index page..."
 fetch "${sitepage}/?nw=always" tmp.1
@@ -816,7 +867,7 @@ while [ ! $FETCH_RESULT = 0 ]; do
 o "[E-H] Whoa. Failed to download index. Going again..."
 fetch "${sitepage}/?nw=always" tmp.1
 done
-folder="$(cat tmp.1 | grep 'title>' | sed 's/<title>//g' | sed 's/<\/title>//g' | sed 's/ - E-Hentai Galleries//g' | sed 's|/|_|g' | entity_to_char | remove_illegal)"
+folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
 mkdir -p "$folder"
 cd "$folder"
 page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
@@ -1264,7 +1315,7 @@ FAILS=$((FAILS + 1))
 message=" :<"
 if [ ! $FAILS = 0 ]; then
 ss_done "!!!"
-en "[Booru] Server refused us. Waiting a bit... "
+n "[Booru] Server refused us. Waiting a bit... "
 SLEEP=$((60 * FAILS))
 while [ ! $SLEEP = 0 ]; do
 sleep 1s
@@ -1272,7 +1323,7 @@ ss "${SLEEP}s"
 SLEEP=$((SLEEP - 1))
 done
 ss_done "DONE"
-en "[Booru] Continuing... "
+n "[Booru] Continuing... "
 fi
 fi
 sleep 2s
