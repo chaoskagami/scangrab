@@ -18,7 +18,7 @@
 # The whole two-in-one thing is annoying.
 
 mangabox_longname="Mangabox"
-mangabox_url="https://www.mangabox.me/"
+mangabox_url="www.mangabox.me"
 mangabox_state=1
 mangabox_filt=0
 mangabox_note="Automatically splits pages with IM. The PC webpage is broken badly. Don't report it."

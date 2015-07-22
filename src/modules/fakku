@@ -18,7 +18,7 @@
 # you've made the mistake of ending up here accidentally once.
 
 fakku_longname="FAKKU"
-fakku_url="https://fakku.net/"
+fakku_url="fakku.net/"
 fakku_state=1
 fakku_filt=0
 fakku_note="They've been shuffling things around recently."

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 mpark_longname="MangaPark"
-mpark_url="http://mangapark.me/"
+mpark_url="mangapark.me"
 # Broken
 mpark_state=1
 # No filter

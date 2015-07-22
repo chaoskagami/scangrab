@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 dynsc_longname="Dynasty Scans"
-dynsc_url="http://dynasty-scans.com/"
+dynsc_url="dynasty-scans.com/"
 dynsc_state=1
 # No filter
 dynsc_filt=0

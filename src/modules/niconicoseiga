@@ -17,10 +17,10 @@
 # NiconicoSeiga is odd in that an account is required. Therefore, I had to implement cookiejars.
 
 niconicoseiga_longname="Niconico Seiga"
-niconicoseiga_url="http://seiga.nicovideo.jp"
+niconicoseiga_url="seiga.nicovideo.jp"
 niconicoseiga_state=1
 niconicoseiga_filt=0
-niconicoseiga_note="Please login first, or make a cookiejar file."
+niconicoseiga_note="Please login first."
 
 # Need to login.
 niconicoseiga_uselogin=1

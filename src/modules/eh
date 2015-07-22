@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-eh_longname="E-Hentai"
-eh_url="http://e-hentai.org/"
+eh_longname="E-H / ExH"
+eh_url="g.e-hentai.org / exhentai.org"
 eh_state=1
 eh_filt=0
 eh_note="Logging in will result in HQ images and less H@H peer-related issues =_=;"
@@ -25,7 +25,7 @@ eh_uselogin=1
 login_eh() {
 	use_cookies=1
 
-	# Lots of extra shat they use to prevent bots. If it gets updated; let me know.
+	# Lots of extra shat they use to prevent bots. If it gets updated; let me know so I can fix it.
 	
 	s_login "UserName" "PassWord" "$1" "$2" "http://forums.e-hentai.org/index.php?act=Login&CODE=01" \
 		"CookieDate=1&b=&bt=&referer=http://forums.e-hentai.org/?act=idx"
