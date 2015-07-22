@@ -518,15 +518,24 @@ upgrade_self() {
 		exit 0
 	fi
 	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
-	echo "[Upgrade] Checking this scangrab's sha512sum..."
-	this_sha256="$(cat "$0" | sha512sum -)"
-	gith_sha256="$(fetch "$URL.sha256sum" "-")"
+	echo "[Upgrade] Checking this scangrab's sha256sum..."
+	this_sha256="$(cat "$0" | sha256sum - | sed "s| .*||g")"
+	gith_sha256="$(fetch "$URL.sha256sum" "-" | sed "s| .*||g")"
 	if [ "$this_sha256" = "$gith_sha256" ]; then
 		echo "[Upgrade] Not required. Same sha256 as upstream."
 		exit 0
 	else
-		echo "[Upgrade] Doesn't match upstream. Upgrading..."
-		
+		echo "[Upgrade] Local:  $this_sha256"
+		echo "[Upgrade] Github: $gith_sha256"
+		echo "[Upgrade] This doesn't match upstream. Upgrading..."
+		fetch "$URL" "$0"
+		echo "[Upgrade] We appear to have replaced ourselves. Checking sha256..."
+		this_sha256="$(cat "$0" | sha256sum - | sed "s| .*||g")"
+		if [ "$this_sha256" = "$gith_sha256" ]; then
+			echo "[Upgrade] Succeded."
+		else
+			echo "[Upgrade] Failed. sha256 does not match github."
+		fi
 	fi
 }
 
