@@ -575,6 +575,12 @@ help() {
 	type 0
 	echo -e "          Pass the module name, your username and password."
 	echo -e "          This will generate a cookie jar as ./cookiejar"
+	color 3
+	echo -e "     upgrade"
+	type 0
+	echo -e "          Checks github for a newer copy of scangrab and"
+	echo -e "          updates itself. Make sure you have write permission."
+	echo -e "          There is no short form of this action."
 	echo ""
 	echo -e "     You can also specify a module name followed by"
 	echo -e "     the URL instead of using the auto-detect."

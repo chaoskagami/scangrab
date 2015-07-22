@@ -1,7 +1,9 @@
 scangrab
 =====
 
-tl;dr - To install, fetch whatever blob floats your boat from the dist folder and put it somewhere as +x. If you need to report an issue, please use the scangrab.raw version - line numbers are fucked in the min, and even worse in sfx.
+tl;dr - To install, fetch whatever blob floats your boat from the dist folder and put it somewhere as +x. Run scngrab upgrade to get a new copy in the future (saves commands manually typed.)
+
+If you need to report an issue, please use the scangrab.raw version - line numbers are fucked in the min, and even worse in sfx since eval is used to actually decode the entire thing.
 
 NOW OFFICIALLY DUE FOR A RENAME. It supports danbooru now, so it's better than just a scangrabber. ;P
 
@@ -21,11 +23,11 @@ Here's the list of sites it currently handles:
  * Batoto
  * Dynasty Scans
  * Fakku
- * Most FoolSlide Sites (working: foolrulez, vortex-scans, etc)
+ * FoolSlide Sites (working: foolrulez, vortex-scans, etc)
  * Niconico Seiga (Manga)
  * MangaBox
  * Boorus (working: Danbooru, Safebooru)
- * E{-,x}H (Expand the expression. Latter requires login. Also, auto-edits cookies.)
+ * Eh,Ex (The latter requires login. Also, auto-edits cookies so just login first. See notes in BUGS.)
 
 Some of the modules don't provide a scrape operation (read: E-H, Booru). Some of them support more advanced filters (like Batoto - language) and some of them are just plain syntactically weird (Booru)
 
@@ -35,9 +37,9 @@ The reason I originally coded this was Dynasty Scans' nonsense "five zips a day"
 
 You may have noticed that I'm a size optimization freak, by the various versions in dist. The shxz, shgz, shbz is the scangrab.min file compressed into an archive, with an decompress to stdout and eval payload. They're compressed and only require the compression tools to execute. If you're running this somewhere that can't run xz, for example, you can pick the shgz variant or shbz2. Also, the scangrab.min file is minified - a lot of things are replaced with garbage equivalents. This works much like a javascript minifier. Why isn't there a bash minifier?
 
-A lot of temporary files may show up with some sites. This is normal. I may rewrite to use eval later everywhere.
+A lot of temporary files may show up with some sites. This is normal. I may rewrite to use eval later everywhere, but for now there are some issues with handling newlines.
 
 Note: I will not add support for mangafox. Why? Their scans get run thru jpeg, they don't credit where it's due, and they watermark everything. Have fun coding that yourself.
 
-Don't want anything NSFW because you can't or don't want it? Check the sfw branch out. It's sync'd every once in a while from master with the stuff removed.
+Don't want anything NSFW because you can't or don't want it? Check the sfw branch out. It's pulled every once in a while from master with the stuff removed. That said, by every once in a while, I mean horribly out-of-date.
 
