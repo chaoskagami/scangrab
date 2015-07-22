@@ -535,6 +535,7 @@ upgrade_self() {
 			echo "[Upgrade] Succeded."
 		else
 			echo "[Upgrade] Failed. sha256 does not match github."
+			echo "[Upgrade] Make sure you have write permission."
 		fi
 	fi
 }
