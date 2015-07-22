@@ -218,12 +218,10 @@ dl_eh() {
 				fi
 			fi
 		else
-			if [ $FETCH_RESULT = 0 ]; then
-				rm $CUR.htm
-				CUR=$(( CUR + 1 ))
-				if [ ! "$next" = "" ]; then
-					page="$next"
-				fi
+			rm $CUR.htm
+			CUR=$(( CUR + 1 ))
+			if [ ! "$next" = "" ]; then
+				page="$next"
 			fi
 		fi
 

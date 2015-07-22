@@ -53,6 +53,11 @@ for ((i = 1, n = 2;; n = 1 << ++i)); do
 	fi
 done
 
+#####@INSERT_TYPE
+#####@MERGE_DEL 1
+type="repo"
+#####@MERGE_DEL 0
+
 if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
 	_COLOR=1
 	if [ -f $_tput ]; then
@@ -507,6 +512,24 @@ mod_login() {
 	exit 1
 }
 
+upgrade_self() {
+	if [ "$type" = "repo" ]; then
+		echo "[Upgrade] You're in a git repo. Use 'git pull' instead."
+		exit 0
+	fi
+	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
+	echo "[Upgrade] Checking this scangrab's sha512sum..."
+	this_sha256="$(cat '$0' | sha512sum -)"
+	gith_sha256="$(fetch "$URL.sha256sum" "-")"
+	if [ "$this_sha256" = "$gith_sha256" ]; then
+		echo "[Upgrade] Not required. Same sha256 as upstream."
+		exit 0
+	else
+		echo "[Upgrade] Doesn't match upstream. Upgrading..."
+		
+	fi
+}
+
 help() {
 	type 1
 	echo -e "Usage:"
@@ -722,5 +745,5 @@ help() {
 	echo -e "     The latest version of scangrab can always be found at the github"
 	echo -e "     page here: https://github.com/chaoskagami/scangrab"
 	echo ""
-	echo -e "     Build: $branch, $rev"
+	echo -e "     Build: $type, $branch, $rev"
 }

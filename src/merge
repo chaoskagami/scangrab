@@ -14,65 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-TARGET="$1"
-
-if [ "$MINIFY" = "" ]; then
-	MINIFY=1
-fi
-
-if [ "$COMPRESS" = "" ]; then
-	COMPRESS="xz"
-fi
-
-if [ "$BRUTE" = "1" ]; then
-	mkdir -p ./dist
-	TARGET="./dist/scangrab"
-fi
-
-if [ "$TARGET" = "" ]; then
-	TARGET="./scangrab.min"
-elif [ "$TARGET" = "-h" ]; then
-	echo "This script merges the modules and the core to make"
-	echo "a standalone script. By default, the output is"
-	echo ""
-	echo "	./scangrab.min"
-	echo ""
-	echo "but you can also pass where you would like as the"
-	echo "first parameter, like so:"
-	echo ""
-	echo "	./merge /usr/local/bin/scangrab"
-	echo ""
-	echo "This script DOES check to see if you passed it a"
-	echo "folder, and will refuse to work."
-	echo ""
-	echo "It also optimizes the output for size; e.g. minify."
-	echo "If you don't want minified output, open this script"
-	echo "and change MINIFY=1 to MINIFY=0 at the top."
-	echo ""
-	echo "Scangrab will experimentally work with zsh;"
-	echo "change the shebang if you feel like it."
-	echo ""
-	echo "We can also make a decompressible archive too."
-	echo "Export COMPRESS as one of {none,gzip,bzip2,xz}"
-	echo ""
-	echo "xz is default. Note that a system without the"
-	echo "tools won't even be able to execute it."
-	echo ""
-	echo "Additionally, setting BRUTE=1 will build all of"
-	echo "the different versions for comparison and store"
-	echo "in a subfolder named dist."
-	exit 0
-fi
-
-if [ -d "$TARGET" ]; then
-	echo "Was told to overwrite a folder. Cowardly refusing."
-	exit 1
-fi
-
-if [ "$(readlink -f $TARGET)" = "$(pwd)/scangrab" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/main" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/support" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/merge" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/rev" ] || [ "$(readlink -f $TARGET)" = "$(pwd)/modules" ]; then
-	echo "Refusing to clobber any actual files in repo. Why would you do that?"
-	exit 1
-fi
+mkdir -p ./dist
+TARGET="./dist/scangrab"
 
 # Shebang.
 echo "#!/bin/bash" > $TARGET.tmp
@@ -128,108 +71,87 @@ sed -i '/#####@MERGE_DEL 1/,/#####@MERGE_DEL 0/d' $TARGET.tmp
 
 echo "#############################################" >> $TARGET.tmp
 
-if [ "$BRUTE" = "1" ]; then
-	cp $TARGET.tmp $TARGET.raw
-fi
+cp $TARGET.tmp $TARGET.raw
+sed -i 's|#####@INSERT_TYPE|type="raw"|g' $TARGET.raw
 
-if [ "$MINIFY" = "1" ]; then
-	# Remove leading and trailing WS.
-	sed -i "s/^[[:space:]]*//" $TARGET.tmp
-	sed -i "s/[[:space:]]*$//" $TARGET.tmp
+# Remove leading and trailing WS.
+sed -i "s/^[[:space:]]*//" $TARGET.tmp
+sed -i "s/[[:space:]]*$//" $TARGET.tmp
 
-	# Remove lines consisting of a comment.
-	sed -i "/^[[:space:]]*#.*/d" $TARGET.tmp
+# Remove lines consisting of a comment.
+sed -i "/^[[:space:]]*#[[:space:]].*/d" $TARGET.tmp
 
-	# Remove lines consisting of WS.
-	sed -i "/^[[:space:]]*$/d" $TARGET.tmp
+# Remove lines consisting of WS.
+sed -i "/^[[:space:]]*$/d" $TARGET.tmp
 
-	# Replace all instances of "echo" and "echo -e" with 'o'.
+# Replace all instances of "echo" and "echo -e" with 'o'.
 
-	# First define the replacements.
-	echo -e "o() {\necho \"\$@\"\n}" >> $TARGET.fun
-	echo -e "n() {\necho -ne \"\$@\"\n}" >> $TARGET.fun
-	echo -e "e() {\necho -e \"\$@\"\n}" >> $TARGET.fun
+# First define the replacements.
+echo -e "o() {\necho \"\$@\"\n}" >> $TARGET.fun
+echo -e "n() {\necho -ne \"\$@\"\n}" >> $TARGET.fun
+echo -e "e() {\necho -e \"\$@\"\n}" >> $TARGET.fun
 
-	# Now repl.
-	sed -i "s/^echo -ne/n/g" $TARGET.tmp
-	sed -i "s/^echo -en/n/g" $TARGET.tmp
-	sed -i "s/^echo -e/e/g" $TARGET.tmp
-	sed -i "s/^echo/o/g" $TARGET.tmp
+# Now repl.
+sed -i "s/^echo -ne/n/g" $TARGET.tmp
+sed -i "s/^echo -en/n/g" $TARGET.tmp
+sed -i "s/^echo -e/e/g" $TARGET.tmp
+sed -i "s/^echo/o/g" $TARGET.tmp
 
-	# More miscellaneous stripdowns.
-	echo 'B="\b\b\b\b\b\b\b\b\b\b"' >> $TARGET.fun
-	sed -i 's/\\b\\b\\b\\b\\b\\b\\b\\b\\b\\b/$B/g' $TARGET.tmp
+# More miscellaneous stripdowns.
+echo 'B="\b\b\b\b\b\b\b\b\b\b"' >> $TARGET.fun
+sed -i 's/\\b\\b\\b\\b\\b\\b\\b\\b\\b\\b/$B/g' $TARGET.tmp
 
-	# We just nuked the shebang, so fix that.
-	echo "#!/bin/bash"|cat - $TARGET.fun $TARGET.tmp >> $TARGET.min && mv $TARGET.min $TARGET
+# We just nuked the shebang, so fix that.
+echo "#!/bin/bash"|cat - $TARGET.fun $TARGET.tmp >> $TARGET.min && mv $TARGET.min $TARGET
 
-	# Some function names and etc can be simplified.
-	sed -i "s/auto_/a_/g" $TARGET
-	sed -i "s/scrape_/s_/g" $TARGET
-	# At this point; this is a micro optimization. It's useless.
-	#sed -i "s/dl_/d_/g" $TARGET
-	# This rule creates more problems than are needed.
-	#sed -i "s/_url/_u/g" $TARGET
-	sed -i "s/_longname/_l/g" $TARGET
-	sed -i "s/_SPINNER_CHAR/_SC/g" $TARGET
-	sed -i "s/spinner/ss/g" $TARGET
-	sed -i "s/spinner_done/sd/g" $TARGET
+# Some function names and etc can be simplified.
+sed -i "s/auto_/a_/g" $TARGET
+sed -i "s/scrape_/s_/g" $TARGET
 
-	# Remove tmp.
-	rm $TARGET.{fun,tmp}
+sed -i "s/_longname/_l/g" $TARGET
+sed -i "s/_SPINNER_CHAR/_SC/g" $TARGET
+sed -i "s/spinner/ss/g" $TARGET
+sed -i "s/spinner_done/sd/g" $TARGET
 
-	if [ "$BRUTE" = "1" ]; then
-		cp $TARGET $TARGET.min
-	fi
-else
-	mv $TARGET.tmp $TARGET
-fi
+# Remove tmp.
+rm $TARGET.{fun,tmp}
 
-if [ "$BRUTE" = "1" ]; then
-	xz -9k $TARGET
-	bzip2 -9k $TARGET
-	gzip -9k $TARGET
-	rm $TARGET
-	echo "#!/bin/bash" > $TARGET.shbz2
-	echo "#!/bin/bash" > $TARGET.shgz
-	echo "#!/bin/bash" > $TARGET.shxz
-	echo 'eval "$(tail -n+4 "$0" | gzip -d)"' >> $TARGET.shgz
-	echo 'eval "$(tail -n+4 "$0" | bzip2 -d)"' >> $TARGET.shbz2
-	echo 'eval "$(tail -n+4 "$0" | xz -d)"' >> $TARGET.shxz
-	echo 'exit 0' >> $TARGET.shgz
-	echo 'exit 0' >> $TARGET.shbz2
-	echo 'exit 0' >> $TARGET.shxz
-	cat $TARGET.gz >> $TARGET.shgz
-	cat $TARGET.bz2 >> $TARGET.shbz2
-	cat $TARGET.xz >> $TARGET.shxz
-	rm $TARGET.{gz,xz,bz2}
-elif [ "$COMPRESS" = "xz" ]; then
-	xz -9 $TARGET
-	echo "#!/bin/bash" > $TARGET
-	echo 'eval "$(tail -n+4 "$0" | xz -d)"' >> $TARGET
-	echo 'exit 0' >> $TARGET
-	cat $TARGET.xz >> $TARGET
-	rm $TARGET.xz
-elif [ "$COMPRESS" = "bzip2" ]; then
-	bzip2 -9 $TARGET
-	echo "#!/bin/bash" > $TARGET
-	echo 'eval "$(tail -n+4 "$0" | bzip2 -d)"' >> $TARGET
-	echo 'exit 0' >> $TARGET
-	cat $TARGET.bz2 >> $TARGET
-	rm $TARGET.bz2
-elif [ "$COMPRESS" = "gzip" ]; then
-	gzip -9 $TARGET
-	echo "#!/bin/bash" > $TARGET
-	echo 'eval "$(tail -n+4 "$0" | gzip -d)"' >> $TARGET
-	echo 'exit 0' >> $TARGET
-	cat $TARGET.gz >> $TARGET
-	rm $TARGET.gz
-fi
+cp $TARGET $TARGET.min
+sed -i 's|#####@INSERT_TYPE|type="min"|g' $TARGET.min
 
+mv $TARGET $TARGET.tmp
 
-# Life needs to be easier.
-if [ "$BRUTE" = "1" ]; then
-	chmod +x $TARGET.*
-else
-	chmod +x $TARGET
-fi
+cp $TARGET.tmp $TARGET
+sed -i 's|#####@INSERT_TYPE|type="shxz"|g' $TARGET
+
+xz -9k $TARGET
+echo "#!/bin/bash" > $TARGET.shxz
+echo 'eval "$(tail -n+4 "$0" | xz -d)"' >> $TARGET.shxz
+echo 'exit 0' >> $TARGET.shxz
+cat $TARGET.xz >> $TARGET.shxz
+
+cp $TARGET.tmp $TARGET
+sed -i 's|#####@INSERT_TYPE|type="shbz2"|g' $TARGET
+
+bzip2 -9k $TARGET
+echo "#!/bin/bash" > $TARGET.shbz2
+echo 'eval "$(tail -n+4 "$0" | bzip2 -d)"' >> $TARGET.shbz2
+echo 'exit 0' >> $TARGET.shbz2
+cat $TARGET.bz2 >> $TARGET.shbz2
+
+cp $TARGET.tmp $TARGET
+sed -i 's|#####@INSERT_TYPE|type="shgz"|g' $TARGET
+
+gzip -9k $TARGET
+echo "#!/bin/bash" > $TARGET.shgz
+echo 'eval "$(tail -n+4 "$0" | gzip -d)"' >> $TARGET.shgz
+echo 'exit 0' >> $TARGET.shgz
+cat $TARGET.gz >> $TARGET.shgz
+
+rm $TARGET{.gz,.xz,.bz2,.tmp,}
+
+chmod +x $TARGET.*
+
+for f in $TARGET.*; do
+	cat "$f" | sha256sum - > $f.sha256sum
+done

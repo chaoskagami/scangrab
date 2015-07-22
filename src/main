@@ -37,6 +37,9 @@ elif [ "$1" = "login" -o "$1" = "u" ]; then
 	# Site login.
 	shift
 	mod_login "$@"
+elif [ "$1" = "upgrade" ]; then
+	# Upgrade self.
+	upgrade_self
 else
 	# Not a common operation - either invalid, a module, or a lazy URL.
 
