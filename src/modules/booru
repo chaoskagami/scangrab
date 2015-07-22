@@ -158,6 +158,8 @@ mode=1
 source=""
 name=""
 
+is_pool=0
+
 # Computes final tags.
 booru_tag_crunch() {
 	# Tag array can be pasted together.
@@ -165,7 +167,18 @@ booru_tag_crunch() {
 		if [ ! "$i" = "0" ] && [ ! "$((i + 1))" = "${#tagarray}" ]; then
 			final[1]="${final[1]}+"
 		fi
+
+		# This is a pool. Ignore the other things.
+		if [[ "${tagarray[i]}" == pool:* ]]; then
+			echo "[Booru] This is apparently a pool."
+			is_pool=1
+			TAGCOUNT=1
+			final[1]="$(echo ${tagarray[i]} | sed -e 's|pool:||g')"
+			break
+		fi
+
 		tag="$(echo ${tagarray[i]} | sed -e 's|:|%3A|g')"
+
 		final[1]="${final[1]}${tag}"
 		if [[ ! "$tag" == *:* ]]; then
 			TAGCOUNT=$((TAGCOUNT + 1))
@@ -174,6 +187,11 @@ booru_tag_crunch() {
 }
 
 booru_size_crunch() {
+	# No settings for a pool.
+	if [ $is_pool = 1 ]; then
+		return
+	fi
+
 	for (( i=0 ; i < ${#sizearray[@]} ; i++ )); do
 		if [[ "${sizearray[i]}" == pages:* ]] || [[ "${sizearray[i]}" == p* ]]; then
 			pagerange=($(echo "${sizearray[i]}" | tr -d 'p' | tr '-' ' '))
@@ -381,7 +399,7 @@ dl_booru() {
 
 	cd meta
 
-	echo -n "[Booru] Checking metadata... "
+	echo -n "[Booru] Checking and refetching metadata... "
 
 	# Ideally metadata should have been taken care of above.
 	# Some sites don't provide all info in a page API query though.

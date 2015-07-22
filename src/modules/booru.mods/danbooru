@@ -32,40 +32,48 @@ booru_danbooru_page() {
 		return 1
 	fi
 
-	dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
+	if [ $is_pool = 0 ]; then
+		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
 
-	BEFORE=$(wc -l meta.txt | sed 's| .*||g')
-	cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
-	AFTER=$(wc -l meta.txt | sed 's| .*||g')
+		BEFORE=$(wc -l meta.txt | sed 's| .*||g')
+		cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
+		AFTER=$(wc -l meta.txt | sed 's| .*||g')
 
-	if [ "$BEFORE" = '' ]; then
-		BEFORE=0
-	fi
-	PAGE_SIZE=$((AFTER - BEFORE))
+		if [ "$BEFORE" = '' ]; then
+			BEFORE=0
+		fi
+		PAGE_SIZE=$((AFTER - BEFORE))
 
-	# We preprocess metadata.
-	sed -i "s|},{|}]\n[{|g" "page${range}.json"
-	# There's no final newline, so the read will miss an ID and have to refetch
-	# later even though that's dumb.
-	echo '' >> "page${range}.json"
+		# We preprocess metadata.
+		sed -i "s|},{|}]\n[{|g" "page${range}.json"
+		# There's no final newline, so the read will miss an ID and have to refetch
+		# later even though that's dumb.
+		echo '' >> "page${range}.json"
 
-	LEN=0
-	while read line; do
-		FIRST=$((PAGE_SIZE - LEN))
-		id="$(cat meta.txt | tail -n $FIRST | head -n 1)"
-		echo "$line" > meta/meta_${id}.json
-		LEN=$((LEN + 1))
-	done < "page${range}.json"
+		LEN=0
+		while read line; do
+			FIRST=$((PAGE_SIZE - LEN))
+			id="$(cat meta.txt | tail -n $FIRST | head -n 1)"
+			echo "$line" > meta/meta_${id}.json
+			LEN=$((LEN + 1))
+		done < "page${range}.json"
 	
-	rm "page${range}.json"
+		rm "page${range}.json"
 
-	# No more pages.
-	if (( BEFORE == AFTER )); then
-		return 1
+		# No more pages.
+		if (( BEFORE == AFTER )); then
+			return 1
+		fi
+
+		# Still more.
+		return 0
+	else
+		final[0]="${source}/pools.json?commit=Search&search[order]=updated_at&search[name_matches]="
+
+		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "${final[1]}.json"
+
+		cat "${final[1]}.json" | tr ',' "\n" | grep '"post_ids"' | sed -e 's|.*:||g' -e 's|"||g' | tr ' ' "\n" >> meta.txt
 	fi
-
-	# Still more.
-	return 0
 }
 
 # This should download a page's meta info. If there isn't any, it should copy the ID to a file named as the ID.
@@ -76,12 +84,11 @@ booru_danbooru_meta() {
 	base[1]="${1}.json"
 
 	if [ ! -e "meta_${base[1]}" ]; then
-		spinner_done
-		echo "[Booru] No metadata for ID:${1}. Refetch... "
+		message="fetch ${1}"
+		spinner "${DONE} -> ${LINES}"
+		message=""
 
 		dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
-
-		echo "[Booru] Continuing... "
 	fi
 }
 
