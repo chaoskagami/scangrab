@@ -31,7 +31,7 @@ login_eh() {
 		"CookieDate=1&b=&bt=&referer=http://forums.e-hentai.org/?act=idx"
 	user="$(fetch "http://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
 	if [ ! "$user" = "" ]; then
-		echo "[E-H] Logged in as: $user"
+		echo -e "\n[E-H] Logged in as: $user"
 		exit 0
 	fi
 
@@ -174,64 +174,56 @@ dl_eh() {
 		extra=""
 
 		spinner "IMG $CUR / $MAXPAGES"
-		if [ $CDNFAIL -ge 3 ]; then
-			FETCH_RESULT=1
+		if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
+			fetch "$lq" "$(basename $lq)"
 		else
-			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
-				fetch "$lq" "$(basename $lq)"
-			else
-				# HQ version; this is the 'Download source resolution' button.
-				fetch "$hq"
-			fi
+			# HQ version; this is the 'Download source resolution' button.
+			fetch "$hq"
 		fi
 
 		if [ ! $FETCH_RESULT = 0 ]; then
-
-			message=" :("
-
-			CDNFAIL=$((CDNFAIL + 1))
-			if [ $CDNFAIL -ge 3 ]; then
-				message=" >:("
-			fi
-			
-			mv "$CUR.htm" "${CUR}nl.htm"
+			message=" Alt"
 
 			while [ ! $FETCH_RESULT = 0 ]; do
-				notload=$(cat ${CUR}nl.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+				# Clobber existing pages.
+				CLOBBER=1
 
+				fetch "$page" "${CUR}.htm"
+				notload=$(cat ${CUR}.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+
+				spinner "FAL $CUR / $MAXPAGES"
 				fetch "$page?nl=$notload" "${CUR}nl.htm"
 
-				while [ ! $FETCH_RESULT = 0 ]; do
-					CLOBBER=1
-					message=":O"
-					spinner "FAL $CUR / $MAXPAGES"
-					fetch "$page?nl=$notload" "${CUR}nl.htm"
-					CLOBBER=0
-				done
-
-				lq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-				hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-				next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
-
-				spinner "IMG $CUR / $MAXPAGES"
-				if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
-					fetch "$lq"
-				else
-					fetch "$hq"
-				fi
+				# Turn clobber off now that we're done.
+				CLOBBER=0
 			done
+
+			lq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+			hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+			next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+
+			spinner "IMG $CUR / $MAXPAGES"
+			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
+				fetch "$lq"
+			else
+				fetch "$hq"
+			fi
 
 			rm "${CUR}nl.htm"
 
-			CUR=$(( CUR + 1 ))
-			if [ ! "$next" = "" ]; then
-				page="$next"
+			if [ $FETCH_RESULT = 0 ]; then
+				CUR=$(( CUR + 1 ))
+				if [ ! "$next" = "" ]; then
+					page="$next"
+				fi
 			fi
 		else
-			rm $CUR.htm
-			CUR=$(( CUR + 1 ))
-			if [ ! "$next" = "" ]; then
-				page="$next"
+			if [ $FETCH_RESULT = 0 ]; then
+				rm $CUR.htm
+				CUR=$(( CUR + 1 ))
+				if [ ! "$next" = "" ]; then
+					page="$next"
+				fi
 			fi
 		fi
 

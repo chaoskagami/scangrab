@@ -465,7 +465,7 @@ dl_booru() {
 		fi
 	done < ../meta.txt
 
-	rm meta.txt
+	rm ../meta.txt
 
 	spinner_done
 

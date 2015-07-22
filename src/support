@@ -270,8 +270,10 @@ fetch() {
 		# Wget uses content-disposition to hopefully get a good name in abscence of one.
 		# Of course, that assumes that SAFETY_HACKS is off.
 
+		STDOUT=0
 		if [ "$2" = "-" ]; then
 			_CMD="$_CMD -O -"
+			STDOUT=1
 		elif [ ! "$2" = "" ]; then
 			_CMD="$_CMD -O \"$2\""
 		fi
@@ -314,7 +316,7 @@ fetch() {
 	# Wget doesn't have an option to clobber forcibly
 	# with content disposition on. I'm so bemused by this
 	# that I'm not even sure what to say.
-	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ]; then
+	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
 		mkdir -p "wget.tmp" 2>/dev/null
 		cd wget.tmp
 	fi
@@ -322,8 +324,8 @@ fetch() {
 	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
 	
-	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ]; then
-		mv ./* ../
+	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
+		mv ./* ../ 2>/dev/null
 		cd ..
 		rm -rf wget.tmp
 	fi
