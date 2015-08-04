@@ -49,7 +49,6 @@ else
 		if [ "$1" = "$module" ]; then
 			shift
 			dl_${module} "$@"
-			exit 0
 		fi
 	done
 
