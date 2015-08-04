@@ -452,22 +452,16 @@ auto() {
 
 batch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
-	IFS=$'\n' read -d '' -r -a LINES < $1
-	NEW=""
-	for chunk in "${LINES[@]}"; do
-		NEW="$NEW$0 $chunk ;"
-	done
-	$NEW
+	while read chunk; do
+		$0 $chunk
+	done < $1
 }
 
 autobatch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
-	IFS=$'\n' read -d '' -r -a LINES < $1
-	NEW=""
-	for chunk in "${LINES[@]}"; do
-		NEW="$NEW$0 auto $chunk ;"
-	done
-	$NEW
+	while read chunk; do
+		$0 auto $chunk
+	done < $1
 }
 
 scrape() {
