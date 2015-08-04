@@ -446,7 +446,6 @@ auto() {
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
 			dl_${module} "$@"
-			exit 0
 		fi
 	done
 }
