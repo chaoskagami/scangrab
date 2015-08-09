@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+type() {
+	if [ $_COLOR = 1 ]; then
+		echo -ne "\x1b[$1m"
+	elif [ $_COLOR = 2 ]; then
+		if [ $1 = 0 ]; then
+			tput sgr0
+		elif [ $1 = 1 ]; then
+			tput bold
+		elif [ $1 = 2 ]; then
+			tput dim
+		fi
+	fi
+}
+

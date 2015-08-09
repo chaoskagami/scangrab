@@ -15,23 +15,48 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-# Why is this file separated? Because of minification.
-# It allows merging files together.
+# This file is literally the 'load everything' file. It doesn't really
+# do much work on its own. Merge generates it's own method of loading everything.
 
-# Load support code. A few common functions.
-
+# The revision.
 . ./rev
 
-. ./support
+# Configure env.
+. ./operations/configure_env
 
-# Load modules and index them.
+# All misc functions (used to be support.)
+. ./functions/type
+. ./functions/color
+. ./functions/cbz_make
+. ./functions/verify
+. ./functions/spinner_clear
+. ./functions/spinner
+. ./functions/spinner_reset
+. ./functions/spinner_done
+. ./functions/mimetype
+. ./functions/s_login
+. ./functions/fetch
+. ./functions/entity_to_char
+. ./functions/remove_illegal
+. ./functions/reverse_lines
 
-MODS=($(find modules/ -maxdepth 1 -type f | sed 's|modules/||g'))
+# Load operations (also used to be support)
+. ./operations/auto
+. ./operations/autobatch
+. ./operations/batch
+. ./operations/scrape
+. ./operations/mod_login
+. ./operations/upgrade_self
+. ./operations/help
 
-for module in ${MODS[@]}; do
-	. modules/$module
+# Load modules sources.
+LIST=($(find modules/ -type f))
+for script in ${LIST[@]}; do
+	source "${script}"
 done
 
-# Run main code.
+# Export module names.
+MODS=($(find modules/ -maxdepth 1 -type f | sed 's|modules/||g'))
 
+# Run main code.
 . ./main

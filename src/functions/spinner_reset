@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+spinner_reset() {
+	if [ $VERBOSE = 1 ]; then
+		echo "Status: $1 - $message"
+		return
+	fi
+
+	spinner_clear
+
+	_SPINNER_CHAR="|"
+	_NUM=0
+}

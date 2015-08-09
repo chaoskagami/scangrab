@@ -1,0 +1,91 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+COOKIEJAR="$(pwd)/cookiejar"
+HAVE_IMAGICK=0
+FETCH_RESULT=0
+
+if [ "$VERBOSE" = "" ]; then
+	VERBOSE=0
+fi
+
+# These values are used by support/core but are controlled by modules.
+message=""
+use_cookies=0
+SAFETY_HACKS=0
+CLOBBER=0
+
+# Anything which starts with an underscore is internal and shouldn't be touched.
+_COLOR=0
+_FETCH_CMD=""
+_CHECK_VALID=0
+_FETCHTOOL=0
+_BUSYBOX=0
+_SPINNER_CHAR="|"
+_NUM=0
+
+# Tools. Use these variables instead of actual command names.
+_tput="$(which tput 2>/dev/null)"
+_identify="$(which identify 2>/dev/null)"
+_convert="$(which convert 2>/dev/null)"
+_wget="$(which wget 2>/dev/null)"
+_curl="$(which curl 2>/dev/null)"
+_aria="$(which aria2c 2>/dev/null)"
+
+for ((i = 1, n = 2;; n = 1 << ++i)); do
+	if [[ ${n:0:1} == '-' ]]; then
+		MAX_INT=$(((1 << i) - 1))
+		break
+	fi
+done
+
+#####@INSERT_TYPE
+#####@MERGE_DEL 1
+type="repo"
+#####@MERGE_DEL 0
+
+if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
+	_COLOR=1
+	if [ -f $_tput ]; then
+		# Better method.
+		_COLOR=2
+	fi
+fi
+
+if [ -f "$_identify" ]; then
+	_CHECK_VALID=1
+fi
+
+if [ -f "$_identify" ]; then
+	HAVE_IMAGICK=1
+fi
+
+if [ ! "$_wget" = "" ]; then
+	common_opts=" --quiet --no-cache --user-agent=\"Mozilla/5.0\" -t 1 -T 10 --random-wait "
+
+	if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
+		echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
+		common_opts=" -q -U \"Mozilla/5.0\""
+		_BUSYBOX=1
+	fi
+
+	_FETCH_CMD="$_wget $common_opts"
+	_FETCHTOOL=1
+else
+	if [ ! "$_curl" = "" ]; then
+			_FETCH_CMD=$_curl
+			_FETCHTOOL=2
+	else
+		if [ ! "$_aria" = "" ]; then
+				_FETCH_CMD=$_aria
+				_FETCHTOOL=3
+		fi
+	fi
+fi	

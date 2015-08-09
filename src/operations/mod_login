@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+mod_login() {
+	for module in ${MODS[@]}; do
+		if [ "$1" = "$module" ]; then
+			if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
+				if [ ! "$3" = "" ]; then
+					echo "[Warn] Caveat; you probably need to wipe your shell history now. Try not to do it like this."
+					username="$2"
+					password="$3"
+				elif [ ! "$2" = "" ]; then
+					username="$2"
+					echo -ne "[$module] Password for $username (will not echo): "
+					read -s password
+				else
+					echo -ne "[$module] Username: "
+					read username
+					echo -ne "[$module] Password for $username (will not echo): "
+					read -s password
+				fi
+				login_${module} "$username" "$password"
+				exit 0
+			else
+				echo "$module does not need login."
+				exit 0
+			fi
+		fi
+	done
+	echo "No such module."
+	exit 1
+}

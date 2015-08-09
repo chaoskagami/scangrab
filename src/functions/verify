@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+# Checks if an image is uncorrupted. If you don't have the tools, this never happens.
+	# Returns 0 on OK / no tool
+	# Returns error code on corrupt
+verify() {
+	if [ -f $_identify ]; then
+		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
+		_IDRES=$?
+		return $_IDRES
+	fi
+
+	return 0
+}

@@ -1,0 +1,233 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+help() {
+	type 1
+	echo -e "Usage:"
+	type 0
+	echo -ne "     $0     "
+	color 3
+	echo -ne "OPERATION     "
+	color 5
+	echo -e "[PARAMS]"
+	type 0
+	type 1
+	echo -e "Operations:"
+	type 0
+	color 3
+	echo -e "     auto (a)"
+	type 0
+	echo -e "          Chooses module based on URL"
+	color 3
+	echo -e "     batch (l)"
+	type 0
+	echo -e "          Takes a file with a list of types and URLs"
+	color 3
+	echo -e "     autobatch (b)"
+	type 0
+	echo -e "          Takes a file with URLs which will be run with auto."
+	color 3
+	echo -e "     scrape (s)"
+	type 0
+	echo -e "          Will take a manga's page and scrape chapters to"
+	echo -e "          a file named batch.txt"
+	color 3
+	echo -e "     login (u)"
+	type 0
+	echo -e "          Pass the module name, your username and password."
+	echo -e "          This will generate a cookie jar as ./cookiejar"
+	color 3
+	echo -e "     upgrade"
+	type 0
+	echo -e "          Checks github for a newer copy of scangrab and"
+	echo -e "          updates itself. Make sure you have write permission."
+	echo -e "          There is no short form of this action."
+	echo ""
+	echo -e "     You can also specify a module name followed by"
+	echo -e "     the URL instead of using the auto-detect."
+	echo ""
+	echo -e "     If you don't specify an operation and pass only a URL"
+	echo -e "     then we assume you want auto (a)."
+	type 1
+	echo -e "Download Modules:"
+	type 0
+	for mod in "${MODS[@]}"; do
+		longname=$(temp=\$${mod}_longname && eval echo $temp)
+		url=$(temp=\$${mod}_url && eval echo $temp)
+		broke=$(temp=\$${mod}_state && eval echo $temp)
+		filter=$(temp=\$${mod}_filt && eval echo $temp)
+		note=$(temp=\$${mod}_note && eval echo $temp)
+
+		echo -ne "     Module Name:                "
+		color 3
+		echo -e "$mod"
+
+		type 0
+		echo -ne "          Long Name:             "
+		color 4
+		echo -e "$longname"
+
+		type 0
+		echo -ne "          Site(s) Used with:     "
+		color 5
+		echo -e "$url"
+		type 0
+
+		type 0
+		echo -ne "          Site(s) Current state: "
+		if [ "$broke" = "1" ]; then
+			color 2
+			echo -e "Works"
+		elif [ "$broke" = "2" ]; then
+			color 3
+			echo -e "InDev"
+		else
+			color 1
+			echo -e "Broken"
+		fi
+
+		if [ ! "$note" = "" ]; then
+			type 0
+			echo -e "          Site Note:             $note"
+		fi
+
+		type 0
+		if [ "$filter" = "1" ]; then
+			echo -e "          Supports filters for scrape"
+		fi
+
+		echo ""
+	done
+	type 1
+	echo -e "Misc Info"
+	type 0
+	echo -e "     If you see an emote in the output, it means we had to deal"
+	echo -e "     with a retrieval quirk."
+	echo -e "\n     [ :/ ]       Given GZip'd data even though we said it wasn't"
+	echo -e "                  supported in the GET."
+	type 2
+	echo -e "                  This happens frequently with batoto when doing"
+	echo -e "                  multiple fetches. :/"
+	type 0
+	echo -e "\n     [ :( ]       Site didn't respond and so the DL failed"
+	echo -e "                  We had to revert to a fallback method."
+
+	echo -e "\n     [ >:( ]      Too many normal requests failed; we reverted"
+	echo -e "                  to using entirely the fallback method."
+	echo ""
+	echo -e "     Some modules accept an extra parameter. Usually, this"
+	echo -e "     is a filter. Try values like 'English' or 'French'."
+	type 1
+	echo -e "System Tools"
+	type 0
+	if [ ! "$_wget" = "" ]; then
+		echo -e "     wget:                $_wget"
+	fi
+	if [ ! "$_curl" = "" ]; then
+		echo -e "     curl:                $_curl"
+	fi
+	if [ ! "$_aria" = "" ]; then
+		echo -e "     aria2c:              $_aria"
+	fi
+	echo -ne "     Will use:            "
+	if [ $_FETCHTOOL = 1 ]; then
+		echo -ne "wget"
+		if [ $_BUSYBOX = 1 ]; then
+			echo -ne ", busybox"
+		else
+			echo -ne ""
+		fi
+	elif [ $_FETCHTOOL = 2 ]; then
+		echo -ne "curl"
+	elif [ $_FETCHTOOL = 3 ]; then
+		echo -ne "aria2c"
+	else
+		echo -ne "no tool. Install one of: "
+	fi
+	echo " (wget, curl, aria2c)"
+	echo -ne "     Check broken images: "
+	if [ $_CHECK_VALID = 1 ]; then
+		if [ -f $_identify ]; then
+			echo -ne "imagemagick ($_identify)"
+		fi
+		echo ""
+	else
+		echo "no"
+	fi
+	echo -ne "     Color:               "
+	if [ $_COLOR = 1 ]; then
+		color 1
+		echo -ne "y"
+		color 2
+		echo -ne "e"
+		color 3
+		echo -ne "s"
+		color 4
+		echo -ne " "
+		echo -ne "("
+		color 5
+		echo -ne "d"
+		color 6
+		echo -ne "u"
+		color 1
+		echo -ne "m"
+		color 2
+		echo -ne "b"
+		color 3
+		echo ")"
+		type 0
+	elif [ $_COLOR = 2 ]; then
+		color 1
+		echo -ne "y"
+		color 2
+		echo -ne "e"
+		color 3
+		echo -ne "s"
+		color 4
+		echo -ne " "
+		echo -ne "("
+		color 5
+		echo -ne "t"
+		color 6
+		echo -ne "p"
+		color 1
+		echo -ne "u"
+		color 2
+		echo -ne "t"
+		color 3
+		echo ")"
+		type 0
+	else
+		echo "no (TERM='$TERM')"
+	fi
+	type 1
+	echo -ne "License / Info"
+	type 0
+	echo ""
+	echo -e "     Copyright (C) 2015     Jon Feldman/@chaoskagami"
+	echo ""
+	echo -e "     This program is free software: you can redistribute it and/or modify"
+	echo -e "     it under the terms of the GNU General Public License as published by"
+	echo -e "     the Free Software Foundation, either version 3 of the License, or"
+	echo -e "     (at your option) any later version."
+	echo ""
+	echo -e "     This program is distributed in the hope that it will be useful,"
+	echo -e "     but WITHOUT ANY WARRANTY; without even the implied warranty of"
+	echo -e "     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+	echo -e "     GNU General Public License for more details."
+	echo ""
+	echo -e "     You should have received a copy of the GNU General Public License"
+	echo -e "     along with this program.  If not, see <http://www.gnu.org/licenses/>"
+	echo ""
+	echo -e "     The latest version of scangrab can always be found at the github"
+	echo -e "     page here: https://github.com/chaoskagami/scangrab"
+	echo ""
+	echo -e "     Build: $type, $branch, $rev"
+}

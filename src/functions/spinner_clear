@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+spinner_clear() {
+	# Clear previous output
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne " "
+	done
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+}

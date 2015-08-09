@@ -1,7 +1,12 @@
 #!/bin/bash
 #############################################
-#####@ORIGINAL-FILE 'support'
+#####@ORIGINAL-FILE 'rev'
+rev=569f0baebe1214c525910ed552f31d150183d93f
+branch=master
+#############################################
+#####@ORIGINAL-FILE 'functions/s_login'
 #!/bin/bash
+
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
 #
 # This program is free software: you can redistribute it and/or modify
@@ -9,216 +14,6 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>
-
-# These values can be read but should not be written by a module.
-COOKIEJAR="$(pwd)/cookiejar"
-HAVE_IMAGICK=0
-FETCH_RESULT=0
-
-if [ "$VERBOSE" = "" ]; then
-	VERBOSE=0
-fi
-
-# These values are used by support/core but are controlled by modules.
-message=""
-use_cookies=0
-SAFETY_HACKS=0
-CLOBBER=0
-
-# Anything which starts with an underscore is internal and shouldn't be touched.
-_COLOR=0
-_FETCH_CMD=""
-_CHECK_VALID=0
-_FETCHTOOL=0
-_BUSYBOX=0
-_SPINNER_CHAR="|"
-_NUM=0
-
-# Tools. Use these variables instead of actual command names.
-_tput="$(which tput 2>/dev/null)"
-_identify="$(which identify 2>/dev/null)"
-_convert="$(which convert 2>/dev/null)"
-_wget="$(which wget 2>/dev/null)"
-_curl="$(which curl 2>/dev/null)"
-_aria="$(which aria2c 2>/dev/null)"
-
-for ((i = 1, n = 2;; n = 1 << ++i)); do
-	if [[ ${n:0:1} == '-' ]]; then
-		MAX_INT=$(((1 << i) - 1))
-		break
-	fi
-done
-
-type="raw"
-
-if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
-	_COLOR=1
-	if [ -f $_tput ]; then
-		# Better method.
-		_COLOR=2
-	fi
-fi
-
-if [ -f "$_identify" ]; then
-	_CHECK_VALID=1
-fi
-
-if [ -f "$_identify" ]; then
-	HAVE_IMAGICK=1
-fi
-
-if [ ! "$_wget" = "" ]; then
-	common_opts=" --quiet --no-cache --user-agent=\"Mozilla/5.0\" -t 1 -T 10 --random-wait "
-
-	if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
-		echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
-		common_opts=" -q -U \"Mozilla/5.0\""
-		_BUSYBOX=1
-	fi
-
-	_FETCH_CMD="$_wget $common_opts"
-	_FETCHTOOL=1
-else
-	if [ ! "$_curl" = "" ]; then
-			_FETCH_CMD=$_curl
-			_FETCHTOOL=2
-	else
-		if [ ! "$_aria" = "" ]; then
-				_FETCH_CMD=$_aria
-				_FETCHTOOL=3
-		fi
-	fi
-fi	
-
-type() {
-	if [ $_COLOR = 1 ]; then
-		echo -ne "\x1b[$1m"
-	elif [ $_COLOR = 2 ]; then
-		if [ $1 = 0 ]; then
-			tput sgr0
-		elif [ $1 = 1 ]; then
-			tput bold
-		elif [ $1 = 2 ]; then
-			tput dim
-		fi
-	fi
-}
-
-color() { 
-	if [ $_COLOR = 1 ]; then
-		echo -ne "\x1b[3$1m"
-	elif [ $_COLOR = 2 ]; then
-		tput setaf $1
-	fi
-}
-
-cbz_make() {
-	echo -e "[Post] Making CBZ..."
-
-	# Check and make sure the folder has something, and is actually a folder.
-	if [ ! -d "$1" ]; then
-		echo -e "\n[Error] Not a folder. Something went wrong."
-		exit 1
-	fi
-	
-	if [ "$(ls "$1")" = "" ]; then
-		echo "[Error] No files? Download failed."
-		exit 1
-	fi
-
-	zip -r "$1.zip" "$1" > /dev/null 2>&1
-	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
-	
-	echo -e "[Post] Cleanup..."
-	rm -rf "$1"
-	echo -e "[Post] Finished!"
-}
-
-# Checks if an image is uncorrupted. If you don't have the tools, this never happens.
-	# Returns 0 on OK / no tool
-	# Returns error code on corrupt
-verify() {
-	if [ -f $_identify ]; then
-		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
-		_IDRES=$?
-		return $_IDRES
-	fi
-
-	return 0
-}
-
-spinner_clear() {
-	# Clear previous output
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne "\b"
-	done
-
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne " "
-	done
-
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne "\b"
-	done
-}
-
-spinner() {
-	if [ $VERBOSE = 1 ]; then
-		echo "Status: $1 - $message"
-		return
-	fi
-	if [ "$_SPINNER_CHAR" = "|" ]; then
-		_SPINNER_CHAR="/"
-	elif [ "$_SPINNER_CHAR" = "/" ]; then
-		_SPINNER_CHAR="-"
-	elif [ "$_SPINNER_CHAR" = "-" ]; then
-		_SPINNER_CHAR="\\"
-	elif [ "$_SPINNER_CHAR" = "\\" ]; then
-		_SPINNER_CHAR="|"
-	fi
-
-	# Clear previous output
-	spinner_clear
-
-	STR="[$1 $_SPINNER_CHAR] $message"
-	_NUM="${#STR}"
-
-	echo -ne "$STR"
-}
-
-spinner_reset() {
-	if [ $VERBOSE = 1 ]; then
-		echo "Status: $1 - $message"
-		return
-	fi
-
-	spinner_clear
-
-	_SPINNER_CHAR="|"
-	_NUM=0
-}
-
-spinner_done() {
-	spinner_reset
-
-	_MESG="OK"
-	if [ ! "$1" = "" ]; then
-		_MESG="$1"
-	fi
-	echo -e "[$_MESG]"
-}
-
-mimetype() {
-	echo "$(file --mime-type "$1" | sed 's/.* //g')"
-}
-
 
 # This creates a cookie jar.
 # $1 - Username field
@@ -252,6 +47,43 @@ s_login() {
 	eval " $_CMD" 2>/dev/null
 	FETCH_RESULT=$?
 }
+#############################################
+#####@ORIGINAL-FILE 'functions/spinner_clear'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+spinner_clear() {
+	# Clear previous output
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne " "
+	done
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/fetch'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
 
 # AVOID CHANGING THIS FUNCTION IF AT ALL POSSIBLE.
 # THINGS WILL BREAK IN EVERYTHING IF THIS ONE BREAKS.
@@ -346,6 +178,176 @@ fetch() {
 
 	return $FETCH_RESULT
 }
+#############################################
+#####@ORIGINAL-FILE 'functions/type'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+type() {
+	if [ $_COLOR = 1 ]; then
+		echo -ne "\x1b[$1m"
+	elif [ $_COLOR = 2 ]; then
+		if [ $1 = 0 ]; then
+			tput sgr0
+		elif [ $1 = 1 ]; then
+			tput bold
+		elif [ $1 = 2 ]; then
+			tput dim
+		fi
+	fi
+}
+
+#############################################
+#####@ORIGINAL-FILE 'functions/spinner'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+spinner() {
+	if [ $VERBOSE = 1 ]; then
+		echo "Status: $1 - $message"
+		return
+	fi
+	if [ "$_SPINNER_CHAR" = "|" ]; then
+		_SPINNER_CHAR="/"
+	elif [ "$_SPINNER_CHAR" = "/" ]; then
+		_SPINNER_CHAR="-"
+	elif [ "$_SPINNER_CHAR" = "-" ]; then
+		_SPINNER_CHAR="\\"
+	elif [ "$_SPINNER_CHAR" = "\\" ]; then
+		_SPINNER_CHAR="|"
+	fi
+
+	# Clear previous output
+	spinner_clear
+
+	STR="[$1 $_SPINNER_CHAR] $message"
+	_NUM="${#STR}"
+
+	echo -ne "$STR"
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/mimetype'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+mimetype() {
+	echo "$(file --mime-type "$1" | sed 's/.* //g')"
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/verify'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+# Checks if an image is uncorrupted. If you don't have the tools, this never happens.
+	# Returns 0 on OK / no tool
+	# Returns error code on corrupt
+verify() {
+	if [ -f $_identify ]; then
+		$_identify -verbose -regard-warnings "$1" 2>&1 >/dev/null
+		_IDRES=$?
+		return $_IDRES
+	fi
+
+	return 0
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/spinner_reset'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+spinner_reset() {
+	if [ $VERBOSE = 1 ]; then
+		echo "Status: $1 - $message"
+		return
+	fi
+
+	spinner_clear
+
+	_SPINNER_CHAR="|"
+	_NUM=0
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/remove_illegal'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+remove_illegal() {
+
+	sed \
+		-e "s/|/-/g" \
+		-e "s|/|-|g" \
+		-e "s|?|？|g"
+
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/color'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+color() { 
+	if [ $_COLOR = 1 ]; then
+		echo -ne "\x1b[3$1m"
+	elif [ $_COLOR = 2 ]; then
+		tput setaf $1
+	fi
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/entity_to_char'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
 
 entity_to_char() {
 	# This probably doesn't handle every case. It should be enough.
@@ -419,18 +421,17 @@ entity_to_char() {
 		-e "s/&#9830;/♦/g"
 
 }
+#############################################
+#####@ORIGINAL-FILE 'functions/reverse_lines'
+#!/bin/bash
 
-# Known fixed snafus.
-# Remove pipe, slash.
-# Replace question mark with fullwidth question mark.
-remove_illegal() {
-
-	sed \
-		-e "s/|/-/g" \
-		-e "s|/|-|g" \
-		-e "s|?|？|g"
-
-}
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
 
 reverse_lines() {
     readarray -t LINES
@@ -438,18 +439,71 @@ reverse_lines() {
         echo "${LINES[--I]}"
     done
 }
+#############################################
+#####@ORIGINAL-FILE 'functions/spinner_done'
+#!/bin/bash
 
-auto() {
-	for module in ${MODS[@]}; do
-		auto_${module} "$@"
-		RETCHECK=$?
-		if [ $RETCHECK = 1 ]; then
-			dl_${module} "$@"
-			return 0
-		fi
-	done
-	return 1
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+spinner_done() {
+	spinner_reset
+
+	_MESG="OK"
+	if [ ! "$1" = "" ]; then
+		_MESG="$1"
+	fi
+	echo -e "[$_MESG]"
 }
+#############################################
+#####@ORIGINAL-FILE 'functions/cbz_make'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+cbz_make() {
+	echo -e "[Post] Making CBZ..."
+
+	# Check and make sure the folder has something, and is actually a folder.
+	if [ ! -d "$1" ]; then
+		echo -e "\n[Error] Not a folder. Something went wrong."
+		exit 1
+	fi
+	
+	if [ "$(ls "$1")" = "" ]; then
+		echo "[Error] No files? Download failed."
+		exit 1
+	fi
+
+	zip -r "$1.zip" "$1" > /dev/null 2>&1
+	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
+	
+	echo -e "[Post] Cleanup..."
+	rm -rf "$1"
+	echo -e "[Post] Finished!"
+}
+#############################################
+#####@ORIGINAL-FILE 'operations/batch'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
 
 batch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
@@ -457,14 +511,17 @@ batch() {
 		$0 $chunk
 	done < $1
 }
+#############################################
+#####@ORIGINAL-FILE 'operations/scrape'
+#!/bin/bash
 
-autobatch() {
-	# $2 is a file. Read it in line by line as $1 and $2.
-	while read chunk; do
-		$0 auto $chunk
-	done < $1
-}
-
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
 scrape() {
 	for module in ${MODS[@]}; do
 		auto_${module} "$@"
@@ -474,70 +531,17 @@ scrape() {
 		fi
 	done
 }
+#############################################
+#####@ORIGINAL-FILE 'operations/help'
+#!/bin/bash
 
-mod_login() {
-	for module in ${MODS[@]}; do
-		if [ "$1" = "$module" ]; then
-			if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
-				if [ ! "$3" = "" ]; then
-					echo "[Warn] Caveat; you probably need to wipe your shell history now. Try not to do it like this."
-					username="$2"
-					password="$3"
-				elif [ ! "$2" = "" ]; then
-					username="$2"
-					echo -ne "[$module] Password for $username (will not echo): "
-					read -s password
-				else
-					echo -ne "[$module] Username: "
-					read username
-					echo -ne "[$module] Password for $username (will not echo): "
-					read -s password
-				fi
-				login_${module} "$username" "$password"
-				exit 0
-			else
-				echo "$module does not need login."
-				exit 0
-			fi
-		fi
-	done
-	echo "No such module."
-	exit 1
-}
-
-upgrade_self() {
-	if [ "$type" = "repo" ]; then
-		echo "[Upgrade] You're in a git repo. Use 'git pull' instead."
-		exit 0
-	fi
-	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
-	echo "[Upgrade] Checking this scangrab's sha256sum..."
-	this_sha256="$(cat "$0" | sha256sum - | sed "s| .*||g")"
-	gith_sha256="$(fetch "$URL.sha256sum" "-" | sed "s| .*||g")"
-
-	echo "[Upgrade] Local:  $this_sha256"
-	echo "[Upgrade] Github: $gith_sha256"
-
-	if [ "$this_sha256" = "$gith_sha256" ]; then
-		echo "[Upgrade] Not required. Same sha256 as upstream."
-		exit 0
-	else
-		echo "[Upgrade] Doesn't match upstream. Fetching..."
-		fetch "$URL" "$0"
-		R=$?
-		if [ ! $R = 0 ]; then
-			echo "[Upgrade] Fetch failed. Error code: $R. Do you have write permission?"
-			exit $R
-		fi
-		echo "[Upgrade] We appear to have replaced ourselves. Checking sha256..."
-		this_sha256="$(cat "$0" | sha256sum - | sed "s| .*||g")"
-		if [ "$this_sha256" = "$gith_sha256" ]; then
-			echo "[Upgrade] Succeded."
-		else
-			echo "[Upgrade] Failed. sha256 does not match github."
-		fi
-	fi
-}
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
 
 help() {
 	type 1
@@ -763,9 +767,222 @@ help() {
 	echo -e "     Build: $type, $branch, $rev"
 }
 #############################################
-#####@ORIGINAL-FILE 'rev'
-rev=0f02e289726f57c8af8ec37606c7ca154a6d6322
-branch=master
+#####@ORIGINAL-FILE 'operations/auto'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+auto() {
+	for module in ${MODS[@]}; do
+		auto_${module} "$@"
+		RETCHECK=$?
+		if [ $RETCHECK = 1 ]; then
+			dl_${module} "$@"
+			return 0
+		fi
+	done
+	return 1
+}
+#############################################
+#####@ORIGINAL-FILE 'operations/configure_env'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+COOKIEJAR="$(pwd)/cookiejar"
+HAVE_IMAGICK=0
+FETCH_RESULT=0
+
+if [ "$VERBOSE" = "" ]; then
+	VERBOSE=0
+fi
+
+# These values are used by support/core but are controlled by modules.
+message=""
+use_cookies=0
+SAFETY_HACKS=0
+CLOBBER=0
+
+# Anything which starts with an underscore is internal and shouldn't be touched.
+_COLOR=0
+_FETCH_CMD=""
+_CHECK_VALID=0
+_FETCHTOOL=0
+_BUSYBOX=0
+_SPINNER_CHAR="|"
+_NUM=0
+
+# Tools. Use these variables instead of actual command names.
+_tput="$(which tput 2>/dev/null)"
+_identify="$(which identify 2>/dev/null)"
+_convert="$(which convert 2>/dev/null)"
+_wget="$(which wget 2>/dev/null)"
+_curl="$(which curl 2>/dev/null)"
+_aria="$(which aria2c 2>/dev/null)"
+
+for ((i = 1, n = 2;; n = 1 << ++i)); do
+	if [[ ${n:0:1} == '-' ]]; then
+		MAX_INT=$(((1 << i) - 1))
+		break
+	fi
+done
+
+type="raw"
+
+if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
+	_COLOR=1
+	if [ -f $_tput ]; then
+		# Better method.
+		_COLOR=2
+	fi
+fi
+
+if [ -f "$_identify" ]; then
+	_CHECK_VALID=1
+fi
+
+if [ -f "$_identify" ]; then
+	HAVE_IMAGICK=1
+fi
+
+if [ ! "$_wget" = "" ]; then
+	common_opts=" --quiet --no-cache --user-agent=\"Mozilla/5.0\" -t 1 -T 10 --random-wait "
+
+	if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
+		echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
+		common_opts=" -q -U \"Mozilla/5.0\""
+		_BUSYBOX=1
+	fi
+
+	_FETCH_CMD="$_wget $common_opts"
+	_FETCHTOOL=1
+else
+	if [ ! "$_curl" = "" ]; then
+			_FETCH_CMD=$_curl
+			_FETCHTOOL=2
+	else
+		if [ ! "$_aria" = "" ]; then
+				_FETCH_CMD=$_aria
+				_FETCHTOOL=3
+		fi
+	fi
+fi	
+#############################################
+#####@ORIGINAL-FILE 'operations/upgrade_self'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+upgrade_self() {
+	if [ "$type" = "repo" ]; then
+		echo "[Upgrade] You're in a git repo. Use 'git pull' instead."
+		exit 0
+	fi
+	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
+	echo "[Upgrade] Checking this scangrab's sha256sum..."
+	this_sha256="$(cat "$0" | sha256sum - | sed "s| .*||g")"
+	gith_sha256="$(fetch "$URL.sha256sum" "-" | sed "s| .*||g")"
+
+	echo "[Upgrade] Local:  $this_sha256"
+	echo "[Upgrade] Github: $gith_sha256"
+
+	if [ "$this_sha256" = "$gith_sha256" ]; then
+		echo "[Upgrade] Not required. Same sha256 as upstream."
+		exit 0
+	else
+		echo "[Upgrade] Doesn't match upstream. Fetching..."
+		fetch "$URL" "$0"
+		R=$?
+		if [ ! $R = 0 ]; then
+			echo "[Upgrade] Fetch failed. Error code: $R. Do you have write permission?"
+			exit $R
+		fi
+		echo "[Upgrade] We appear to have replaced ourselves. Checking sha256..."
+		this_sha256="$(cat "$0" | sha256sum - | sed "s| .*||g")"
+		if [ "$this_sha256" = "$gith_sha256" ]; then
+			echo "[Upgrade] Succeded."
+		else
+			echo "[Upgrade] Failed. sha256 does not match github."
+		fi
+	fi
+}
+#############################################
+#####@ORIGINAL-FILE 'operations/mod_login'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+mod_login() {
+	for module in ${MODS[@]}; do
+		if [ "$1" = "$module" ]; then
+			if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
+				if [ ! "$3" = "" ]; then
+					echo "[Warn] Caveat; you probably need to wipe your shell history now. Try not to do it like this."
+					username="$2"
+					password="$3"
+				elif [ ! "$2" = "" ]; then
+					username="$2"
+					echo -ne "[$module] Password for $username (will not echo): "
+					read -s password
+				else
+					echo -ne "[$module] Username: "
+					read username
+					echo -ne "[$module] Password for $username (will not echo): "
+					read -s password
+				fi
+				login_${module} "$username" "$password"
+				exit 0
+			else
+				echo "$module does not need login."
+				exit 0
+			fi
+		fi
+	done
+	echo "No such module."
+	exit 1
+}
+#############################################
+#####@ORIGINAL-FILE 'operations/autobatch'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+autobatch() {
+	# $2 is a file. Read it in line by line as $1 and $2.
+	while read chunk; do
+		$0 auto $chunk
+	done < $1
+}
 #############################################
 #####@AUTOGENERATED 'MODS'
 MODS=(mangabox batoto niconicoseiga eh fakku dynsc foolsl mpark booru)
@@ -863,6 +1080,122 @@ scrape_mangabox() {
 
 	echo "[MangaBox] Not yet supported, sorry."
 	exit 1
+}
+#############################################
+#####@ORIGINAL-FILE 'modules/booru.mods/danbooru'
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# This should set up any variables needed by this module.
+
+booru_danbooru_init() {
+	final[0]="$source/posts.json?tags="
+}
+
+
+# This should build a URL which can download a page; call dl_booru_page,
+# And then extract the pages. It should not itself do the download.
+
+booru_danbooru_page() {
+	final[4]=$1
+
+	if [ $RESUME = 1 ]; then
+		# Assume this is done.
+		return 1
+	fi
+
+	if [ $is_pool = 0 ]; then
+		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
+
+		BEFORE=$(wc -l meta.txt | sed 's| .*||g')
+		cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
+		AFTER=$(wc -l meta.txt | sed 's| .*||g')
+
+		if [ "$BEFORE" = '' ]; then
+			BEFORE=0
+		fi
+		PAGE_SIZE=$((AFTER - BEFORE))
+
+		# We preprocess metadata.
+		sed -i "s|},{|}]\n[{|g" "page${range}.json"
+		# There's no final newline, so the read will miss an ID and have to refetch
+		# later even though that's dumb.
+		echo '' >> "page${range}.json"
+
+		LEN=0
+		while read line; do
+			FIRST=$((PAGE_SIZE - LEN))
+			id="$(cat meta.txt | tail -n $FIRST | head -n 1)"
+			echo "$line" > meta/meta_${id}.json
+			LEN=$((LEN + 1))
+		done < "page${range}.json"
+	
+		rm "page${range}.json"
+
+		# No more pages.
+		if (( BEFORE == AFTER )); then
+			return 1
+		fi
+
+		# Still more.
+		return 0
+	else
+		final[0]="${source}/pools.json?commit=Search&search[order]=updated_at&search[name_matches]="
+
+		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "${final[1]}.json"
+
+		cat "${final[1]}.json" | tr ',' "\n" | grep '"post_ids"' | sed -e 's|.*:||g' -e 's|"||g' | tr ' ' "\n" >> meta.txt
+	fi
+}
+
+# This should download a page's meta info. If there isn't any, it should copy the ID to a file named as the ID.
+
+booru_danbooru_meta() {
+	declare -a base
+	base[0]="$source/posts/"
+	base[1]="${1}.json"
+
+	if [ ! -e "meta_${base[1]}" ]; then
+		message="fetch ${1}"
+		spinner "${DONE} -> ${LINES}"
+		message=""
+
+		dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
+	fi
+}
+
+booru_danbooru_content() {
+	declare -a base
+	base[0]="$source/posts/"
+	base[1]="${1}.json"
+
+	url_img="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
+	file_ext="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
+
+	if [ "$file_ext" = "" ] || [ "$url_img" = "" ]; then
+		spinner_done
+		echo "[Booru] ID:${1} appears to be deleted/hidden. Skipping."
+
+		# ID is deleted. Skip.
+		return
+	fi
+
+	if [ ! -e "image_${1}.${file_ext}" ]; then
+		dl_booru_page "${source}${url_img}" "image_${1}.${file_ext}"
+	fi
 }
 #############################################
 #####@ORIGINAL-FILE 'modules/batoto'
@@ -1773,125 +2106,6 @@ scrape_mpark() {
 	echo -e "[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
 #############################################
-#####@AUTOGENERATED 'booru_MODS'
-booru_MODS=(danbooru)
-#############################################
-#####@ORIGINAL-FILE 'modules/booru.mods/danbooru'
-#!/bin/bash
-# Copyright (C) 2015  Jon Feldman/@chaoskagami
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>
-
-# This should set up any variables needed by this module.
-
-booru_danbooru_init() {
-	final[0]="$source/posts.json?tags="
-}
-
-
-# This should build a URL which can download a page; call dl_booru_page,
-# And then extract the pages. It should not itself do the download.
-
-booru_danbooru_page() {
-	final[4]=$1
-
-	if [ $RESUME = 1 ]; then
-		# Assume this is done.
-		return 1
-	fi
-
-	if [ $is_pool = 0 ]; then
-		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
-
-		BEFORE=$(wc -l meta.txt | sed 's| .*||g')
-		cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
-		AFTER=$(wc -l meta.txt | sed 's| .*||g')
-
-		if [ "$BEFORE" = '' ]; then
-			BEFORE=0
-		fi
-		PAGE_SIZE=$((AFTER - BEFORE))
-
-		# We preprocess metadata.
-		sed -i "s|},{|}]\n[{|g" "page${range}.json"
-		# There's no final newline, so the read will miss an ID and have to refetch
-		# later even though that's dumb.
-		echo '' >> "page${range}.json"
-
-		LEN=0
-		while read line; do
-			FIRST=$((PAGE_SIZE - LEN))
-			id="$(cat meta.txt | tail -n $FIRST | head -n 1)"
-			echo "$line" > meta/meta_${id}.json
-			LEN=$((LEN + 1))
-		done < "page${range}.json"
-	
-		rm "page${range}.json"
-
-		# No more pages.
-		if (( BEFORE == AFTER )); then
-			return 1
-		fi
-
-		# Still more.
-		return 0
-	else
-		final[0]="${source}/pools.json?commit=Search&search[order]=updated_at&search[name_matches]="
-
-		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "${final[1]}.json"
-
-		cat "${final[1]}.json" | tr ',' "\n" | grep '"post_ids"' | sed -e 's|.*:||g' -e 's|"||g' | tr ' ' "\n" >> meta.txt
-	fi
-}
-
-# This should download a page's meta info. If there isn't any, it should copy the ID to a file named as the ID.
-
-booru_danbooru_meta() {
-	declare -a base
-	base[0]="$source/posts/"
-	base[1]="${1}.json"
-
-	if [ ! -e "meta_${base[1]}" ]; then
-		message="fetch ${1}"
-		spinner "${DONE} -> ${LINES}"
-		message=""
-
-		dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
-	fi
-}
-
-booru_danbooru_content() {
-	declare -a base
-	base[0]="$source/posts/"
-	base[1]="${1}.json"
-
-	url_img="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
-	file_ext="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
-
-	if [ "$file_ext" = "" ] || [ "$url_img" = "" ]; then
-		spinner_done
-		echo "[Booru] ID:${1} appears to be deleted/hidden. Skipping."
-
-		# ID is deleted. Skip.
-		return
-	fi
-
-	if [ ! -e "image_${1}.${file_ext}" ]; then
-		dl_booru_page "${source}${url_img}" "image_${1}.${file_ext}"
-	fi
-}
-#############################################
 #####@ORIGINAL-FILE 'modules/booru'
 #!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
@@ -1934,7 +2148,6 @@ booru_longname="*Booru"
 booru_url="Generic"
 booru_state=2
 booru_filt=1
-
 
 auto_booru() {
 	if [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then

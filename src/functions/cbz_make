@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+cbz_make() {
+	echo -e "[Post] Making CBZ..."
+
+	# Check and make sure the folder has something, and is actually a folder.
+	if [ ! -d "$1" ]; then
+		echo -e "\n[Error] Not a folder. Something went wrong."
+		exit 1
+	fi
+	
+	if [ "$(ls "$1")" = "" ]; then
+		echo "[Error] No files? Download failed."
+		exit 1
+	fi
+
+	zip -r "$1.zip" "$1" > /dev/null 2>&1
+	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
+	
+	echo -e "[Post] Cleanup..."
+	rm -rf "$1"
+	echo -e "[Post] Finished!"
+}

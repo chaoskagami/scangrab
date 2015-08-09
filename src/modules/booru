@@ -40,13 +40,6 @@ booru_url="Generic"
 booru_state=2
 booru_filt=1
 
-#####@MERGE_DEL 1
-MODS_booru=($(find modules/booru.mods/ -maxdepth 1 -type f | sed 's|modules/booru.mods/||g'))
-for module in ${MODS_booru[@]}; do
-	. modules/booru.mods/$module
-done
-#####@MERGE_DEL 0
-
 auto_booru() {
 	if [ -n "$(echo $1 | grep 'donmai.us/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
 		# Danbooru / Safebooru
