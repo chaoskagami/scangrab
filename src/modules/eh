@@ -46,8 +46,6 @@ limitcheck_eh() {
 	LIMIT_AT="$(echo $line | sed -e 's|.*<p>You are currently at <strong>||g' -e 's|</strong>.*||g')"
 	LIMIT_OF="$(echo $line | sed -e 's|.*</strong> towards a limit of <strong>||g' -e 's|</strong>.*||g')"
 	LIMIT_REGEN="$(echo $line | sed -e 's|.*</strong>. This regenerates at a rate of <strong>||g' -e 's|</strong>.*||g')"
-
-	echo "${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
 }
 
 auto_eh() {
@@ -138,10 +136,6 @@ dl_eh() {
 		exit 1
 	fi
 
-	if [ $LOGGEDIN = 1 ]; then
-		limitcheck_eh
-	fi
-
 	sitepage=$1
 
 	echo "[E-H] Fetching index page..."
@@ -165,14 +159,24 @@ dl_eh() {
 
 	MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
 
-	rm ../tmp.1
-
-	echo -n "[E-H] Downloading '$folder' "
 	if [ $LOGGEDIN = 1 ]; then
-		echo -n "[HQ] "
-	else
-		echo -n "[LQ] "		
+		limitcheck_eh
+		LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
+		THIS_COUNT=$MAXPAGES
+		if [ $LOGGEDIN = 1 ]; then
+			THIS_COUNT=$(( MAXPAGES * 5 ))
+		fi
+
+		echo "[E-H] Limits: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
+
+		if (( $LIMIT_LEFT < $THIS_COUNT )); then
+			echo "[E-H] WARNING. This may exceed your download quota."
+			echo "[E-H] You have five seconds to hit ctrl+c and abort."
+			sleep 5s
+		fi
 	fi
+
+	rm ../tmp.1
 
 	doneyet=0
 

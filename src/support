@@ -264,7 +264,7 @@ fetch() {
 		fi
 
 		if [ ! $CLOBBER = 1 ]; then
-			_CMD="$_FETCH_CMD -c \"$1\""
+			_CMD="$_CMD -c \"$1\""
 		fi
 
 		if [ $use_cookies = 1 ]; then

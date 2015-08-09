@@ -73,6 +73,8 @@ dl_fakku() {
 	cd ..
 	
 	cbz_make "$folder"
+
+	SAFETY_HACKS=0
 }
 
 scrape_fakku() {
