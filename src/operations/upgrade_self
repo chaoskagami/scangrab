@@ -16,8 +16,8 @@ upgrade_self() {
 	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
 	echo "[Upgrade] Checking this scangrab's sha256sum..."
 	this_sha256="$( cat "${0}" | sha256sum )"
-	fetch_no_ops "${URL}.sha256sum" "new.sha256sum"
-	gith_sha256="$( cat "new.sha256sum" )"
+	fetch_no_ops "${URL}.sha256sum" new.sha256sum
+	gith_sha256="$( cat new.sha256sum )"
 
 	echo "[Upgrade] Local:  $this_sha256"
 	echo "[Upgrade] Github: $gith_sha256"
