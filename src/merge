@@ -126,7 +126,7 @@ sed -i 's|#####@INSERT_TYPE|type="shxz"|g' $TARGET
 
 xz -9k $TARGET
 echo "#!/bin/bash" > $TARGET.shxz
-echo 'eval "$(tail -n+4 "$0" | xz -d)"' >> $TARGET.shxz
+echo 'eval "$(cat "$0" | tail -n+4 | xz -d)"' >> $TARGET.shxz
 echo 'exit 0' >> $TARGET.shxz
 cat $TARGET.xz >> $TARGET.shxz
 
@@ -135,7 +135,7 @@ sed -i 's|#####@INSERT_TYPE|type="shbz2"|g' $TARGET
 
 bzip2 -9k $TARGET
 echo "#!/bin/bash" > $TARGET.shbz2
-echo 'eval "$(tail -n+4 "$0" | bzip2 -d)"' >> $TARGET.shbz2
+echo 'eval "$(cat "$0" | tail -n+4 | bzip2 -d)"' >> $TARGET.shbz2
 echo 'exit 0' >> $TARGET.shbz2
 cat $TARGET.bz2 >> $TARGET.shbz2
 
@@ -144,7 +144,7 @@ sed -i 's|#####@INSERT_TYPE|type="shgz"|g' $TARGET
 
 gzip -9k $TARGET
 echo "#!/bin/bash" > $TARGET.shgz
-echo 'eval "$(tail -n+4 "$0" | gzip -d)"' >> $TARGET.shgz
+echo 'eval "$(cat "$0" | tail -n+4 | gzip -d)"' >> $TARGET.shgz
 echo 'exit 0' >> $TARGET.shgz
 cat $TARGET.gz >> $TARGET.shgz
 
