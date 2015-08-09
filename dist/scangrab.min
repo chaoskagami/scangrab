@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=ab6a3a54169fb67631ce447a94b2cc53f74dd791
+rev=b29977b2196ae6b8e992cb745d9d555d9ff8a647
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -205,7 +205,7 @@ fi
 if [ $VERBOSE = 1 ]; then
 e "\n$_CMD"
 fi
-eval $_CMD
+eval $_CMD 2>&1 >/dev/null
 FETCH_RESULT=$?
 return $FETCH_RESULT
 }
