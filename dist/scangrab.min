@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=c9892c6610355cbc576bcc0d191763d61ea8253c
+rev=1ac3c96d2cbe606c81f34f0c4c50220d2942a00f
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -341,6 +341,17 @@ if [ ! "$1" = "" ]; then
 _MESG="$1"
 fi
 e "[$_MESG]"
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/is_done'
+#!/bin/bash
+#
+#
+is_done() {
+if [ -e "${1}.cbz" ]; then
+return 1
+fi
+return 0
 }
 #############################################
 #####@ORIGINAL-FILE 'functions/cbz_make'
@@ -1102,7 +1113,10 @@ return 1
 fi
 return 0
 }
-dl_eh() {
+check_eh() {
+if [ "$check_eh_done" = "1" ]; then
+return 0
+fi
 LOGGEDIN=0
 use_cookies=0
 if [ -e "cookiejar" ]; then
@@ -1174,7 +1188,12 @@ elif [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*
 o "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
 exit 1
 fi
+check_eh_done=1
+return 0
+}
+dl_eh() {
 sitepage=$1
+check_eh
 o "[E-H] Fetching index page..."
 fetch "${sitepage}/?nw=always" tmp.1
 while [ ! $FETCH_RESULT = 0 ]; do
@@ -1183,6 +1202,7 @@ done
 folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
 mkdir -p "$folder"
 cd "$folder"
+o "[E-H] Downloading '$folder'... "
 page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
 if [ $LOGGEDIN = 1 ]; then
@@ -1194,9 +1214,13 @@ THIS_COUNT=$(( MAXPAGES * 5 ))
 fi
 o "[E-H] Limits: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
 if (( $LIMIT_LEFT < $THIS_COUNT )); then
-o "[E-H] WARNING. This may exceed your download quota."
-o "[E-H] You have five seconds to hit ctrl+c and abort."
-sleep 5s
+o "[E-H] This will probably exceed your download quota. Hit enter in the next five seconds, or I'll abort:"
+read -t 5
+R=$?
+if [ ! $R = 0 ]; then
+o "[E-H] Aborting."
+exit 1
+fi
 fi
 fi
 rm ../tmp.1
