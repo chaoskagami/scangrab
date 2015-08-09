@@ -22,7 +22,7 @@ fetch_no_ops() {
 		echo -e "\n$_CMD"
 	fi
 
-	$_CMD
+	eval $_CMD
 	FETCH_RESULT=$?
 
 	return $FETCH_RESULT
