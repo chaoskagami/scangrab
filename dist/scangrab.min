@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=a9323af329b4ab9debb79b2319b360783a59cba8
+rev=7043c0210bc39db8f4529548722e8413726cec62
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -703,8 +703,8 @@ fi
 URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
 o "[Upgrade] Checking this scangrab's sha256sum..."
 this_sha256="$( cat "${0}" | sha256sum )"
-fetch_no_ops "${URL}.sha256sum" "${0}.new.sha256sum"
-gith_sha256="$( cat "${0}.new.sha256sum" )"
+fetch_no_ops "${URL}.sha256sum" "new.sha256sum"
+gith_sha256="$( cat "new.sha256sum" )"
 o "[Upgrade] Local:  $this_sha256"
 o "[Upgrade] Github: $gith_sha256"
 if [ "$this_sha256" = "$gith_sha256" ]; then
