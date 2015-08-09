@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=b29977b2196ae6b8e992cb745d9d555d9ff8a647
+rev=f4cd1bb6e04d7e3be48d44e7558796f37cfa26bc
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -196,7 +196,7 @@ return 0
 #
 fetch_no_ops() {
 if [ $_FETCHTOOL = 1 ]; then
-_CMD="wget \"$1\" -O \"$2\""
+_CMD="wget -q \"$1\" -O \"$2\""
 elif [ $_FETCHTOOL = 2 ]; then
 _CMD="curl \"$1\" > \"$2\""
 elif [ $_FETCHTOOL = 3 ]; then
@@ -205,7 +205,7 @@ fi
 if [ $VERBOSE = 1 ]; then
 e "\n$_CMD"
 fi
-eval $_CMD 2>&1 >/dev/null
+eval $_CMD 2>/dev/null
 FETCH_RESULT=$?
 return $FETCH_RESULT
 }

@@ -11,7 +11,7 @@
 # This version adds no extra parameters, and requires an output.
 fetch_no_ops() {
 	if [ $_FETCHTOOL = 1 ]; then
-		_CMD="wget \"$1\" -O \"$2\""
+		_CMD="wget -q \"$1\" -O \"$2\""
 	elif [ $_FETCHTOOL = 2 ]; then
 		_CMD="curl \"$1\" > \"$2\""
 	elif [ $_FETCHTOOL = 3 ]; then
@@ -22,7 +22,7 @@ fetch_no_ops() {
 		echo -e "\n$_CMD"
 	fi
 
-	eval $_CMD 2>&1 >/dev/null
+	eval $_CMD 2>/dev/null
 	FETCH_RESULT=$?
 
 	return $FETCH_RESULT
