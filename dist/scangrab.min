@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=f4cd1bb6e04d7e3be48d44e7558796f37cfa26bc
+rev=2b1ab8aca5d9bd13f22bbe43a7d06be880bed13e
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -705,6 +705,7 @@ o "[Upgrade] Checking this scangrab's sha256sum..."
 this_sha256="$( cat "${0}" | sha256sum )"
 fetch_no_ops "${URL}.sha256sum" "${0}.new.sha256sum"
 gith_sha256="$( cat "${0}.new.sha256sum" )"
+rm "${0}.new.sha256sum"
 if [ "$this_sha256" = "$gith_sha256" ]; then
 o "[Upgrade] Not required. Same sha256 as upstream."
 exit 0
@@ -714,6 +715,7 @@ fetch_no_ops "$URL" "${0}.new"
 R=$?
 if [ ! $R = 0 ]; then
 o "[Upgrade] Fetch failed. Error code: $R. Do you have write permission?"
+rm "${0}.new" 2>/dev/null
 exit $R
 fi
 o "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
@@ -730,6 +732,7 @@ fi
 o "[Upgrade] Sync to avoid race conditions..."
 sync
 o "[Upgrade] Checking to make sure it has been replaced..."
+rm "${0}.new"
 new_sha256="$(cat "${0}" | sha256sum )"
 if [ ! "$new_sha256" = "$gith_sha256" ]; then
 o "[Upgrade] Sanity check failed. This is not normal."

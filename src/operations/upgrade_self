@@ -19,6 +19,8 @@ upgrade_self() {
 	fetch_no_ops "${URL}.sha256sum" "${0}.new.sha256sum"
 	gith_sha256="$( cat "${0}.new.sha256sum" )"
 
+	rm "${0}.new.sha256sum"
+
 	if [ "$this_sha256" = "$gith_sha256" ]; then
 		echo "[Upgrade] Not required. Same sha256 as upstream."
 		exit 0
@@ -28,6 +30,7 @@ upgrade_self() {
 		R=$?
 		if [ ! $R = 0 ]; then
 			echo "[Upgrade] Fetch failed. Error code: $R. Do you have write permission?"
+			rm "${0}.new" 2>/dev/null
 			exit $R
 		fi
 		echo "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
@@ -44,6 +47,7 @@ upgrade_self() {
 			echo "[Upgrade] Sync to avoid race conditions..."
 			sync
 			echo "[Upgrade] Checking to make sure it has been replaced..."
+			rm "${0}.new"
 			new_sha256="$(cat "${0}" | sha256sum )"
 			if [ ! "$new_sha256" = "$gith_sha256" ]; then
 				echo "[Upgrade] Sanity check failed. This is not normal."
