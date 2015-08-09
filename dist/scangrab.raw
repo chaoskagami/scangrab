@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=1d13124ae0e19131dec396930a0eaa09ed9cdf58
+rev=a9323af329b4ab9debb79b2319b360783a59cba8
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -152,12 +152,16 @@ fetch() {
 	# Wget doesn't have an option to clobber forcibly
 	# with content disposition on. I'm so bemused by this
 	# that I'm not even sure what to say.
+
+	# We use a rather idiotic workaround. We download to a temp folder,
+	# and move it out afterwards.
+
 	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
 		mkdir -p "wget.tmp"
 		cd wget.tmp
 	fi
 
-	eval " $_CMD" 2>/dev/null
+	$_CMD 2>/dev/null
 	FETCH_RESULT=$?
 	
 	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
@@ -275,6 +279,37 @@ verify() {
 	fi
 
 	return 0
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/fetch_no_ops'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+# This version adds no extra parameters, and requires an output.
+fetch_no_ops() {
+	if [ $_FETCHTOOL = 1 ]; then
+		_CMD="wget '$1' -O '$2'"
+	elif [ $_FETCHTOOL = 2 ]; then
+		_CMD="curl '$1' > '$2'"
+	elif [ $_FETCHTOOL = 3 ]; then
+		_CMD="aria2c '$1' -o '$2'"
+	fi
+	
+	if [ $VERBOSE = 1 ]; then
+		echo -e "\n$_CMD"
+	fi
+
+	$_CMD 2>/dev/null
+	FETCH_RESULT=$?
+
+	return $FETCH_RESULT
 }
 #############################################
 #####@ORIGINAL-FILE 'functions/spinner_reset'
@@ -898,25 +933,26 @@ upgrade_self() {
 	fi
 	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
 	echo "[Upgrade] Checking this scangrab's sha256sum..."
-	this_sha256="$(cat "${0}" | sha256sum -)"
-	gith_sha256="$( fetch "${URL}.sha256sum" "-")"
+	this_sha256="$( cat "${0}" | sha256sum )"
+	fetch_no_ops "${URL}.sha256sum" "${0}.new.sha256sum"
+	gith_sha256="$( cat "${0}.new.sha256sum" )"
 
 	echo "[Upgrade] Local:  $this_sha256"
-	# echo "[Upgrade] Github: $gith_sha256"
+	echo "[Upgrade] Github: $gith_sha256"
 
 	if [ "$this_sha256" = "$gith_sha256" ]; then
 		echo "[Upgrade] Not required. Same sha256 as upstream."
 		exit 0
 	else
 		echo "[Upgrade] Doesn't match upstream. Fetching..."
-		fetch "$URL" "${0}.new"
+		fetch_no_ops "$URL" "${0}.new"
 		R=$?
 		if [ ! $R = 0 ]; then
 			echo "[Upgrade] Fetch failed. Error code: $R. Do you have write permission?"
 			exit $R
 		fi
 		echo "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
-		new_sha256="$(cat "${0}.new" | sha256sum - | sed "s| .*||g")"
+		new_sha256="$(cat "${0}.new" | sha256sum | sed "s| .*||g")"
 		if [ "$new_sha256" = "$gith_sha256" ]; then
 			echo "[Upgrade] Matched. Replacing self..."
 			cp -f "${0}.new" "${0}"
