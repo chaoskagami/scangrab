@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=7289a98673dfd512a788339a5bd7310bfdeddf60
+rev=59818b7917b089e972f53b88897014eae217595f
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -952,7 +952,7 @@ upgrade_self() {
 			exit $R
 		fi
 		echo "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
-		new_sha256="$(cat "${0}.new" | sha256sum | sed "s| .*||g")"
+		new_sha256="$( cat "${0}.new" | sha256sum )"
 		echo "[Upgrade] Replacement: $new_sha256"
 		if [ "$new_sha256" = "$gith_sha256" ]; then
 			echo "[Upgrade] Matched. Replacing self..."
@@ -966,7 +966,7 @@ upgrade_self() {
 			echo "[Upgrade] Sync to avoid race conditions..."
 			sync
 			echo "[Upgrade] Checking to make sure it has been replaced..."
-			new_sha256="$(cat "${0}" | sha256sum - | sed "s| .*||g")"
+			new_sha256="$(cat "${0}" | sha256sum )"
 			if [ ! "$new_sha256" = "$gith_sha256" ]; then
 				echo "[Upgrade] Sanity check failed. This is not normal."
 				exit 1;

@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=7289a98673dfd512a788339a5bd7310bfdeddf60
+rev=59818b7917b089e972f53b88897014eae217595f
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -719,7 +719,7 @@ o "[Upgrade] Fetch failed. Error code: $R. Do you have write permission?"
 exit $R
 fi
 o "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
-new_sha256="$(cat "${0}.new" | sha256sum | sed "s| .*||g")"
+new_sha256="$( cat "${0}.new" | sha256sum )"
 o "[Upgrade] Replacement: $new_sha256"
 if [ "$new_sha256" = "$gith_sha256" ]; then
 o "[Upgrade] Matched. Replacing self..."
@@ -733,7 +733,7 @@ fi
 o "[Upgrade] Sync to avoid race conditions..."
 sync
 o "[Upgrade] Checking to make sure it has been replaced..."
-new_sha256="$(cat "${0}" | sha256sum - | sed "s| .*||g")"
+new_sha256="$(cat "${0}" | sha256sum )"
 if [ ! "$new_sha256" = "$gith_sha256" ]; then
 o "[Upgrade] Sanity check failed. This is not normal."
 exit 1;
