@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=59818b7917b089e972f53b88897014eae217595f
+rev=ab6a3a54169fb67631ce447a94b2cc53f74dd791
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -703,10 +703,8 @@ fi
 URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
 o "[Upgrade] Checking this scangrab's sha256sum..."
 this_sha256="$( cat "${0}" | sha256sum )"
-fetch_no_ops "${URL}.sha256sum" new.sha256sum
-gith_sha256="$( cat new.sha256sum )"
-o "[Upgrade] Local:  $this_sha256"
-o "[Upgrade] Github: $gith_sha256"
+fetch_no_ops "${URL}.sha256sum" "${0}.new.sha256sum"
+gith_sha256="$( cat "${0}.new.sha256sum" )"
 if [ "$this_sha256" = "$gith_sha256" ]; then
 o "[Upgrade] Not required. Same sha256 as upstream."
 exit 0
@@ -720,7 +718,6 @@ exit $R
 fi
 o "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
 new_sha256="$( cat "${0}.new" | sha256sum )"
-o "[Upgrade] Replacement: $new_sha256"
 if [ "$new_sha256" = "$gith_sha256" ]; then
 o "[Upgrade] Matched. Replacing self..."
 cp -f "${0}.new" "${0}"
