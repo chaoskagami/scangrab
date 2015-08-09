@@ -42,8 +42,7 @@ auto_eh() {
 	if [ -n "`echo $1 | grep 'e-hentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# E-H
 		return 1
-	fi
-	if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+	elif [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# Ex
 		return 1
 	fi
@@ -65,10 +64,16 @@ dl_eh() {
 				echo -ne "[E-H] Checking for access..."
 
 				# This is a good way of checking if it succeeded.
-				fetch "exhentai.org" "-" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+				fetch "exhentai.org" "exchk"
+				cat exchk | grep "The X Makes It Sound Cool" >/dev/null 2>&1
 				RES=$?
 				if [ ! $RES = 0 ]; then
-					echo "panda. Dying."
+					echo -n "no, "
+					if [ "$(sha256sum exchk | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
+						echo "panda."
+					else
+						echo "not cool."
+					fi
 					exit 1
 				else
 					LOGGEDIN=1
@@ -124,7 +129,6 @@ dl_eh() {
 	fetch "${sitepage}/?nw=always" tmp.1
 
 	while [ ! $FETCH_RESULT = 0 ]; do
-		echo "[E-H] Whoa. Failed to download index. Going again..."
 		fetch "${sitepage}/?nw=always" tmp.1
 	done
 
@@ -162,7 +166,7 @@ dl_eh() {
 			# And if the next loop "succeeds" with a zero length page, it will propogate
 			# to next, and the 'done' check will trigger incorrectly.
 			message=":O"
-			spinner "Get $CUR / $MAXPAGES"
+			spinner "RETR $CUR / $MAXPAGES"
 			fetch "$page" "$CUR.htm"
 		done
 
@@ -241,5 +245,9 @@ dl_eh() {
 }
 
 scrape_eh() {
-	echo -e "[E-H] This isn't supported, considering there's really zero categorization here."
+	# TODO - Support grabbing page list of one tag.
+	# There are some things to account for though; namely, layouts. Thumb layout vs list.
+	# Number of things per page, etc.
+	# A pain basically.
+	echo -e "[E-H] Not yet implemented."
 }

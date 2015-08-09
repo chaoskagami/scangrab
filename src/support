@@ -27,7 +27,7 @@ fi
 message=""
 use_cookies=0
 SAFETY_HACKS=0
-CLOBBER=1
+CLOBBER=0
 
 # Anything which starts with an underscore is internal and shouldn't be touched.
 _COLOR=0
@@ -154,6 +154,21 @@ verify() {
 	return 0
 }
 
+spinner_clear() {
+	# Clear previous output
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne " "
+	done
+
+	for (( i=0 ; i < _NUM ; i++ )); do
+		echo -ne "\b"
+	done
+}
+
 spinner() {
 	if [ $VERBOSE = 1 ]; then
 		echo "Status: $1 - $message"
@@ -170,17 +185,7 @@ spinner() {
 	fi
 
 	# Clear previous output
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne "\b"
-	done
-
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne " "
-	done
-
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne "\b"
-	done
+	spinner_clear
 
 	STR="[$1 $_SPINNER_CHAR] $message"
 	_NUM="${#STR}"
@@ -188,27 +193,21 @@ spinner() {
 	echo -ne "$STR"
 }
 
-spinner_done() {
+spinner_reset() {
 	if [ $VERBOSE = 1 ]; then
 		echo "Status: $1 - $message"
 		return
 	fi
 
-	# Clear previous output
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne "\b"
-	done
-
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne " "
-	done
-
-	for (( i=0 ; i < _NUM ; i++ )); do
-		echo -ne "\b"
-	done
+	spinner_clear
 
 	_SPINNER_CHAR="|"
 	_NUM=0
+}
+
+spinner_done() {
+	spinner_reset
+
 	_MESG="OK"
 	if [ ! "$1" = "" ]; then
 		_MESG="$1"
@@ -269,7 +268,7 @@ fetch() {
 		fi
 
 		if [ $use_cookies = 1 ]; then
-			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies"
+			_CMD="$_CMD --load-cookies=$COOKIEJAR"
 		fi
 
 		# Wget uses content-disposition to hopefully get a good name in abscence of one.
@@ -302,7 +301,7 @@ fetch() {
 
 		_CMD="$_FETCH_CMD $1"
 		if [ $use_cookies = 1 ]; then
-			_CMD="$_CMD --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR"
+			_CMD="$_CMD --load-cookies=$COOKIEJAR"
 		fi
 
 		if [ "$2" = "" ]; then
@@ -322,7 +321,7 @@ fetch() {
 	# with content disposition on. I'm so bemused by this
 	# that I'm not even sure what to say.
 	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
-		mkdir -p "wget.tmp" 2>/dev/null
+		mkdir -p "wget.tmp"
 		cd wget.tmp
 	fi
 
@@ -446,8 +445,10 @@ auto() {
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
 			dl_${module} "$@"
+			return 0
 		fi
 	done
+	return 1
 }
 
 batch() {
@@ -470,7 +471,6 @@ scrape() {
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
 			scrape_${module} "$@"
-			exit 0
 		fi
 	done
 }
