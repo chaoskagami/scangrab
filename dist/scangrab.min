@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=8d65895647b4d03b798c2f4141f257a1ec91a069
+rev=1d13124ae0e19131dec396930a0eaa09ed9cdf58
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -59,7 +59,7 @@ done
 #
 fetch() {
 if [ $_FETCHTOOL = 1 ]; then
-if [ $SAFETY_HACKS = 1 ]; then
+if [ $SAFETY_HACKS = 1 ] || [ "$1" = "-" ]; then
 _CMD="$_FETCH_CMD \"$1\""
 else
 _CMD="$_FETCH_CMD --content-disposition \"$1\""
@@ -682,10 +682,9 @@ exit 0
 fi
 URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
 o "[Upgrade] Checking this scangrab's sha256sum..."
-this_sha256="$(cat "${0}" | sha256sum - | sed "s| .*||g")"
-gith_sha256="$(fetch "${URL}.sha256sum" "-" | sed "s| .*||g")"
+this_sha256="$(cat "${0}" | sha256sum -)"
+gith_sha256="$( fetch "${URL}.sha256sum" "-")"
 o "[Upgrade] Local:  $this_sha256"
-o "[Upgrade] Github: $gith_sha256"
 if [ "$this_sha256" = "$gith_sha256" ]; then
 o "[Upgrade] Not required. Same sha256 as upstream."
 exit 0
