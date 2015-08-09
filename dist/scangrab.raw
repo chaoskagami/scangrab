@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=4e21fbbfd4c411ee021567b53acbe0f1c3f5ee40
+rev=7289a98673dfd512a788339a5bd7310bfdeddf60
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -953,6 +953,7 @@ upgrade_self() {
 		fi
 		echo "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
 		new_sha256="$(cat "${0}.new" | sha256sum | sed "s| .*||g")"
+		echo "[Upgrade] Replacement: $new_sha256"
 		if [ "$new_sha256" = "$gith_sha256" ]; then
 			echo "[Upgrade] Matched. Replacing self..."
 			cp -f "${0}.new" "${0}"

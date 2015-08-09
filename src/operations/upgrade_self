@@ -35,6 +35,7 @@ upgrade_self() {
 		fi
 		echo "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
 		new_sha256="$(cat "${0}.new" | sha256sum | sed "s| .*||g")"
+		echo "[Upgrade] Replacement: $new_sha256"
 		if [ "$new_sha256" = "$gith_sha256" ]; then
 			echo "[Upgrade] Matched. Replacing self..."
 			cp -f "${0}.new" "${0}"
