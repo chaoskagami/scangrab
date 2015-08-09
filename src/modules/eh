@@ -60,7 +60,11 @@ auto_eh() {
 	return 0
 }
 
-dl_eh() {
+check_eh() {
+	if [ "$check_eh_done" = "1" ]; then
+		return 0
+	fi
+
 	LOGGEDIN=0
 	use_cookies=0
 	if [ -e "cookiejar" ]; then
@@ -136,7 +140,15 @@ dl_eh() {
 		exit 1
 	fi
 
+	check_eh_done=1
+
+	return 0
+}
+
+dl_eh() {
 	sitepage=$1
+
+	check_eh
 
 	echo "[E-H] Fetching index page..."
 
@@ -154,6 +166,8 @@ dl_eh() {
 	folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
 	mkdir -p "$folder"
 	cd "$folder"
+
+	echo "[E-H] Downloading '$folder'... "
 	
 	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 
@@ -170,9 +184,13 @@ dl_eh() {
 		echo "[E-H] Limits: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
 
 		if (( $LIMIT_LEFT < $THIS_COUNT )); then
-			echo "[E-H] WARNING. This may exceed your download quota."
-			echo "[E-H] You have five seconds to hit ctrl+c and abort."
-			sleep 5s
+			echo "[E-H] This will probably exceed your download quota. Hit enter in the next five seconds, or I'll abort:"
+			read -t 5
+			R=$?
+			if [ ! $R = 0 ]; then
+				echo "[E-H] Aborting."
+				exit 1
+			fi
 		fi
 	fi
 
