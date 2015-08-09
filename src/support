@@ -522,13 +522,17 @@ upgrade_self() {
 		echo "[Upgrade] Github: $gith_sha256"
 		echo "[Upgrade] This doesn't match upstream. Upgrading..."
 		fetch "$URL" "$0"
+		R=$?
+		if [ ! $R = 0 ]; then
+			echo "[Upgrade] Fetch failed. Error code: $R. Do you have write permission?"
+			exit $R
+		fi
 		echo "[Upgrade] We appear to have replaced ourselves. Checking sha256..."
 		this_sha256="$(cat "$0" | sha256sum - | sed "s| .*||g")"
 		if [ "$this_sha256" = "$gith_sha256" ]; then
 			echo "[Upgrade] Succeded."
 		else
 			echo "[Upgrade] Failed. sha256 does not match github."
-			echo "[Upgrade] Make sure you have write permission."
 		fi
 	fi
 }
