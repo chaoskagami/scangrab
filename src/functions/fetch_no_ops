@@ -11,18 +11,18 @@
 # This version adds no extra parameters, and requires an output.
 fetch_no_ops() {
 	if [ $_FETCHTOOL = 1 ]; then
-		_CMD="wget '$1' -O '$2'"
+		_CMD="wget \"$1\" -O \"$2\""
 	elif [ $_FETCHTOOL = 2 ]; then
-		_CMD="curl '$1' > '$2'"
+		_CMD="curl \"$1\" > \"$2\""
 	elif [ $_FETCHTOOL = 3 ]; then
-		_CMD="aria2c '$1' -o '$2'"
+		_CMD="aria2c \"$1\" -o \"$2\""
 	fi
 	
 	if [ $VERBOSE = 1 ]; then
 		echo -e "\n$_CMD"
 	fi
 
-	$_CMD 2>/dev/null
+	$_CMD
 	FETCH_RESULT=$?
 
 	return $FETCH_RESULT
