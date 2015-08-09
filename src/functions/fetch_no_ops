@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+# This version adds no extra parameters, and requires an output.
+fetch_no_ops() {
+	if [ $_FETCHTOOL = 1 ]; then
+		_CMD="wget '$1' -O '$2'"
+	elif [ $_FETCHTOOL = 2 ]; then
+		_CMD="curl '$1' > '$2'"
+	elif [ $_FETCHTOOL = 3 ]; then
+		_CMD="aria2c '$1' -o '$2'"
+	fi
+	
+	if [ $VERBOSE = 1 ]; then
+		echo -e "\n$_CMD"
+	fi
+
+	$_CMD 2>/dev/null
+	FETCH_RESULT=$?
+
+	return $FETCH_RESULT
+}

@@ -36,6 +36,7 @@
 . ./functions/mimetype
 . ./functions/s_login
 . ./functions/fetch
+. ./functions/fetch_no_ops
 . ./functions/entity_to_char
 . ./functions/remove_illegal
 . ./functions/reverse_lines

@@ -75,12 +75,16 @@ fetch() {
 	# Wget doesn't have an option to clobber forcibly
 	# with content disposition on. I'm so bemused by this
 	# that I'm not even sure what to say.
+
+	# We use a rather idiotic workaround. We download to a temp folder,
+	# and move it out afterwards.
+
 	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
 		mkdir -p "wget.tmp"
 		cd wget.tmp
 	fi
 
-	eval " $_CMD" 2>/dev/null
+	$_CMD 2>/dev/null
 	FETCH_RESULT=$?
 	
 	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
