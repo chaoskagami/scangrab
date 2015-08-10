@@ -178,8 +178,6 @@ dl_eh() {
 
 	mkdir -p "$folder"
 	cd "$folder"
-
-	echo "[E-H] Downloading '$folder'... "
 	
 	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 
@@ -211,6 +209,8 @@ dl_eh() {
 	fi
 
 	rm ../tmp.1
+
+	echo "[E-H] Downloading '$folder'... "
 
 	doneyet=0
 
