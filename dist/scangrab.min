@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=1ac3c96d2cbe606c81f34f0c4c50220d2942a00f
+rev=37187375eb24494f439b79cf50612d1d15a08906
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -826,6 +826,12 @@ dl_mangabox() {
 o "[MangaBox] Getting list of pages..."
 fetch "$1" "tmp.htm"
 fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char)"
+is_done "$fullname"
+R=$?
+if [ $R = 1 ]; then
+o "[MangaBox] Already downloaded. Skipping."
+return 0
+fi
 declare -a list
 list=($(cat tmp.htm | grep 'class="jsNext"' | sed -e 's|.*<li><img src="||g' -e 's|?.*||g'))
 mkdir -p "$fullname"
@@ -949,6 +955,12 @@ return 0
 }
 dl_batoto() {
 folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
+is_done "$folder"
+R=$?
+if [ $R = 1 ]; then
+o "[Batoto] Already downloaded. Skipping."
+return 0
+fi
 mkdir -p "$folder"
 cd "$folder"
 CUR=0
@@ -1054,6 +1066,12 @@ cat $name.htm | grep 'data-image-id' | sed -e 's|^[[:space:]]*data-image-id="||g
 if [ "$(cat $name.lst)" = "" ]; then
 o "[Niconico] No images in page. Did you login?"
 return 1
+fi
+is_done "$folder"
+R=$?
+if [ $R = 1 ]; then
+o "[Niconico] Already downloaded. Skipping."
+return 0
 fi
 mkdir -p "$fullname"
 cd "$fullname"
@@ -1202,6 +1220,12 @@ done
 folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
 mkdir -p "$folder"
 cd "$folder"
+is_done "$folder"
+R=$?
+if [ $R = 1 ]; then
+o "[E-H] Already downloaded. Skipping."
+return 0
+fi
 o "[E-H] Downloading '$folder'... "
 page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
@@ -1221,6 +1245,7 @@ if [ ! $R = 0 ]; then
 o "[E-H] Aborting."
 exit 1
 fi
+WARNED_YOU=1
 fi
 fi
 rm ../tmp.1
@@ -1228,6 +1253,21 @@ doneyet=0
 CDNFAIL=0
 CUR=1
 while [ $doneyet = 0 ]; do
+if [ $WARNED_YOU = 1 ]; then
+limitcheck_eh
+LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
+if (( $LIMIT_LEFT < 5 )); then
+message=":#"
+zzz=$(( LIMIT_REGEN * 60 ))
+while [ ! $zzz = 0 ]; do
+ss "Over, wait ${zzz}s"
+sleep 1s
+zzz=$(( zzz - 1 ))
+done
+limitcheck_eh
+LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
+fi
+fi
 fetch "$page" "$CUR.htm"
 while [ ! $FETCH_RESULT = 0 ]; do
 message=":O"
@@ -1313,6 +1353,12 @@ PAGE="$(fetch "$1/read" "-")"
 PAGEDATA="$(echo "$PAGE" | grep "window.params.thumbs =" | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
 DATA="$(printf "$PAGEDATA")"
 folder="$(echo "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
+is_done "$folder"
+R=$?
+if [ $R = 1 ]; then
+o "[Fakku] Already downloaded. Skipping."
+return 0
+fi
 mkdir -p "$folder"
 cd "$folder"
 eval "$DATA"
@@ -1360,6 +1406,12 @@ return 0
 dl_dynsc() {
 PAGEDATA="$(fetch "$1" "-")"
 folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+is_done "$folder"
+R=$?
+if [ $R = 1 ]; then
+o "[DynastyScans] Already downloaded. Skipping."
+return 0
+fi
 mkdir -p "$folder"
 cd "$folder"
 PAGELIST="$(echo "$PAGEDATA" | grep "var pages")"
@@ -1448,6 +1500,12 @@ sitepage="$1"
 sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
 FETCH="$(fetch "$sitepage" "-")"
 folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g')"
+is_done "$folder"
+R=$?
+if [ $R = 1 ]; then
+o "[MangaPark] Already downloaded. Skipping."
+return 0
+fi
 mkdir -p "$folder"
 cd "$folder"
 declare -a DATA
