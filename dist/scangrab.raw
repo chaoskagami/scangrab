@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=37187375eb24494f439b79cf50612d1d15a08906
+rev=edc76ad7b2cb6bd4d5bd3224ff3a161bf740a248
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1723,15 +1723,15 @@ dl_eh() {
 	# I'm using pipes for clarity.
 	# the last sed deals with names like fate/stay night which are invalid
 	folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
-	mkdir -p "$folder"
-	cd "$folder"
-
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
 		echo "[E-H] Already downloaded. Skipping."
 		return 0
 	fi
+
+	mkdir -p "$folder"
+	cd "$folder"
 
 	echo "[E-H] Downloading '$folder'... "
 	
@@ -1748,6 +1748,8 @@ dl_eh() {
 		fi
 
 		echo "[E-H] Limits: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
+
+		WARNED_YOU=0
 
 		if (( $LIMIT_LEFT < $THIS_COUNT )); then
 			echo "[E-H] This will probably exceed your download quota. Hit enter in the next five seconds, or I'll abort:"

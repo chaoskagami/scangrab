@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=37187375eb24494f439b79cf50612d1d15a08906
+rev=edc76ad7b2cb6bd4d5bd3224ff3a161bf740a248
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1218,14 +1218,14 @@ while [ ! $FETCH_RESULT = 0 ]; do
 fetch "${sitepage}/?nw=always" tmp.1
 done
 folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
-mkdir -p "$folder"
-cd "$folder"
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
 o "[E-H] Already downloaded. Skipping."
 return 0
 fi
+mkdir -p "$folder"
+cd "$folder"
 o "[E-H] Downloading '$folder'... "
 page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
@@ -1237,6 +1237,7 @@ if [ $LOGGEDIN = 1 ]; then
 THIS_COUNT=$(( MAXPAGES * 5 ))
 fi
 o "[E-H] Limits: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
+WARNED_YOU=0
 if (( $LIMIT_LEFT < $THIS_COUNT )); then
 o "[E-H] This will probably exceed your download quota. Hit enter in the next five seconds, or I'll abort:"
 read -t 5
