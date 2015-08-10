@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=e04e73a735898940f9b49dc31e8424e656a92648
+rev=6242827af65f0239655e28486b65d3e817d38d52
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1055,7 +1055,6 @@ mod_login() {
 autobatch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
 	while read chunk; do
-		echo $chunk
 		eval auto $chunk
 	done < $1
 }
@@ -1724,11 +1723,12 @@ dl_eh() {
 	# I'm using pipes for clarity.
 	# the last sed deals with names like fate/stay night which are invalid
 	folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
+
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
-		echo "$folder"
 		echo "[E-H] Already downloaded. Skipping."
+		rm tmp.1
 		return 0
 	fi
 

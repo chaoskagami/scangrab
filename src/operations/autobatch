@@ -11,7 +11,6 @@
 autobatch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
 	while read chunk; do
-		echo $chunk
 		eval auto $chunk
 	done < $1
 }

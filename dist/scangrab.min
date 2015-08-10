@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=e04e73a735898940f9b49dc31e8424e656a92648
+rev=6242827af65f0239655e28486b65d3e817d38d52
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -798,7 +798,6 @@ exit 1
 #
 autobatch() {
 while read chunk; do
-o $chunk
 eval auto $chunk
 done < $1
 }
@@ -1222,8 +1221,8 @@ folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g'
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
-o "$folder"
 o "[E-H] Already downloaded. Skipping."
+rm tmp.1
 return 0
 fi
 mkdir -p "$folder"
