@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=f535fc804a9e7ad9aa1d9b0289656acb068db321
+rev=e04e73a735898940f9b49dc31e8424e656a92648
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -798,6 +798,7 @@ exit 1
 #
 autobatch() {
 while read chunk; do
+o $chunk
 eval auto $chunk
 done < $1
 }
