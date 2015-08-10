@@ -152,8 +152,11 @@ dl_eh() {
 
 	echo "[E-H] Fetching index page..."
 
+	[ -e 'tmp.1' ] && rm tmp.1
+
 	# This is so that we don't get the 'offensive' warning.
 	# XXX - Is this needed for Ex?
+
 	fetch "${sitepage}/?nw=always" tmp.1
 
 	while [ ! $FETCH_RESULT = 0 ]; do

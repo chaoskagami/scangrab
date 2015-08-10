@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=6242827af65f0239655e28486b65d3e817d38d52
+rev=5648c5a633363b889b568107670544cdca10a90a
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1213,6 +1213,7 @@ dl_eh() {
 sitepage=$1
 check_eh
 o "[E-H] Fetching index page..."
+[ -e 'tmp.1' ] && rm tmp.1
 fetch "${sitepage}/?nw=always" tmp.1
 while [ ! $FETCH_RESULT = 0 ]; do
 fetch "${sitepage}/?nw=always" tmp.1
