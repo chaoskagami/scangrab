@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=5648c5a633363b889b568107670544cdca10a90a
+rev=669c1e19aa140f00a6a8663c225adf200fc18ea6
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1228,7 +1228,6 @@ return 0
 fi
 mkdir -p "$folder"
 cd "$folder"
-o "[E-H] Downloading '$folder'... "
 page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
 if [ $LOGGEDIN = 1 ]; then
@@ -1236,22 +1235,17 @@ limitcheck_eh
 LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
 THIS_COUNT=$MAXPAGES
 if [ $LOGGEDIN = 1 ]; then
-THIS_COUNT=$(( MAXPAGES * 5 ))
+THIS_COUNT=$(( MAXPAGES * 20 ))
 fi
 o "[E-H] Limits: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
 WARNED_YOU=0
 if (( $LIMIT_LEFT < $THIS_COUNT )); then
-o "[E-H] This will probably exceed your download quota. Hit enter in the next five seconds, or I'll abort:"
-read -t 5
-R=$?
-if [ ! $R = 0 ]; then
-o "[E-H] Aborting."
-exit 1
-fi
+o "[E-H] This could exceed your download quota. Being safe."
 WARNED_YOU=1
 fi
 fi
 rm ../tmp.1
+o "[E-H] Downloading '$folder'... "
 doneyet=0
 CDNFAIL=0
 CUR=1
@@ -1259,7 +1253,7 @@ while [ $doneyet = 0 ]; do
 if [ $WARNED_YOU = 1 ]; then
 limitcheck_eh
 LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
-if (( $LIMIT_LEFT < 5 )); then
+if (( $LIMIT_LEFT < 20)); then
 message=":#"
 zzz=$(( LIMIT_REGEN * 60 ))
 while [ ! $zzz = 0 ]; do

@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=5648c5a633363b889b568107670544cdca10a90a
+rev=669c1e19aa140f00a6a8663c225adf200fc18ea6
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1737,8 +1737,6 @@ dl_eh() {
 
 	mkdir -p "$folder"
 	cd "$folder"
-
-	echo "[E-H] Downloading '$folder'... "
 	
 	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 
@@ -1749,7 +1747,7 @@ dl_eh() {
 		LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
 		THIS_COUNT=$MAXPAGES
 		if [ $LOGGEDIN = 1 ]; then
-			THIS_COUNT=$(( MAXPAGES * 5 ))
+			THIS_COUNT=$(( MAXPAGES * 20 ))
 		fi
 
 		echo "[E-H] Limits: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
@@ -1757,19 +1755,15 @@ dl_eh() {
 		WARNED_YOU=0
 
 		if (( $LIMIT_LEFT < $THIS_COUNT )); then
-			echo "[E-H] This will probably exceed your download quota. Hit enter in the next five seconds, or I'll abort:"
-			read -t 5
-			R=$?
-			if [ ! $R = 0 ]; then
-				echo "[E-H] Aborting."
-				exit 1
-			fi
+			echo "[E-H] This could exceed your download quota. Being safe."
 
 			WARNED_YOU=1
 		fi
 	fi
 
 	rm ../tmp.1
+
+	echo "[E-H] Downloading '$folder'... "
 
 	doneyet=0
 
@@ -1783,7 +1777,7 @@ dl_eh() {
 			limitcheck_eh
 			LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
 
-			if (( $LIMIT_LEFT < 5 )); then
+			if (( $LIMIT_LEFT < 20)); then
 				message=":#"
 						
 				zzz=$(( LIMIT_REGEN * 60 ))
