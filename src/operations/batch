@@ -11,6 +11,6 @@
 batch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
 	while read chunk; do
-		$0 $chunk
+		eval $chunk
 	done < $1
 }
