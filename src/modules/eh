@@ -167,6 +167,7 @@ dl_eh() {
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
+		echo "$folder"
 		echo "[E-H] Already downloaded. Skipping."
 		return 0
 	fi

@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=edc76ad7b2cb6bd4d5bd3224ff3a161bf740a248
+rev=afad1d8b175b9c321b953b871c253a5b152e73d7
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1221,6 +1221,7 @@ folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g'
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
+o "$folder"
 o "[E-H] Already downloaded. Skipping."
 return 0
 fi
