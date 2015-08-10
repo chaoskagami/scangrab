@@ -40,6 +40,14 @@ dl_mpark() {
 	FETCH="$(fetch "$sitepage" "-")"
 
 	folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g')"
+
+	is_done "$folder"
+	R=$?
+	if [ $R = 1 ]; then
+		echo "[MangaPark] Already downloaded. Skipping."
+		return 0
+	fi
+
 	mkdir -p "$folder"
 	cd "$folder"
 

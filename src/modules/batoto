@@ -36,6 +36,13 @@ dl_batoto() {
 	
 	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
 
+	is_done "$folder"
+	R=$?
+	if [ $R = 1 ]; then
+		echo "[Batoto] Already downloaded. Skipping."
+		return 0
+	fi
+
 	mkdir -p "$folder"
 	cd "$folder"
 

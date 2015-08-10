@@ -167,6 +167,13 @@ dl_eh() {
 	mkdir -p "$folder"
 	cd "$folder"
 
+	is_done "$folder"
+	R=$?
+	if [ $R = 1 ]; then
+		echo "[E-H] Already downloaded. Skipping."
+		return 0
+	fi
+
 	echo "[E-H] Downloading '$folder'... "
 	
 	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
@@ -191,6 +198,8 @@ dl_eh() {
 				echo "[E-H] Aborting."
 				exit 1
 			fi
+
+			WARNED_YOU=1
 		fi
 	fi
 
@@ -202,6 +211,27 @@ dl_eh() {
 
 	CUR=1
 	while [ $doneyet = 0 ]; do
+		if [ $WARNED_YOU = 1 ]; then
+			# Check to see (again) if CUR > MAX.
+			# If it is, sit around and sleep until we have enough credits.
+			limitcheck_eh
+			LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
+
+			if (( $LIMIT_LEFT < 5 )); then
+				message=":#"
+						
+				zzz=$(( LIMIT_REGEN * 60 ))
+
+				while [ ! $zzz = 0 ]; do
+					spinner "Over, wait ${zzz}s"
+					sleep 1s
+					zzz=$(( zzz - 1 ))
+				done
+
+				limitcheck_eh
+				LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
+			fi
+		fi
 
 		fetch "$page" "$CUR.htm"
 		while [ ! $FETCH_RESULT = 0 ]; do

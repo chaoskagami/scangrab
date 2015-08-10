@@ -62,6 +62,13 @@ dl_niconicoseiga() {
 		return 1
 	fi
 
+	is_done "$folder"
+	R=$?
+	if [ $R = 1 ]; then
+		echo "[Niconico] Already downloaded. Skipping."
+		return 0
+	fi
+
 	mkdir -p "$fullname"
 	cd "$fullname"
 

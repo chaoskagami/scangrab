@@ -40,6 +40,13 @@ dl_mangabox() {
 
 	fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char)"
 
+	is_done "$fullname"
+	R=$?
+	if [ $R = 1 ]; then
+		echo "[MangaBox] Already downloaded. Skipping."
+		return 0
+	fi
+
 	declare -a list
 	list=($(cat tmp.htm | grep 'class="jsNext"' | sed -e 's|.*<li><img src="||g' -e 's|?.*||g'))
 
