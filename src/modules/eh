@@ -195,11 +195,11 @@ dl_eh() {
 
 	# This is so that we don't get the 'offensive' warning.
 	# XXX - Is this needed for Ex?
-	dl_eh_wait
+
+	# Don't wait here.
 	fetch "${sitepage}/?nw=always" tmp.1
 
 	while [ ! $FETCH_RESULT = 0 ]; do
-		dl_eh_wait
 		fetch "${sitepage}/?nw=always" tmp.1
 	done
 
