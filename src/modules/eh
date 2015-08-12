@@ -139,10 +139,38 @@ check_eh() {
 		echo "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
 		exit 1
 	fi
+	
+	if [ $LOGGEDIN = 0 ]; then
+		echo "[E-H] Not logged in. Expect random failures at anoymous quota cap."
+	fi
 
 	check_eh_done=1
 
 	return 0
+}
+
+dl_eh_wait() {
+	# Check to see (again) if CUR > MAX.
+	# If it is, sit around and sleep until we have enough credits.
+	limitcheck_eh
+	LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
+
+	# It is totally possible for images to take an absurd chunk of quota.
+	# I still have no clue how it is calculated.
+	if (( $LIMIT_LEFT < 100 )); then
+		message=":#"
+						
+		zzz=$(( LIMIT_REGEN * 60 ))
+
+		while [ ! $zzz = 0 ]; do
+			spinner "Over, wait ${zzz}s"
+			sleep 1s
+			zzz=$(( zzz - 1 ))
+		done
+
+		limitcheck_eh
+		LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
+	fi
 }
 
 dl_eh() {
@@ -150,16 +178,28 @@ dl_eh() {
 
 	check_eh "$1"
 
+	if [ $LOGGEDIN = 1 ]; then
+		limitcheck_eh
+		LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
+		THIS_COUNT=$MAXPAGES
+		if [ $LOGGEDIN = 1 ]; then
+			THIS_COUNT=$(( MAXPAGES * 100 ))
+		fi
+
+		echo "[E-H] Limit check: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
+	fi
+
 	echo "[E-H] Fetching index page..."
 
 	[ -e 'tmp.1' ] && rm tmp.1
 
 	# This is so that we don't get the 'offensive' warning.
 	# XXX - Is this needed for Ex?
-
+	dl_eh_wait
 	fetch "${sitepage}/?nw=always" tmp.1
 
 	while [ ! $FETCH_RESULT = 0 ]; do
+		dl_eh_wait
 		fetch "${sitepage}/?nw=always" tmp.1
 	done
 
@@ -183,25 +223,6 @@ dl_eh() {
 
 	MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
 
-	if [ $LOGGEDIN = 1 ]; then
-		limitcheck_eh
-		LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
-		THIS_COUNT=$MAXPAGES
-		if [ $LOGGEDIN = 1 ]; then
-			THIS_COUNT=$(( MAXPAGES * 20 ))
-		fi
-
-		echo "[E-H] Limits: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
-
-		WARNED_YOU=0
-
-		if (( $LIMIT_LEFT < $THIS_COUNT )); then
-			echo "[E-H] This could exceed your download quota. Being safe."
-
-			WARNED_YOU=1
-		fi
-	fi
-
 	rm ../tmp.1
 
 	echo "[E-H] Downloading '$folder'... "
@@ -212,29 +233,9 @@ dl_eh() {
 
 	CUR=1
 	while [ $doneyet = 0 ]; do
-		if [ $WARNED_YOU = 1 ]; then
-			# Check to see (again) if CUR > MAX.
-			# If it is, sit around and sleep until we have enough credits.
-			limitcheck_eh
-			LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
-
-			if (( $LIMIT_LEFT < 20)); then
-				message=":#"
-						
-				zzz=$(( LIMIT_REGEN * 60 ))
-
-				while [ ! $zzz = 0 ]; do
-					spinner "Over, wait ${zzz}s"
-					sleep 1s
-					zzz=$(( zzz - 1 ))
-				done
-
-				limitcheck_eh
-				LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
-			fi
-		fi
-
+		dl_eh_wait
 		fetch "$page" "$CUR.htm"
+
 		while [ ! $FETCH_RESULT = 0 ]; do
 			# For the most part, we'll not hit this unless there's network issues.
 			# However, it can cause a failed fetch to go uncaught, causing next to be ''
@@ -242,6 +243,8 @@ dl_eh() {
 			# to next, and the 'done' check will trigger incorrectly.
 			message=":O"
 			spinner "RETR $CUR / $MAXPAGES"
+
+			dl_eh_wait
 			fetch "$page" "$CUR.htm"
 		done
 
@@ -254,9 +257,11 @@ dl_eh() {
 
 		spinner "IMG $CUR / $MAXPAGES"
 		if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
+			dl_eh_wait
 			fetch "$lq" "$(basename $lq)"
 		else
 			# HQ version; this is the 'Download source resolution' button.
+			dl_eh_wait
 			fetch "$hq"
 		fi
 
@@ -267,10 +272,14 @@ dl_eh() {
 				# Clobber existing pages.
 				CLOBBER=1
 
+				dl_eh_wait
 				fetch "$page" "${CUR}.htm"
+
 				notload=$(cat ${CUR}.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 
+				dl_eh_wait
 				spinner "FAL $CUR / $MAXPAGES"
+
 				fetch "$page?nl=$notload" "${CUR}nl.htm"
 
 				# Turn clobber off now that we're done.
@@ -283,8 +292,10 @@ dl_eh() {
 
 			spinner "IMG $CUR / $MAXPAGES"
 			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
+				dl_eh_wait
 				fetch "$lq"
 			else
+				dl_eh_wait
 				fetch "$hq"
 			fi
 
