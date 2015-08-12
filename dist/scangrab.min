@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=93a1aa2667353f19b7f42d38edadc515115043e4
+rev=50d082a3667c78513e8200f8600041f63abf5f2f
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1241,10 +1241,8 @@ o "[E-H] Limit check: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
 fi
 o "[E-H] Fetching index page..."
 [ -e 'tmp.1' ] && rm tmp.1
-dl_eh_wait
 fetch "${sitepage}/?nw=always" tmp.1
 while [ ! $FETCH_RESULT = 0 ]; do
-dl_eh_wait
 fetch "${sitepage}/?nw=always" tmp.1
 done
 folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"

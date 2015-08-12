@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=93a1aa2667353f19b7f42d38edadc515115043e4
+rev=50d082a3667c78513e8200f8600041f63abf5f2f
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1754,11 +1754,11 @@ dl_eh() {
 
 	# This is so that we don't get the 'offensive' warning.
 	# XXX - Is this needed for Ex?
-	dl_eh_wait
+
+	# Don't wait here.
 	fetch "${sitepage}/?nw=always" tmp.1
 
 	while [ ! $FETCH_RESULT = 0 ]; do
-		dl_eh_wait
 		fetch "${sitepage}/?nw=always" tmp.1
 	done
 
