@@ -148,7 +148,7 @@ check_eh() {
 dl_eh() {
 	sitepage=$1
 
-	check_eh
+	check_eh "$1"
 
 	echo "[E-H] Fetching index page..."
 
