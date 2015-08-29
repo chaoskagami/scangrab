@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=50d082a3667c78513e8200f8600041f63abf5f2f
+rev=bc4f45e4ed572a7c57d74897ea7cf0086100430e
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -310,6 +310,94 @@ fetch_no_ops() {
 	FETCH_RESULT=$?
 
 	return $FETCH_RESULT
+}
+#############################################
+#####@ORIGINAL-FILE 'functions/bash_get'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+# This provides an alternative stupid-ass way to get files from the internet
+# with some rather severe limitations. This can be used in abscence of wget
+# curl and aria2c but requires a bash with support for /dev/tcp.
+
+# It is also incapable of POST, and may produce general weirdness.
+
+bash_get() {
+    if [ "$1" = "" ]; then
+        echo "Usage: bget url [output_file]"
+        return 1
+    fi
+
+    BASE="$(echo -ne $1 | sed -e 's|http://||g' -e 's|https://||g' -e 's|/.*||g')"
+    GET="$(echo -ne $1 | sed -e 's|http://||g' -e 's|https://||g' -e "s|$BASE||g")"
+    STDOUT=0
+
+    if [ "$2" = "-" ]; then
+        STDOUT=1
+        OUT="stdout"
+    elif [ "$2" = "" ]; then
+        OUT="$(basename $GET | sed 's|?.*||g')"
+        GET_L=$((${#GET}-1))
+        if [ "${GET:$GET_L:1}" = "/" ]; then
+            OUT="index.htm"
+        fi
+    else
+        OUT="$2"
+    fi
+
+    # Open connection.
+    exec 3<>/dev/tcp/${BASE}/80
+
+    printf "GET ${GET} HTTP/1.1\r\nhost: ${BASE}\r\nConnection: close\r\n\r\n" >&3
+
+    ( cat <&3 | cat > $OUT ) 2>&1 >/dev/null
+
+    # Close.
+    exec 3>&-
+
+    STAT_CODE=0
+    LINE=0
+
+    # Edit out / interpret headers.
+    while read line; do
+        if [ "$(echo -n $line | tr -d "\r")" = "" ]; then
+            break
+        fi
+        if [ $LINE = 0 ]; then
+            # HTTP status code always first.
+            STAT_CODE="$(echo $line | sed -e 's|HTTP/1.1 ||g' -e 's| .*||g')"
+        else
+            echo $line | grep "Set-Cookie" 2>&1 >/dev/null
+            R=$?
+            if [ $R = 0 ]; then
+                # Set cookie.
+                cookie=$(echo $line | sed 's|Set-Cookie: ||g')
+            fi
+        fi
+        LINE=$((LINE + 1))
+    done < $OUT
+
+    LINE=$((LINE + 1))
+
+    sed -i "1,${LINE}d" $OUT
+
+    if [ "$STDOUT" = "1" ]; then
+        cat $OUT
+        rm $OUT
+    fi
+
+    if [ $STAT_CODE = 200 ]; then
+        return 0
+    else
+        return 1
+    fi
 }
 #############################################
 #####@ORIGINAL-FILE 'functions/spinner_reset'
@@ -2067,7 +2155,7 @@ dl_dynsc() {
 	# So we're essentially modifying the webpage into a dl-script.
 	# Cool, eh?
 
-	PAGETMP="$(echo $PAGELIST | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g")"
+	pages=( $(echo $PAGELIST | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g") )
 
 	# One possible nasty. Spaces.
 	# sed -i "s/\%20/ /g" tmp.1

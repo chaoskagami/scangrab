@@ -36,7 +36,7 @@ dl_dynsc() {
 
 	PAGEDATA="$(fetch "$1" "-")"
 
-	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+	folder="$(echo $PAGEDATA | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
 
 	is_done "$folder"
 	R=$?
@@ -55,7 +55,7 @@ dl_dynsc() {
 	# So we're essentially modifying the webpage into a dl-script.
 	# Cool, eh?
 
-	PAGETMP="$(echo $PAGELIST | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g")"
+	pages=( $(echo $PAGELIST | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g") )
 
 	# One possible nasty. Spaces.
 	# sed -i "s/\%20/ /g" tmp.1
