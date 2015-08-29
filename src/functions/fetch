@@ -19,7 +19,7 @@ fetch() {
 		fi
 
 		if [ ! $CLOBBER = 1 ]; then
-			_CMD="$_CMD -c \"$1\""
+			_CMD="$_CMD -c"
 		fi
 
 		if [ $use_cookies = 1 ]; then
@@ -62,6 +62,7 @@ fetch() {
 		if [ "$2" = "" ]; then
 			_CMD="$_CMD -o $(basename "$1")"
 		elif [ "$2" = "-" ]; then
+			# FIXME - This doesn't work as expected.
 			_CMD="$_CMD -o -"
 		else
 			_CMD="$_CMD -o \"$2\""

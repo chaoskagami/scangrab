@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # Turn off history expansion. It only causes issues with exclamation points.
+# TODO - this broke some shit. Fix it.
 set +H
 
 # Determine operation.

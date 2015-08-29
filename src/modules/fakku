@@ -50,7 +50,7 @@ dl_fakku() {
 
 	DATA="$(printf "$PAGEDATA")"
 
-	folder="$(echo "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
+	folder="$(echo -n "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
 
 	is_done "$folder"
 	R=$?

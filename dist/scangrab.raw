@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=bc4f45e4ed572a7c57d74897ea7cf0086100430e
+rev=879dd1affed71e7c8efe485175de79cb17e4988c
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -327,7 +327,8 @@ fetch_no_ops() {
 # with some rather severe limitations. This can be used in abscence of wget
 # curl and aria2c but requires a bash with support for /dev/tcp.
 
-# It is also incapable of POST, and may produce general weirdness.
+# It is also incapable of POSTs, https, and every form of header (like
+# content-disposition) and may produce general weirdness.
 
 bash_get() {
     if [ "$1" = "" ]; then
@@ -2136,7 +2137,7 @@ dl_dynsc() {
 
 	PAGEDATA="$(fetch "$1" "-")"
 
-	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+	folder="$(echo $PAGEDATA | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
 
 	is_done "$folder"
 	R=$?
@@ -2862,6 +2863,10 @@ scrape_booru() {
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# Turn off history expansion. It only causes issues with exclamation points.
+# TODO - this broke some shit. Fix it.
+set +H
 
 # Determine operation.
 

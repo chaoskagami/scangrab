@@ -20,7 +20,7 @@
 
 SAVE=$(pwd)
 
-cd ../src && source support && cd $SAVE
+cd ../src && source scangrab.nomain && cd $SAVE
 
 # We override this. We don't want things zipped.
 cbz_make() {

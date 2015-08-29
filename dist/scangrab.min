@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=bc4f45e4ed572a7c57d74897ea7cf0086100430e
+rev=879dd1affed71e7c8efe485175de79cb17e4988c
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1466,7 +1466,7 @@ return 0
 }
 dl_dynsc() {
 PAGEDATA="$(fetch "$1" "-")"
-folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+folder="$(echo $PAGEDATA | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
@@ -1947,6 +1947,7 @@ exit 1
 #
 #
 #
+set +H
 if [ "$1" = "auto" -o "$1" = "a" ]; then
 shift
 auto "$@"
