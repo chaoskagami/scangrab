@@ -12,7 +12,8 @@
 # with some rather severe limitations. This can be used in abscence of wget
 # curl and aria2c but requires a bash with support for /dev/tcp.
 
-# It is also incapable of POST, and may produce general weirdness.
+# It is also incapable of POSTs, https, and every form of header (like
+# content-disposition) and may produce general weirdness.
 
 bash_get() {
     if [ "$1" = "" ]; then
