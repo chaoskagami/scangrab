@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=74392f4eac44c63463bf39d3d258008824c3962d
+rev=6c430332dd3563025ced496bff4568560eae3a37
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
