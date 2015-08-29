@@ -57,7 +57,7 @@ upgrade_self() {
 			echo "[Upgrade] Succeeded. Displaying changelog, then exiting..."
 			echo "--- Changelog ----------------------"
 			fetch_no_ops "$LOG" "/tmp/scangrab-changelog-${new_sha256}"
-			cat /tmp/scangrab-changelog-${new_sha256}
+			cat /tmp/scangrab-changelog-${new_sha256} | sed -n '/== START ==/,/== END ==/p' | head -n-1 | tail -n+2
 			rm "/tmp/scangrab-changelog-${new_sha256}" 2>/dev/null
 			exit 0
 		else
