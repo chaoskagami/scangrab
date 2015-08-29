@@ -12,4 +12,6 @@ Actual issues
 
  * Batoto changes things so frequently it's annoying. I'll try to fix it ASAP but no guarantees about speediness. The current method is hopefully future-proof.
  
- * Foolslide only gets zips. Right now, it doesn't fetch individual images in the event such functionality isn't available.
+ * Foolslide only gets zips. Right now, it doesn't fetch individual images in the event such functionality isn't available on the site.
+ 
+ * The upgrader has some rather negative quirks. These need resolving. One of the things that needs to go is the 'rev' file.
