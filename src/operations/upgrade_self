@@ -14,6 +14,7 @@ upgrade_self() {
 		exit 0
 	fi
 	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
+	LOG="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/CHANGES-SNAP"
 	echo "[Upgrade] Checking this scangrab's sha256sum..."
 	this_sha256="$( cat "${0}" | sha256sum )"
 	fetch_no_ops "${URL}.sha256sum" "${0}.new.sha256sum"
@@ -30,7 +31,7 @@ upgrade_self() {
 		R=$?
 		if [ ! $R = 0 ]; then
 			echo "[Upgrade] Fetch failed. Error code: $R. Do you have write permission?"
-			rm "${0}.new" 2>/dev/null
+			rm "${0}.new" "${0}.new.sha256sum" 2>/dev/null
 			exit $R
 		fi
 		echo "[Upgrade] Downloaded replacement. Checking replacement's sha256sum..."
@@ -41,19 +42,23 @@ upgrade_self() {
 			R=$?
 			if [ ! $R = 0 ]; then
 				echo "[Upgrade] Couldn't replace. cp error: $R. Abort."
-				rm "${0}.new"
+				rm "${0}.new" "${0}.new.sha256sum" 2>/dev/null
 				exit $R
 			fi
 			echo "[Upgrade] Sync to avoid race conditions..."
 			sync
 			echo "[Upgrade] Checking to make sure it has been replaced..."
-			rm "${0}.new"
+			rm "${0}.new" "${0}.new.sha256" 2>/dev/null
 			new_sha256="$(cat "${0}" | sha256sum )"
 			if [ ! "$new_sha256" = "$gith_sha256" ]; then
 				echo "[Upgrade] Sanity check failed. This is not normal."
-				exit 1;
+				exit 1
 			fi
-			echo "[Upgrade] Succeeded. Exiting."
+			echo "[Upgrade] Succeeded. Displaying changelog, then exiting..."
+			echo "--- Changelog ----------------------"
+			fetch_no_ops "$LOG" "/tmp/scangrab-changelog-${new_sha256}"
+			cat /tmp/scangrab-changelog-${new_sha256}
+			rm "/tmp/scangrab-changelog-${new_sha256}" 2>/dev/null
 			exit 0
 		else
 			echo "[Upgrade] Failed. sha256 does not match."

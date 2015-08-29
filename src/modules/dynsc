@@ -36,12 +36,6 @@ dl_dynsc() {
 
 	PAGEDATA="$(fetch "$1" "-")"
 
-	echo page
-	echo "$PAGEDATA"
-
-	echo title
-	echo "$PAGEDATA" | grep "<title>"
-
 	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
 
 	is_done "$folder"
