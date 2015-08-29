@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=6c430332dd3563025ced496bff4568560eae3a37
+rev=f2c9486a6586affb8381c0cb7b6e4d6bd2210ef1
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1084,7 +1084,7 @@ upgrade_self() {
 			fi
 			echo "[Upgrade] Succeeded. Displaying changelog, then exiting..."
 			echo "--- Changelog ----------------------"
-			fetch_no_ops "$LOG" "/tmp/scangrab-changelog-${new_sha256}"
+			fetch_no_ops "$LOG" "/tmp/scangrab-changelog-$(echo ${new_sha256} | sed 's/ .*//g')"
 			cat /tmp/scangrab-changelog-${new_sha256} | sed -n '/== START ==/,/== END ==/p' | head -n-1 | tail -n+2
 			rm "/tmp/scangrab-changelog-${new_sha256}" 2>/dev/null
 			exit 0
