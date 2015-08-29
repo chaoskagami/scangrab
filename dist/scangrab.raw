@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=879dd1affed71e7c8efe485175de79cb17e4988c
+rev=77af7268d447e52811e635186eadd4d07c1778de
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -96,7 +96,7 @@ fetch() {
 		fi
 
 		if [ ! $CLOBBER = 1 ]; then
-			_CMD="$_CMD -c \"$1\""
+			_CMD="$_CMD -c"
 		fi
 
 		if [ $use_cookies = 1 ]; then
@@ -139,6 +139,7 @@ fetch() {
 		if [ "$2" = "" ]; then
 			_CMD="$_CMD -o $(basename "$1")"
 		elif [ "$2" = "-" ]; then
+			# FIXME - This doesn't work as expected.
 			_CMD="$_CMD -o -"
 		else
 			_CMD="$_CMD -o \"$2\""
@@ -478,70 +479,70 @@ entity_to_char() {
 	# It also handles the case of illegal characters on windows/FAT/NTFS.
 	# And the case of a slash in the name which is the only illegal one on linux.
 
-	sed \
-		-e "s/&#32;/ /g" \
-		-e "s/&nbsp;/ /g" \
-		-e "s/&#33;/\!/g" \
-		-e "s/&#34;/\"/g" \
-		-e "s/&#35;/\#/g" \
-		\
-		-e "s/&#36;/\$/g" \
-		-e "s/&#37;/\%/g" \
-		-e "s/&amp;/\&/g" \
-		-e "s/&#38;/\&/g" \
-		-e "s/&#39;/'/g" \
-		\
-		-e "s/&#40;/\(/g" \
-		-e "s/&#41;/\)/g" \
-		-e "s/&#42;/\*/g" \
-		-e "s/&#43;/\+/g" \
-		-e "s/&#44;/\,/g" \
-		\
-		-e "s/&#45;/\-/g" \
-		-e "s/&#46;/\./g" \
-		-e "s/&#58;/\:/g" \
-		-e "s/&#59;/\;/g" \
-		-e "s/&lt;/\</g" \
-		\
-		-e "s/&#60;/\</g" \
-		-e "s/&gt/\>/g" \
-		-e "s/&#61;/\>/g" \
-		-e "s/&#63;/\?/g" \
-		-e "s/&#64;/\@/g" \
-		\
-		-e "s/&#91;/\[/g" \
+	sed                     \
+		-e "s/&#32;/ /g"    \
+		-e "s/&nbsp;/ /g"   \
+		-e "s/&#33;/\!/g"   \
+		-e "s/&#34;/\"/g"   \
+		-e "s/&#35;/\#/g"   \
+		                    \
+		-e "s/&#36;/\$/g"   \
+		-e "s/&#37;/\%/g"   \
+		-e "s/&amp;/\&/g"   \
+		-e "s/&#38;/\&/g"   \
+		-e "s/&#39;/'/g"    \
+		                    \
+		-e "s/&#40;/\(/g"   \
+		-e "s/&#41;/\)/g"   \
+		-e "s/&#42;/\*/g"   \
+		-e "s/&#43;/\+/g"   \
+		-e "s/&#44;/\,/g"   \
+		                    \
+		-e "s/&#45;/\-/g"   \
+		-e "s/&#46;/\./g"   \
+		-e "s/&#58;/\:/g"   \
+		-e "s/&#59;/\;/g"   \
+		-e "s/&lt;/\</g"    \
+		                    \
+		-e "s/&#60;/\</g"   \
+		-e "s/&gt/\>/g"     \
+		-e "s/&#61;/\>/g"   \
+		-e "s/&#63;/\?/g"   \
+		-e "s/&#64;/\@/g"   \
+		                    \
+		-e "s/&#91;/\[/g"   \
 		-e "s/&#92;/\\\\/g" \
-		-e "s/&#93;/\]/g" \
-		-e "s/&#94;/\^/g" \
-		-e "s/&#95;/\_/g" \
-		\
-		-e "s/&#123;/\{/g" \
-		-e "s/&#124;/\|/g" \
-		-e "s/&#125;/\}/g" \
-		-e "s/&#126;/\~/g" \
-		-e "s/&yen;/¥/g" \
-		\
-		-e "s/&#165;/¥/g" \
-		-e "s/&sup2;/²/g" \
-		-e "s/&#178;/²/g" \
-		-e "s/&sup3;/³/g" \
-		-e "s/&#179;/³/g" \
-		\
+		-e "s/&#93;/\]/g"   \
+		-e "s/&#94;/\^/g"   \
+		-e "s/&#95;/\_/g"   \
+		                    \
+		-e "s/&#123;/\{/g"  \
+		-e "s/&#124;/\|/g"  \
+		-e "s/&#125;/\}/g"  \
+		-e "s/&#126;/\~/g"  \
+		-e "s/&yen;/¥/g"    \
+		                    \
+		-e "s/&#165;/¥/g"   \
+		-e "s/&sup2;/²/g"   \
+		-e "s/&#178;/²/g"   \
+		-e "s/&sup3;/³/g"   \
+		-e "s/&#179;/³/g"   \
+		                    \
 		-e "s/&frac14;/¼/g" \
-		-e "s/&#188;/¼/g" \
+		-e "s/&#188;/¼/g"   \
 		-e "s/&frac12;/½/g" \
-		-e "s/&#189;/½/g" \
+		-e "s/&#189;/½/g"   \
 		-e "s/&frac34;/¾/g" \
-		\
-		-e "s/&#190;/¾/g" \
+		                    \
+		-e "s/&#190;/¾/g"   \
 		-e "s/&spades;/♠/g" \
-		-e "s/&#9824;/♠/g" \
-		-e "s/&clubs;/♣/g" \
-		-e "s/&#9827;/♣/g" \
-		\
+		-e "s/&#9824;/♠/g"  \
+		-e "s/&clubs;/♣/g"  \
+		-e "s/&#9827;/♣/g"  \
+		                    \
 		-e "s/&hearts;/♥/g" \
-		-e "s/&#9829;/♥/g" \
-		-e "s/&diams;/♦/g" \
+		-e "s/&#9829;/♥/g"  \
+		-e "s/&diams;/♦/g"  \
 		-e "s/&#9830;/♦/g"
 
 }
@@ -2039,7 +2040,7 @@ dl_fakku() {
 
 	DATA="$(printf "$PAGEDATA")"
 
-	folder="$(echo "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
+	folder="$(echo -n "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
 
 	is_done "$folder"
 	R=$?
@@ -2137,7 +2138,13 @@ dl_dynsc() {
 
 	PAGEDATA="$(fetch "$1" "-")"
 
-	folder="$(echo $PAGEDATA | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+	echo page
+	echo "$PAGEDATA"
+
+	echo title
+	echo "$PAGEDATA" | grep "<title>"
+
+	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
 
 	is_done "$folder"
 	R=$?
@@ -2156,7 +2163,7 @@ dl_dynsc() {
 	# So we're essentially modifying the webpage into a dl-script.
 	# Cool, eh?
 
-	pages=( $(echo $PAGELIST | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g") )
+	PAGETMP="$(echo "$PAGELIST" | sed -e "s/\"image\"\://g" -e "s/,\"name\"\:\"[[:alnum:]_-]*\"//g" -e "s/\}\]/\)/g" -e "s/{//g" -e "s/}//g" -e "s/;//g" -e "s/ //g" -e "s/varpages=\[/pages=\(/g" -e "s/,/ /g")"
 
 	# One possible nasty. Spaces.
 	# sed -i "s/\%20/ /g" tmp.1
