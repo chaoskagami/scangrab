@@ -8,11 +8,16 @@
 # (at your option) any later version.
 #
 
+# These are characters that are either issue causing or
+# not FAT-legal.
+
 remove_illegal() {
 
 	sed \
 		-e "s/|/-/g" \
 		-e "s|/|-|g" \
-		-e "s|?|？|g"
+		-e "s|?|？|g" \
+		-e "s|<|(|g" \
+		-e "s|>|)|g"
 
 }
