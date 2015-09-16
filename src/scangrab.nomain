@@ -18,6 +18,9 @@
 # This file is literally the 'load everything' file. It doesn't really
 # do much work on its own. Merge generates it's own method of loading everything.
 
+# This is also meant for development, really - nomain allows quick testing of
+# functions in a current shell.
+
 # The revision.
 . ./rev
 

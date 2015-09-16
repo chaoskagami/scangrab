@@ -18,7 +18,7 @@ eh_longname="E-H / ExH"
 eh_url="g.e-hentai.org / exhentai.org"
 eh_state=1
 eh_filt=0
-eh_note="Logging in will result in HQ images and less H@H peer-related issues =_=;"
+eh_note="Logging in will result in HQ images, cap detection, and if you can, Ex use."
 
 eh_uselogin=1
 
@@ -156,7 +156,8 @@ dl_eh_wait() {
 	LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
 
 	# It is totally possible for images to take an absurd chunk of quota.
-	# I still have no clue how it is calculated.
+	# I still have no clue how it is calculated, but I've never seen one
+	# image cost more than 100 quota.
 	if (( $LIMIT_LEFT < 100 )); then
 		message=":#"
 						
@@ -331,9 +332,139 @@ dl_eh() {
 }
 
 scrape_eh() {
-	# TODO - Support grabbing page list of one tag.
-	# There are some things to account for though; namely, layouts. Thumb layout vs list.
-	# Number of things per page, etc.
-	# A pain basically.
-	echo -e "[E-H] Not yet implemented."
+	# TODO - Implement search functionality.
+	FETCH=""
+
+	# Two syntaxes; A URL, or a query followed by a mode string.
+	echo "$1" | grep "e.hentai\.org/\?" 2>&1 >/dev/null
+	S=$?
+	if [ $S = 0 ]; then
+		# This is a URL.
+		FETCH="$1"
+	else
+		KEYW=""
+
+		# Mode strings: dmagwnicpx
+		DEFAULT=1
+		M_D=$DEFAULT # Doujinshi
+		M_M=$DEFAULT # Manga
+		M_A=$DEFAULT # Artist CG
+		M_G=$DEFAULT # Game CG
+		M_W=$DEFAULT # Western
+		M_N=$DEFAULT # Non-H
+		M_I=$DEFAULT # Imageset
+		M_C=$DEFAULT # Cosplay
+		M_P=$DEFAULT # That category which nobody uses E-h for
+		M_X=$DEFAULT # Misc
+
+		BASE_URL="http://g.e-hentai.org/"
+
+		# By default, all of them are enabled. By putting a '-' in the mode string as first char, this behavior will reverse.
+
+		# This is a query.
+
+		if [ "$1" = "-m" ]; then
+			# Apply mode.
+			shift
+			MODE="$1"
+			shift
+
+			if [ "${MODE:0:1}" = "-" ]; then
+				DEFAULT=0
+				M_D=$DEFAULT # Doujinshi
+				M_M=$DEFAULT # Manga
+				M_A=$DEFAULT # Artist CG
+				M_G=$DEFAULT # Game CG
+				M_W=$DEFAULT # Western
+				M_N=$DEFAULT # Non-H
+				M_I=$DEFAULT # Imageset
+				M_C=$DEFAULT # Cosplay
+				M_P=$DEFAULT # That category which nobody uses E-h for
+				M_X=$DEFAULT # Misc
+			fi
+
+			for (( i=0; i<${#MODE}; i++ )); do
+				C="${MODE:$i:1}"
+				case "$C" in
+					D )
+						M_D=1 ;;
+					d )
+						M_D=0 ;;
+					M )
+						M_M=1 ;;
+					m )
+						M_M=0 ;;
+					A )
+						M_A=1 ;;
+					a )
+						M_A=0 ;;
+					G )
+						M_G=1 ;;
+					g )
+						M_G=0 ;;
+					W )
+						M_W=1 ;;
+					w )
+						M_W=0 ;;
+					N )
+						M_N=1 ;;
+					n )
+						M_N=0 ;;
+					I )
+						M_I=1 ;;
+					i )
+						M_I=0 ;;
+					C )
+						M_C=1 ;;
+					c )
+						M_C=0 ;;
+					P )
+						M_P=1 ;;
+					p )
+						M_P=0 ;;
+					Z )
+						M_X=1 ;;
+					z )
+						M_X=0 ;;
+					X )
+						BASE_URL="http://exhentai.org/" ;;
+				esac
+			done
+		fi
+
+		MODE_PART="f_doujinshi=$M_D&f_manga=$M_M&f_artistcg=$M_A&f_gamecg=$M_G&f_western=$M_W&f_non-h=$M_N&f_imageset=$M_I&f_cosplay=$M_C&f_asianporn=$M_P&f_misc=$M_X"
+
+		# Read search keywords.
+		while [ ! -z "$1" ]; do
+			KEYW="$KEYW+\"$(echo $1 | sed -e 's| |+|g' -e 's|:|%3A|g')\""
+
+			shift
+		done
+
+		KEYW="$(echo $KEYW | sed 's|^\+||g')"
+
+		FETCH="${BASE_URL}?${MODE_PART}&f_search=${KEYW}&f_apply=Apply+Filter&page="
+	fi
+
+	# Notes; page=1 is page 2. Pages are base 0 indexed.
+
+	
+	# cat tmp.1 
+
+	# How many pages of shit?
+	PAGE_COUNT="$(fetch "${FETCH}0" "-" | grep "Jump to page" | sed 's|.*Jump to page: (1-||g' | sed 's|).*||g' | head -n1)"
+
+	echo "[E-h] Pages: $PAGE_COUNT"
+
+	for (( i=0 ; i < $PAGE_COUNT ; i++ )); do
+		FETCH_RESULT=1
+		while [ ! $FETCH_RESULT = 0 ]; do
+			fetch "${FETCH}${i}" "-" >> data
+			
+			echo "[E-H] Grabbing page $((i + 1))..."
+		done
+	done
+
+	cat data | sed "s|<|\n|g" | grep "a href=\"${BASE_URL}g/" | sed -e 's|a href="||g' -e 's|".*||g' | sort | uniq >> batch.txt
+	rm data
 }
