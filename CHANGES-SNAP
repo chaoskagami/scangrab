@@ -1,9 +1,12 @@
 This file describes the changes made in the release snapshots. When parsing with scangrab, this line is skipped.
 == START ==
+ * Fix for FAT filesystems. No more errors for '<' and '>'.
+   I'd like to detect this, though...
+== END ==
+Older commit messages are moved down here.
+
  * Fixed double filename bug. No more Suika Suika\nSuika Suika nonsense!
  * Work made on a fancy-pants bash fetcher for if a stupid device is used
    but said device has access to bash sockets. See functions/bash_get.
  * This script now is set +H. Shell history was causing issues.
  * Added a readable changelog for upgrades. That is, this file.
-== END ==
-Older commit messages are moved down here.
