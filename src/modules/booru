@@ -130,20 +130,17 @@ declare -a sizearray
 declare -a final
 TAGCOUNT=0
 page_index=0
+
 # base URL
-final[0]="$source/posts?tags="
 # Tags
-final[1]=""
 # Images per page. Blank if no.
-final[2]=""
 # page=
-final[3]="&page="
 # Page Number
-final[4]=1
+final=("$source/posts?tags=" "" "" "&page=" 1)
+
 RESUME=0
 
-pagerange[0]=1
-pagerange[1]=1
+pagerange=(1 1)
 
 # Paged mode by default.
 # 1=paged, 2=images

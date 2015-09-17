@@ -14,47 +14,58 @@ help() {
 	type 0
 	echo -ne "     $0     "
 	color 3
-	echo -ne "OPERATION     "
+	echo -ne "[FLAGS]     "
 	color 5
-	echo -e "[PARAMS]"
+	echo -e "URL/Parameters"
 	type 0
 	type 1
 	echo -e "Operations:"
 	type 0
+	echo -e "     By default, this tool will download a manga from a URL."
+	echo -e "     If it can detect what module should be used, it will choose that."
+	echo ""
 	color 3
-	echo -e "     auto (a)"
+	echo -e "     -b     Download as batch list"
 	type 0
-	echo -e "          Chooses module based on URL"
+	echo -e "          Takes a file with URLs which will be run as downloads with auto."
+	echo ""
 	color 3
-	echo -e "     batch (l)"
-	type 0
-	echo -e "          Takes a file with a list of types and URLs"
-	color 3
-	echo -e "     autobatch (b)"
-	type 0
-	echo -e "          Takes a file with URLs which will be run with auto."
-	color 3
-	echo -e "     scrape (s)"
+	echo -e "     -s     Scrape list of manga from page"
 	type 0
 	echo -e "          Will take a manga's page and scrape chapters to"
-	echo -e "          a file named batch.txt"
+	echo -e "          a file named batch.txt. Some modules may handle this"
+	echo -e "          differently - consult module help for more info."
+	echo ""
 	color 3
-	echo -e "     login (u)"
+	echo -e "     -l     Login to site"
 	type 0
-	echo -e "          Pass the module name, your username and password."
-	echo -e "          This will generate a cookie jar as ./cookiejar"
+	echo -e "          REQUIRES a module (-m) argument. It will ask to login."
+	echo -e "          This will generate a cookie jar as ./cookiejar so you can download"
+	echo -e "          things that are normally restricted (like Niconico Manga, or ExH)"
+	echo ""
 	color 3
-	echo -e "     upgrade"
+	echo -e "     -U     Upgrade scangrab" 
 	type 0
 	echo -e "          Checks github for a newer copy of scangrab and"
 	echo -e "          updates itself. Make sure you have write permission."
 	echo -e "          There is no short form of this action."
 	echo ""
-	echo -e "     You can also specify a module name followed by"
-	echo -e "     the URL instead of using the auto-detect."
+	color 3
+	echo -e "     -mMODULE    Use specified module 'MODULE'"
+	type 0
+	echo -e "          Use MODULE to perform any operations."
+	echo -e "          This bypasses the autodetection code."
 	echo ""
-	echo -e "     If you don't specify an operation and pass only a URL"
-	echo -e "     then we assume you want auto (a)."
+	color 3
+	echo -e "     -h   Display help"
+	type 0
+	echo -e "          Print all of this stuff."
+	echo ""
+	color 3
+	echo -e "     -u   Usage"
+	type 0
+	echo -e "          Print a short version of help."
+	echo ""
 	type 1
 	echo -e "Download Modules:"
 	type 0

@@ -12,20 +12,12 @@ mod_login() {
 	for module in ${MODS[@]}; do
 		if [ "$1" = "$module" ]; then
 			if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
-				if [ ! "$3" = "" ]; then
-					echo "[Warn] Caveat; you probably need to wipe your shell history now. Try not to do it like this."
-					username="$2"
-					password="$3"
-				elif [ ! "$2" = "" ]; then
-					username="$2"
-					echo -ne "[$module] Password for $username (will not echo): "
-					read -s password
-				else
-					echo -ne "[$module] Username: "
-					read username
-					echo -ne "[$module] Password for $username (will not echo): "
-					read -s password
-				fi
+				echo -ne "[$module] Username: "
+				read username
+
+				echo -ne "[$module] Password for $username (will not echo): "
+				read -s password
+
 				login_${module} "$username" "$password"
 				exit 0
 			else

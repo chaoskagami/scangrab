@@ -11,6 +11,13 @@
 # These are characters that are either issue causing or
 # not FAT-legal.
 
+# Forward slash is not legal on linux.
+# Pipe character isn't legal on FAT and can cause issues with redirection.
+# ? is not FAT legal, so it is replaced with the unicode wide version
+# Angle brackets are not FAT legal - they're replaced with parenthesis.
+# \t is a no-no in filenames. I've seen at least one instance of this nastiness.
+# \n - see \t.
+
 remove_illegal() {
 
 	sed \
@@ -18,6 +25,7 @@ remove_illegal() {
 		-e "s|/|-|g" \
 		-e "s|?|？|g" \
 		-e "s|<|(|g" \
-		-e "s|>|)|g"
-
+		-e "s|>|)|g" \
+		-e "s|\t| |g" \
+		-e "s|\n| |g"
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=bc9353fa0830ec79e2ae882d67726168267421ad
+rev=c09000be3e46cd40a9045c3e3d07d86688d9cc80
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -439,6 +439,13 @@ spinner_reset() {
 # These are characters that are either issue causing or
 # not FAT-legal.
 
+# Forward slash is not legal on linux.
+# Pipe character isn't legal on FAT and can cause issues with redirection.
+# ? is not FAT legal, so it is replaced with the unicode wide version
+# Angle brackets are not FAT legal - they're replaced with parenthesis.
+# \t is a no-no in filenames. I've seen at least one instance of this nastiness.
+# \n - see \t.
+
 remove_illegal() {
 
 	sed \
@@ -446,8 +453,9 @@ remove_illegal() {
 		-e "s|/|-|g" \
 		-e "s|?|？|g" \
 		-e "s|<|(|g" \
-		-e "s|>|)|g"
-
+		-e "s|>|)|g" \
+		-e "s|\t| |g" \
+		-e "s|\n| |g"
 }
 #############################################
 #####@ORIGINAL-FILE 'functions/color'
@@ -484,71 +492,73 @@ entity_to_char() {
 	# It also handles the case of illegal characters on windows/FAT/NTFS.
 	# And the case of a slash in the name which is the only illegal one on linux.
 
+	# Always put 0* before any number, since some pages have &#039, for example.
+
 	sed                     \
-		-e "s/&#32;/ /g"    \
+		-e "s/&#0*32;/ /g"    \
 		-e "s/&nbsp;/ /g"   \
-		-e "s/&#33;/\!/g"   \
-		-e "s/&#34;/\"/g"   \
-		-e "s/&#35;/\#/g"   \
+		-e "s/&#0*33;/\!/g"   \
+		-e "s/&#0*34;/\"/g"   \
+		-e "s/&#0*35;/\#/g"   \
 		                    \
-		-e "s/&#36;/\$/g"   \
-		-e "s/&#37;/\%/g"   \
+		-e "s/&#0*36;/\$/g"   \
+		-e "s/&#0*37;/\%/g"   \
 		-e "s/&amp;/\&/g"   \
-		-e "s/&#38;/\&/g"   \
-		-e "s/&#39;/'/g"    \
+		-e "s/&#0*38;/\&/g"   \
+		-e "s/&#0*39;/'/g"    \
 		                    \
-		-e "s/&#40;/\(/g"   \
-		-e "s/&#41;/\)/g"   \
-		-e "s/&#42;/\*/g"   \
-		-e "s/&#43;/\+/g"   \
-		-e "s/&#44;/\,/g"   \
+		-e "s/&#0*40;/\(/g"   \
+		-e "s/&#0*41;/\)/g"   \
+		-e "s/&#0*42;/\*/g"   \
+		-e "s/&#0*43;/\+/g"   \
+		-e "s/&#0*44;/\,/g"   \
 		                    \
-		-e "s/&#45;/\-/g"   \
-		-e "s/&#46;/\./g"   \
-		-e "s/&#58;/\:/g"   \
-		-e "s/&#59;/\;/g"   \
+		-e "s/&#0*45;/\-/g"   \
+		-e "s/&#0*46;/\./g"   \
+		-e "s/&#0*58;/\:/g"   \
+		-e "s/&#0*59;/\;/g"   \
 		-e "s/&lt;/\</g"    \
 		                    \
-		-e "s/&#60;/\</g"   \
+		-e "s/&#0*60;/\</g"   \
 		-e "s/&gt/\>/g"     \
-		-e "s/&#61;/\>/g"   \
-		-e "s/&#63;/\?/g"   \
-		-e "s/&#64;/\@/g"   \
+		-e "s/&#0*61;/\>/g"   \
+		-e "s/&#0*63;/\?/g"   \
+		-e "s/&#0*64;/\@/g"   \
 		                    \
-		-e "s/&#91;/\[/g"   \
-		-e "s/&#92;/\\\\/g" \
-		-e "s/&#93;/\]/g"   \
-		-e "s/&#94;/\^/g"   \
-		-e "s/&#95;/\_/g"   \
+		-e "s/&#0*91;/\[/g"   \
+		-e "s/&#0*92;/\\\\/g" \
+		-e "s/&#0*93;/\]/g"   \
+		-e "s/&#0*94;/\^/g"   \
+		-e "s/&#0*95;/\_/g"   \
 		                    \
-		-e "s/&#123;/\{/g"  \
-		-e "s/&#124;/\|/g"  \
-		-e "s/&#125;/\}/g"  \
-		-e "s/&#126;/\~/g"  \
+		-e "s/&#0*123;/\{/g"  \
+		-e "s/&#0*124;/\|/g"  \
+		-e "s/&#0*125;/\}/g"  \
+		-e "s/&#0*126;/\~/g"  \
 		-e "s/&yen;/¥/g"    \
 		                    \
-		-e "s/&#165;/¥/g"   \
+		-e "s/&#0*165;/¥/g"   \
 		-e "s/&sup2;/²/g"   \
-		-e "s/&#178;/²/g"   \
+		-e "s/&#0*178;/²/g"   \
 		-e "s/&sup3;/³/g"   \
-		-e "s/&#179;/³/g"   \
+		-e "s/&#0*179;/³/g"   \
 		                    \
 		-e "s/&frac14;/¼/g" \
-		-e "s/&#188;/¼/g"   \
+		-e "s/&#0*188;/¼/g"   \
 		-e "s/&frac12;/½/g" \
-		-e "s/&#189;/½/g"   \
+		-e "s/&#0*189;/½/g"   \
 		-e "s/&frac34;/¾/g" \
 		                    \
-		-e "s/&#190;/¾/g"   \
+		-e "s/&#0*190;/¾/g"   \
 		-e "s/&spades;/♠/g" \
-		-e "s/&#9824;/♠/g"  \
+		-e "s/&#0*9824;/♠/g"  \
 		-e "s/&clubs;/♣/g"  \
-		-e "s/&#9827;/♣/g"  \
+		-e "s/&#0*9827;/♣/g"  \
 		                    \
 		-e "s/&hearts;/♥/g" \
-		-e "s/&#9829;/♥/g"  \
+		-e "s/&#0*9829;/♥/g"  \
 		-e "s/&diams;/♦/g"  \
-		-e "s/&#9830;/♦/g"
+		-e "s/&#0*9830;/♦/g"
 
 }
 #############################################
@@ -658,7 +668,7 @@ cbz_make() {
 batch() {
 	# $2 is a file. Read it in line by line as $1 and $2.
 	while read chunk; do
-		eval $chunk
+		eval auto $chunk
 	done < $1
 }
 #############################################
@@ -699,47 +709,58 @@ help() {
 	type 0
 	echo -ne "     $0     "
 	color 3
-	echo -ne "OPERATION     "
+	echo -ne "[FLAGS]     "
 	color 5
-	echo -e "[PARAMS]"
+	echo -e "URL/Parameters"
 	type 0
 	type 1
 	echo -e "Operations:"
 	type 0
+	echo -e "     By default, this tool will download a manga from a URL."
+	echo -e "     If it can detect what module should be used, it will choose that."
+	echo ""
 	color 3
-	echo -e "     auto (a)"
+	echo -e "     -b     Download as batch list"
 	type 0
-	echo -e "          Chooses module based on URL"
+	echo -e "          Takes a file with URLs which will be run as downloads with auto."
+	echo ""
 	color 3
-	echo -e "     batch (l)"
-	type 0
-	echo -e "          Takes a file with a list of types and URLs"
-	color 3
-	echo -e "     autobatch (b)"
-	type 0
-	echo -e "          Takes a file with URLs which will be run with auto."
-	color 3
-	echo -e "     scrape (s)"
+	echo -e "     -s     Scrape list of manga from page"
 	type 0
 	echo -e "          Will take a manga's page and scrape chapters to"
-	echo -e "          a file named batch.txt"
+	echo -e "          a file named batch.txt. Some modules may handle this"
+	echo -e "          differently - consult module help for more info."
+	echo ""
 	color 3
-	echo -e "     login (u)"
+	echo -e "     -l     Login to site"
 	type 0
-	echo -e "          Pass the module name, your username and password."
-	echo -e "          This will generate a cookie jar as ./cookiejar"
+	echo -e "          REQUIRES a module (-m) argument. It will ask to login."
+	echo -e "          This will generate a cookie jar as ./cookiejar so you can download"
+	echo -e "          things that are normally restricted (like Niconico Manga, or ExH)"
+	echo ""
 	color 3
-	echo -e "     upgrade"
+	echo -e "     -U     Upgrade scangrab" 
 	type 0
 	echo -e "          Checks github for a newer copy of scangrab and"
 	echo -e "          updates itself. Make sure you have write permission."
 	echo -e "          There is no short form of this action."
 	echo ""
-	echo -e "     You can also specify a module name followed by"
-	echo -e "     the URL instead of using the auto-detect."
+	color 3
+	echo -e "     -mMODULE    Use specified module 'MODULE'"
+	type 0
+	echo -e "          Use MODULE to perform any operations."
+	echo -e "          This bypasses the autodetection code."
 	echo ""
-	echo -e "     If you don't specify an operation and pass only a URL"
-	echo -e "     then we assume you want auto (a)."
+	color 3
+	echo -e "     -h   Display help"
+	type 0
+	echo -e "          Print all of this stuff."
+	echo ""
+	color 3
+	echo -e "     -u   Usage"
+	type 0
+	echo -e "          Print a short version of help."
+	echo ""
 	type 1
 	echo -e "Download Modules:"
 	type 0
@@ -915,6 +936,23 @@ help() {
 	echo -e "     page here: https://github.com/chaoskagami/scangrab"
 	echo ""
 	echo -e "     Build: $type, $branch, $rev"
+}
+#############################################
+#####@ORIGINAL-FILE 'operations/usage'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+usage() {
+	echo "Usage:    $0 [-hu] [-U] [-bsl] [-mmodule] args ..."
+	echo "Modules"
+	echo "  ${MODS[@]}"
 }
 #############################################
 #####@ORIGINAL-FILE 'operations/auto'
@@ -1124,20 +1162,12 @@ mod_login() {
 	for module in ${MODS[@]}; do
 		if [ "$1" = "$module" ]; then
 			if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
-				if [ ! "$3" = "" ]; then
-					echo "[Warn] Caveat; you probably need to wipe your shell history now. Try not to do it like this."
-					username="$2"
-					password="$3"
-				elif [ ! "$2" = "" ]; then
-					username="$2"
-					echo -ne "[$module] Password for $username (will not echo): "
-					read -s password
-				else
-					echo -ne "[$module] Username: "
-					read username
-					echo -ne "[$module] Password for $username (will not echo): "
-					read -s password
-				fi
+				echo -ne "[$module] Username: "
+				read username
+
+				echo -ne "[$module] Password for $username (will not echo): "
+				read -s password
+
 				login_${module} "$username" "$password"
 				exit 0
 			else
@@ -1148,24 +1178,6 @@ mod_login() {
 	done
 	echo "No such module."
 	exit 1
-}
-#############################################
-#####@ORIGINAL-FILE 'operations/autobatch'
-#!/bin/bash
-
-# Copyright (C) 2015  Jon Feldman/@chaoskagami
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-
-autobatch() {
-	# $2 is a file. Read it in line by line as $1 and $2.
-	while read chunk; do
-		eval auto $chunk
-	done < $1
 }
 #############################################
 #####@AUTOGENERATED 'MODS'
@@ -1686,7 +1698,7 @@ eh_longname="E-H / ExH"
 eh_url="g.e-hentai.org / exhentai.org"
 eh_state=1
 eh_filt=0
-eh_note="Logging in will result in HQ images and less H@H peer-related issues =_=;"
+eh_note="Logging in will result in HQ images, cap detection, and if you can, Ex use."
 
 eh_uselogin=1
 
@@ -1824,7 +1836,8 @@ dl_eh_wait() {
 	LIMIT_LEFT=$(( LIMIT_OF - LIMIT_AT ))
 
 	# It is totally possible for images to take an absurd chunk of quota.
-	# I still have no clue how it is calculated.
+	# I still have no clue how it is calculated, but I've never seen one
+	# image cost more than 100 quota.
 	if (( $LIMIT_LEFT < 100 )); then
 		message=":#"
 						
@@ -1999,11 +2012,141 @@ dl_eh() {
 }
 
 scrape_eh() {
-	# TODO - Support grabbing page list of one tag.
-	# There are some things to account for though; namely, layouts. Thumb layout vs list.
-	# Number of things per page, etc.
-	# A pain basically.
-	echo -e "[E-H] Not yet implemented."
+	# TODO - Implement search functionality.
+	FETCH=""
+
+	# Two syntaxes; A URL, or a query followed by a mode string.
+	echo "$1" | grep "e.hentai\.org/\?" 2>&1 >/dev/null
+	S=$?
+	if [ $S = 0 ]; then
+		# This is a URL.
+		FETCH="$1"
+	else
+		KEYW=""
+
+		# Mode strings: dmagwnicpx
+		DEFAULT=1
+		M_D=$DEFAULT # Doujinshi
+		M_M=$DEFAULT # Manga
+		M_A=$DEFAULT # Artist CG
+		M_G=$DEFAULT # Game CG
+		M_W=$DEFAULT # Western
+		M_N=$DEFAULT # Non-H
+		M_I=$DEFAULT # Imageset
+		M_C=$DEFAULT # Cosplay
+		M_P=$DEFAULT # That category which nobody uses E-h for
+		M_X=$DEFAULT # Misc
+
+		BASE_URL="http://g.e-hentai.org/"
+
+		# By default, all of them are enabled. By putting a '-' in the mode string as first char, this behavior will reverse.
+
+		# This is a query.
+
+		if [ "$1" = "-m" ]; then
+			# Apply mode.
+			shift
+			MODE="$1"
+			shift
+
+			if [ "${MODE:0:1}" = "-" ]; then
+				DEFAULT=0
+				M_D=$DEFAULT # Doujinshi
+				M_M=$DEFAULT # Manga
+				M_A=$DEFAULT # Artist CG
+				M_G=$DEFAULT # Game CG
+				M_W=$DEFAULT # Western
+				M_N=$DEFAULT # Non-H
+				M_I=$DEFAULT # Imageset
+				M_C=$DEFAULT # Cosplay
+				M_P=$DEFAULT # That category which nobody uses E-h for
+				M_X=$DEFAULT # Misc
+			fi
+
+			for (( i=0; i<${#MODE}; i++ )); do
+				C="${MODE:$i:1}"
+				case "$C" in
+					D )
+						M_D=1 ;;
+					d )
+						M_D=0 ;;
+					M )
+						M_M=1 ;;
+					m )
+						M_M=0 ;;
+					A )
+						M_A=1 ;;
+					a )
+						M_A=0 ;;
+					G )
+						M_G=1 ;;
+					g )
+						M_G=0 ;;
+					W )
+						M_W=1 ;;
+					w )
+						M_W=0 ;;
+					N )
+						M_N=1 ;;
+					n )
+						M_N=0 ;;
+					I )
+						M_I=1 ;;
+					i )
+						M_I=0 ;;
+					C )
+						M_C=1 ;;
+					c )
+						M_C=0 ;;
+					P )
+						M_P=1 ;;
+					p )
+						M_P=0 ;;
+					Z )
+						M_X=1 ;;
+					z )
+						M_X=0 ;;
+					X )
+						BASE_URL="http://exhentai.org/" ;;
+				esac
+			done
+		fi
+
+		MODE_PART="f_doujinshi=$M_D&f_manga=$M_M&f_artistcg=$M_A&f_gamecg=$M_G&f_western=$M_W&f_non-h=$M_N&f_imageset=$M_I&f_cosplay=$M_C&f_asianporn=$M_P&f_misc=$M_X"
+
+		# Read search keywords.
+		while [ ! -z "$1" ]; do
+			KEYW="$KEYW+\"$(echo $1 | sed -e 's| |+|g' -e 's|:|%3A|g')\""
+
+			shift
+		done
+
+		KEYW="$(echo $KEYW | sed 's|^\+||g')"
+
+		FETCH="${BASE_URL}?${MODE_PART}&f_search=${KEYW}&f_apply=Apply+Filter&page="
+	fi
+
+	# Notes; page=1 is page 2. Pages are base 0 indexed.
+
+	
+	# cat tmp.1 
+
+	# How many pages of shit?
+	PAGE_COUNT="$(fetch "${FETCH}0" "-" | grep "Jump to page" | sed 's|.*Jump to page: (1-||g' | sed 's|).*||g' | head -n1)"
+
+	echo "[E-h] Pages: $PAGE_COUNT"
+
+	for (( i=0 ; i < $PAGE_COUNT ; i++ )); do
+		FETCH_RESULT=1
+		while [ ! $FETCH_RESULT = 0 ]; do
+			fetch "${FETCH}${i}" "-" >> data
+			
+			echo "[E-H] Grabbing page $((i + 1))..."
+		done
+	done
+
+	cat data | sed "s|<|\n|g" | grep "a href=\"${BASE_URL}g/" | sed -e 's|a href="||g' -e 's|".*||g' | sort | uniq >> batch.txt
+	rm data
 }
 #############################################
 #####@ORIGINAL-FILE 'modules/fakku'
@@ -2527,20 +2670,17 @@ declare -a sizearray
 declare -a final
 TAGCOUNT=0
 page_index=0
+
 # base URL
-final[0]="$source/posts?tags="
 # Tags
-final[1]=""
 # Images per page. Blank if no.
-final[2]=""
 # page=
-final[3]="&page="
 # Page Number
-final[4]=1
+final=("$source/posts?tags=" "" "" "&page=" 1)
+
 RESUME=0
 
-pagerange[0]=1
-pagerange[1]=1
+pagerange=(1 1)
 
 # Paged mode by default.
 # 1=paged, 2=images
@@ -2890,54 +3030,88 @@ set +H
 
 # Determine operation.
 
-if [ "$1" = "auto" -o "$1" = "a" ]; then
-	# Common operation - Automatic Module Select.
-	shift
-	auto "$@"
-	exit 0
-elif [ "$1" = "batch" -o "$1" = "l" ]; then
-	# Common operation - typed batch.
-	shift
-	batch "$@"
-	exit 0
-elif [ "$1" = "autobatch" -o "$1" = "b" ]; then
-	# Common operation - auto batch.
-	shift
-	autobatch "$@"
-	exit 0
-elif [ "$1" = "scrape" -o "$1" = "s" ]; then
-	# Link scraper.
-	shift
-	scrape "$@"
-	exit 0
-elif [ "$1" = "login" -o "$1" = "u" ]; then
-	# Site login.
-	shift
-	mod_login "$@"
-	exit 0
-elif [ "$1" = "upgrade" ]; then
-	# Upgrade self.
-	upgrade_self
-	exit 0
-else
-	# Not a common operation - either invalid, a module, or a lazy URL.
+# New syntax; default is auto.
+#  -b Batch download
+#  -s Scrape list
+#  -l Login
+#  -U upgrade scangrab
+#  -mModule Use module instead of detection.
 
-	# Detect whether it is a module operation
-	MATCH=""
-	for module in ${MODS[@]}; do
-		if [ "$1" = "$module" ]; then
-			shift
-			dl_${module} "$@"
-			exit 0
-		fi
-	done
-
-	# Try to see if this was a lazy URL as first parameter.
-	auto "$@"
-	R=$?
-	if [ $R = 1 ]; then
-		# All checks failed. Usage~
-		help
+CMD_STR="$1"
+OPERATION=a
+MODULE=a
+TYPE=0
+while [ "${CMD_STR:0:1}" = "-" ]; do
+	if [ ${#CMD_STR} = 2 ]; then
+		case ${CMD_STR:1:1} in
+			b)
+				OPERATION=b ;;
+			s)
+				OPERATION=s ;;
+			l)
+				OPERATION=l ;;
+			U)
+				OPERATION=U ;;
+			u)
+				usage
+				exit 0
+				;;
+			h)
+				help
+				exit 0
+				;;
+			e)
+				# This is used to import functions to a shell.
+				# Not for general use.
+				return 0 # cannot use exit - that would kill the shell
+				;;
+		esac
+	elif [ "${CMD_STR:0:2}" = "-m" ]; then
+		MODULE="${CMD_STR:2}"
+		TYPE=1
 	fi
+	shift
+	CMD_STR="$1"
+done
+
+if [ "$1" = "" ]; then
+	echo "Invalid syntax. See usage (-u) or help (-h) for more info."
+	exit 1
 fi
+
+case $OPERATION in
+	a)
+		if [ $TYPE = 0 ]; then
+			auto "$@"
+		else
+			dl_$MODULE "$@"
+		fi
+		exit 0
+		;;
+	b)
+		batch "$@"
+		exit 0
+		;;
+	s)
+		if [ $TYPE = 0 ]; then
+			scrape "$@"
+		else
+			scrape_$MODULE "$@"
+		fi
+		exit 0
+		;;
+	l)
+		if [ $TYPE = 0 ]; then
+			echo "[scangrab] Please specify a module with the '-m' option."
+			exit 1
+		else
+			mod_login "$MODULE"
+		fi
+		exit 0
+		;;
+	U)
+		upgrade_self
+		exit 0
+		;;
+esac
 #############################################

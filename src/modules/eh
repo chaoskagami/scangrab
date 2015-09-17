@@ -259,7 +259,7 @@ dl_eh() {
 		spinner "IMG $CUR / $MAXPAGES"
 		if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
 			dl_eh_wait
-			fetch "$lq" "$(basename $lq)"
+			fetch "$lq" "$(basename "$lq")"
 		else
 			# HQ version; this is the 'Download source resolution' button.
 			dl_eh_wait
@@ -267,7 +267,7 @@ dl_eh() {
 		fi
 
 		if [ ! $FETCH_RESULT = 0 ]; then
-			message=" Alt"
+			message="=_="
 
 			while [ ! $FETCH_RESULT = 0 ]; do
 				# Clobber existing pages.
