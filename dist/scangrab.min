@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=c09000be3e46cd40a9045c3e3d07d86688d9cc80
+rev=f1b168741963bd6aa1425fe67ed0b22aaa78f811
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1353,13 +1353,13 @@ extra=""
 ss "IMG $CUR / $MAXPAGES"
 if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
 dl_eh_wait
-fetch "$lq" "$(basename $lq)"
+fetch "$lq" "$(basename "$lq")"
 else
 dl_eh_wait
 fetch "$hq"
 fi
 if [ ! $FETCH_RESULT = 0 ]; then
-message=" Alt"
+message="=_="
 while [ ! $FETCH_RESULT = 0 ]; do
 CLOBBER=1
 dl_eh_wait
@@ -2083,6 +2083,9 @@ exit 0
 h)
 help
 exit 0
+;;
+v)
+VERBOSE=1
 ;;
 e)
 return 0 # cannot use exit - that would kill the shell
