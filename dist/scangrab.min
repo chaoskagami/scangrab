@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=f1b168741963bd6aa1425fe67ed0b22aaa78f811
+rev=d90173da54b50d9721073d08e24c3b157fb021ac
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -899,7 +899,7 @@ return 0
 dl_mangabox() {
 o "[MangaBox] Getting list of pages..."
 fetch "$1" "tmp.htm"
-fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char)"
+fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
 is_done "$fullname"
 R=$?
 if [ $R = 1 ]; then
