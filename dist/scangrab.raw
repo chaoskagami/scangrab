@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=f2d896a809d9822801b47c096f2a7822b00c96d5
+rev=c56e4c33f9b4b2b7cbe6433e397c99212442d28a
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -3057,7 +3057,9 @@ while [ "${CMD_STR:0:1}" = "-" ]; do
 			l)
 				OPERATION=l ;;
 			U)
-				OPERATION=U ;;
+				upgrade_self
+				exit 0
+				;;
 			u)
 				usage
 				exit 0
@@ -3116,10 +3118,6 @@ case $OPERATION in
 		else
 			mod_login "$MODULE"
 		fi
-		exit 0
-		;;
-	U)
-		upgrade_self
 		exit 0
 		;;
 esac
