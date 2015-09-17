@@ -42,7 +42,9 @@ while [ "${CMD_STR:0:1}" = "-" ]; do
 			l)
 				OPERATION=l ;;
 			U)
-				OPERATION=U ;;
+				upgrade_self
+				exit 0
+				;;
 			u)
 				usage
 				exit 0
@@ -101,10 +103,6 @@ case $OPERATION in
 		else
 			mod_login "$MODULE"
 		fi
-		exit 0
-		;;
-	U)
-		upgrade_self
 		exit 0
 		;;
 esac
