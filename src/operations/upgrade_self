@@ -20,7 +20,9 @@ upgrade_self() {
 
 	fetch_no_ops "${URL}.sha256sum" "${0}.new.sha256sum"
 	if [ ! $FETCH_RESULT = 0 ]; then
-		echo "[Upgrade] Error fetching sha256. Aborting."
+		echo "[Upgrade] Error fetching sha256. Either you don't have +w permission,"
+		echo "[Upgrade] or your internet is down. Either way, aborting."
+		exit 1
 	fi
 
 	this_sha256="$( cat "${0}" | sha256sum )"
