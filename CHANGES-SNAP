@@ -5,6 +5,7 @@ This file describes the changes made in the release snapshots. When parsing with
  * Another fix for an anomaly I found on E-h. Tabs and Newlines in
    filenames are NOT kosher.
  * Frontend overhaul. Syntax changes. Run 'scangrab -h' to see info.
+ * Minor fix for mangabox.
 == END ==
 Older commit messages are moved down here.
 

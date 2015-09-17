@@ -38,7 +38,7 @@ dl_mangabox() {
 
 	fetch "$1" "tmp.htm"
 
-	fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char)"
+	fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
 
 	is_done "$fullname"
 	R=$?
