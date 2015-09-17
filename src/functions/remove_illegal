@@ -17,6 +17,9 @@
 # Angle brackets are not FAT legal - they're replaced with parenthesis.
 # \t is a no-no in filenames. I've seen at least one instance of this nastiness.
 # \n - see \t.
+# The last two rules are more a pet peeve. Spaces are stripped from the front and back.
+# The last head command cuts the string to the max filename length of the system.
+# If getconf isn't a valid command, we use 255 instead.
 
 remove_illegal() {
 
@@ -27,5 +30,8 @@ remove_illegal() {
 		-e "s|<|(|g" \
 		-e "s|>|)|g" \
 		-e "s|\t| |g" \
-		-e "s|\n| |g"
+		-e "s|\n| |g" \
+		-e "s|^[[:space:]]*||g" \
+		-e "s|[[:space:]]*$||g" |
+		head -c $(getconf NAME_MAX . || echo 255)
 }

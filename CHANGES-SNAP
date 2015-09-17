@@ -6,6 +6,8 @@ This file describes the changes made in the release snapshots. When parsing with
    filenames are NOT kosher.
  * Frontend overhaul. Syntax changes. Run 'scangrab -h' to see info.
  * Minor fix for mangabox.
+ * Handle the 'Filename too long' situation that sometimes happens due
+   to overnaming on E-H. Seriously, though, why do they do that?
 == END ==
 Older commit messages are moved down here.
 
