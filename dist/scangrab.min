@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=a905b27a50c27c76ccacb30e6d2cf3c578691f90
+rev=b157dbd0bcb900235780dd9e02cd4b1a92ff6476
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -544,11 +544,11 @@ color 3
 o ""
 e "     -fFORMAT    Output as 'FORMAT'"
 type 0
-e "             Outputs the resulting download to a specified format."
-e "             Valid options are:"
-e "                 zip cbz 7z cb7 tar cbt raw"
-e "             The following are recognized but ignored:"
-e "                 rar cbr"
+e "          Outputs the resulting download to a specified format."
+e "          Valid options are:"
+e "              zip cbz 7z cb7 tar cbt raw"
+e "          The following are recognized but ignored:"
+e "              rar cbr"
 o ""
 color 3
 e "     -h   Display help"
