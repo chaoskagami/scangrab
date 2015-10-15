@@ -9,23 +9,61 @@
 #
 
 cbz_make() {
-	echo -e "[Post] Making CBZ..."
-
 	# Check and make sure the folder has something, and is actually a folder.
 	if [ ! -d "$1" ]; then
 		echo -e "\n[Error] Not a folder. Something went wrong."
 		exit 1
 	fi
-	
+
+	# If nothing is in it, something went wrong.
 	if [ "$(ls "$1")" = "" ]; then
 		echo "[Error] No files? Download failed."
 		exit 1
 	fi
 
-	zip -r "$1.zip" "$1" > /dev/null 2>&1
-	mv "$1.zip" "$1.cbz" > /dev/null 2>&1
-	
-	echo -e "[Post] Cleanup..."
-	rm -rf "$1"
+
+	if [ "$FORMAT" = "cbz" ] || [ "$FORMAT" = "zip" ]; then
+		# Zip format
+		echo -e "[Post] Zipping up..."
+		zip -r "$1.zip" "$1" > /dev/null 2>&1
+		mv "$1.zip" "$1.cbz" > /dev/null 2>&1
+
+		echo -e "[Post] Cleanup..."
+		rm -rf "$1"
+	elif [ "$FORMAT" = "cb7" ] || [ "$FORMAT" = "7z" ]; then
+		# 7zip format
+		echo -e "[Post] 7z'ing..."
+		7z a "$1.7z" "$1" > /dev/null 2>&1
+		mv "$1.7z" "$1.cb7" > /dev/null 2>&1
+
+		echo -e "[Post] Cleanup..."
+		rm -rf "$1"
+	elif [ "$FORMAT" = "cbr" ] || [ "$FORMAT" = "rar" ]; then
+		# RAR format (unsupported)
+		echo -e "[Post] RAR is not supported, and never will be. Sorry."
+	elif [ "$FORMAT" = "cbt" ] || [ "$FORMAT" = "tar" ]; then
+		# Tar archive
+		echo -e "[Post] Tarring..."
+		tar -cf "$1.tar" "$1" > /dev/null 2>&1
+		mv "$1.tar" "$1.cbt" > /dev/null 2>&1
+
+		echo -e "[Post] Cleanup..."
+		rm -rf "$1"
+	elif [ "$FORMAT" = "raw" ]; then
+		# Leave it as a folder
+		echo -e "[Post] Raw was specified. Leaving as a folder."
+	else
+		echo -e "[Post] Don't know how to handle format '$FORMAT'. Zipping instead."
+
+		# Zip format
+		echo -e "[Post] Zipping up..."
+		zip -r "$1.zip" "$1" > /dev/null 2>&1
+		mv "$1.zip" "$1.cbz" > /dev/null 2>&1
+
+		echo -e "[Post] Cleanup..."
+		rm -rf "$1"
+	fi
+
 	echo -e "[Post] Finished!"
+
 }

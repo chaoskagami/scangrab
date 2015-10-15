@@ -44,7 +44,7 @@ help() {
 	echo -e "          things that are normally restricted (like Niconico Manga, or ExH)"
 	echo ""
 	color 3
-	echo -e "     -U     Upgrade scangrab" 
+	echo -e "     -U     Upgrade scangrab"
 	type 0
 	echo -e "          Checks github for a newer copy of scangrab and"
 	echo -e "          updates itself. Make sure you have write permission."
@@ -55,6 +55,15 @@ help() {
 	type 0
 	echo -e "          Use MODULE to perform any operations."
 	echo -e "          This bypasses the autodetection code."
+	color 3
+	echo ""
+	echo -e "     -fFORMAT    Output as 'FORMAT'"
+	type 0
+	echo -e "             Outputs the resulting download to a specified format."
+	echo -e "             Valid options are:"
+	echo -e "                 zip cbz 7z cb7 tar cbt raw"
+	echo -e "             The following are recognized but ignored:"
+	echo -e "                 rar cbr"
 	echo ""
 	color 3
 	echo -e "     -h   Display help"

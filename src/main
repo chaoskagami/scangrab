@@ -27,10 +27,12 @@ set +H
 #  -l Login
 #  -U upgrade scangrab
 #  -mModule Use module instead of detection.
+#  -fformat Specify output type
 
 CMD_STR="$1"
 OPERATION=a
 MODULE=a
+FORMAT=cbz
 TYPE=0
 while [ "${CMD_STR:0:1}" = "-" ]; do
 	if [ ${#CMD_STR} = 2 ]; then
@@ -64,6 +66,9 @@ while [ "${CMD_STR:0:1}" = "-" ]; do
 		esac
 	elif [ "${CMD_STR:0:2}" = "-m" ]; then
 		MODULE="${CMD_STR:2}"
+		TYPE=1
+	elif [ "${CMD_STR:0:2}" = "-f" ]; then
+		FORMAT="${CMD_STR:2}"
 		TYPE=1
 	fi
 	shift
