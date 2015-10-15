@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=ae4f84812acf640f6941e394b68cf412055fe712
+rev=c7c6c1466db7d02c24eb884365039f9fc8f1f8fc
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -424,7 +424,6 @@ return 0
 #
 #
 cbz_make() {
-e "[Post] Making CBZ..."
 if [ ! -d "$1" ]; then
 e "\n[Error] Not a folder. Something went wrong."
 exit 1
@@ -433,10 +432,36 @@ if [ "$(ls "$1")" = "" ]; then
 o "[Error] No files? Download failed."
 exit 1
 fi
+if [ "$FORMAT" = "cbz" ] || [ "$FORMAT" = "zip" ]; then
+e "[Post] Zipping up..."
 zip -r "$1.zip" "$1" > /dev/null 2>&1
 mv "$1.zip" "$1.cbz" > /dev/null 2>&1
 e "[Post] Cleanup..."
 rm -rf "$1"
+elif [ "$FORMAT" = "cb7" ] || [ "$FORMAT" = "7z" ]; then
+e "[Post] 7z'ing..."
+7z a "$1.7z" "$1" > /dev/null 2>&1
+mv "$1.7z" "$1.cb7" > /dev/null 2>&1
+e "[Post] Cleanup..."
+rm -rf "$1"
+elif [ "$FORMAT" = "cbr" ] || [ "$FORMAT" = "rar" ]; then
+e "[Post] RAR is not supported, and never will be. Sorry."
+elif [ "$FORMAT" = "cbt" ] || [ "$FORMAT" = "tar" ]; then
+e "[Post] Tarring..."
+tar -cf "$1.tar" "$1" > /dev/null 2>&1
+mv "$1.tar" "$1.cbt" > /dev/null 2>&1
+e "[Post] Cleanup..."
+rm -rf "$1"
+elif [ "$FORMAT" = "raw" ]; then
+e "[Post] Raw was specified. Leaving as a folder."
+else
+e "[Post] Don't know how to handle format '$FORMAT'. Zipping instead."
+e "[Post] Zipping up..."
+zip -r "$1.zip" "$1" > /dev/null 2>&1
+mv "$1.zip" "$1.cbz" > /dev/null 2>&1
+e "[Post] Cleanup..."
+rm -rf "$1"
+fi
 e "[Post] Finished!"
 }
 #############################################
@@ -515,6 +540,15 @@ e "     -mMODULE    Use specified module 'MODULE'"
 type 0
 e "          Use MODULE to perform any operations."
 e "          This bypasses the autodetection code."
+color 3
+o ""
+e "     -fFORMAT    Output as 'FORMAT'"
+type 0
+e "             Outputs the resulting download to a specified format."
+e "             Valid options are:"
+e "                 zip cbz 7z cb7 tar cbt raw"
+e "             The following are recognized but ignored:"
+e "                 rar cbr"
 o ""
 color 3
 e "     -h   Display help"
@@ -1387,6 +1421,7 @@ dl_eh_wait
 fetch "$hq"
 fi
 rm "${CUR}nl.htm"
+rm "${CUR}.htm"
 if [ $FETCH_RESULT = 0 ]; then
 CUR=$(( CUR + 1 ))
 if [ ! "$next" = "" ]; then
@@ -2069,6 +2104,7 @@ set +H
 CMD_STR="$1"
 OPERATION=a
 MODULE=a
+FORMAT=cbz
 TYPE=0
 while [ "${CMD_STR:0:1}" = "-" ]; do
 if [ ${#CMD_STR} = 2 ]; then
@@ -2101,6 +2137,8 @@ esac
 elif [ "${CMD_STR:0:2}" = "-m" ]; then
 MODULE="${CMD_STR:2}"
 TYPE=1
+elif [ "${CMD_STR:0:2}" = "-f" ]; then
+FORMAT="${CMD_STR:2}"
 fi
 shift
 CMD_STR="$1"
