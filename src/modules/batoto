@@ -33,8 +33,8 @@ dl_batoto() {
 	# Batoto requires a different strategy.
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
-	
-	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
+
+	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
@@ -49,7 +49,7 @@ dl_batoto() {
 	CUR=0
 	PAGES=0
 	RET=0
-	
+
 	base="$1"
 	if [ ! "${base:${#base}-1}" = "/" ]; then
 		base="${base}/"
@@ -83,7 +83,7 @@ dl_batoto() {
 		RET=$?
 
 		rm $CUR.htm
-	
+
 		spinner "$CUR"
 	done
 
@@ -102,7 +102,7 @@ scrape_batoto() {
 	echo -n "[Batoto] Scraping Chapters..."
 
 	fetch "$1" scrape.htm
-		
+
 	# Batoto sometimes gives out gunzips. We need to account for that... =_=
 	if [ "$(mimetype scrape.htm)" = "application/x-gzip" ]; then
 		mv $CUR.htm $CUR.htm.gz
@@ -140,13 +140,13 @@ scrape_batoto() {
 	if [ "$2" = "" ]; then
 		# Delete Language text, leaving urls
 		sed -ni '0~2p' batch.txtf
-		
+
 		cat batch.txtf >> batch.txt
 	else
 		echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b Applying Language Filter '$2'..."
 
 		grep -A 1 "$2" batch.txtf > batch.txtf2
-		
+
 		# Delete '--' lines
 		sed -i '/^[[:space:]]*--[[:space:]]*$/d' batch.txtf2
 
@@ -161,7 +161,7 @@ scrape_batoto() {
 
 	# We've scraped a batch file from the URL list. Clean up.
 	rm scrape.htm batch.txtr batch.txtf*
-	
+
 	echo -en "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
 
 	for ((n=0;n < ${#2}; n++)); do

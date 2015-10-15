@@ -50,7 +50,7 @@ dl_fakku() {
 
 	DATA="$(printf "$PAGEDATA")"
 
-	folder="$(echo -n "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
+	folder="$(echo -n "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
@@ -79,7 +79,7 @@ dl_fakku() {
 	spinner_done
 
 	cd ..
-	
+
 	cbz_make "$folder"
 
 	SAFETY_HACKS=0
@@ -87,7 +87,7 @@ dl_fakku() {
 
 scrape_fakku() {
 	echo -n "[Fakku] Scraping Chapters..."
-	
+
 	fetch "$1" scrape.htm
 
 	grep 'class="content-title"' scrape.htm > batch.txtf

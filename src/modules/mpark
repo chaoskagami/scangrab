@@ -36,10 +36,10 @@ dl_mpark() {
 
 	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
 	sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
-	
+
 	FETCH="$(fetch "$sitepage" "-")"
 
-	folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g')"
+	folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
@@ -62,7 +62,7 @@ dl_mpark() {
 		spinner "$CUR"
 		CUR=$(( CUR + 1 ))
 	done
-	
+
 	spinner_done
 
 	cd ..

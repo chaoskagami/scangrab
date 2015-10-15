@@ -30,13 +30,13 @@ auto_dynsc() {
 }
 
 dl_dynsc() {
-	
+
 	# Now loop-de-loop. First, make a decent name. Dynasty always has
 	# a short-title at the end of the URL.
 
 	PAGEDATA="$(fetch "$1" "-")"
 
-	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
@@ -74,7 +74,7 @@ dl_dynsc() {
 	done
 
 	spinner_done
-	
+
 	cd ..
 
 	cbz_make "$folder"

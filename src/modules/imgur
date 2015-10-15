@@ -36,7 +36,7 @@ dl_imgur() {
 
 	PAGEDATA="$(fetch "$1" "-")"
 
-	folder="$(echo "$PAGEDATA" | grep "</title>" | sed -e 's|<title>||g' -e 's/^[[:space:]]*//g' -e 's|</title>||g' | sed 's| - Album on Imgur||g')"
+	folder="$(echo "$PAGEDATA" | grep "</title>" | sed -e 's|<title>||g' -e 's/^[[:space:]]*//g' -e 's|</title>||g' | sed 's| - Album on Imgur||g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
