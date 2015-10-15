@@ -301,6 +301,7 @@ dl_eh() {
 			fi
 
 			rm "${CUR}nl.htm"
+			rm "${CUR}.htm"
 
 			if [ $FETCH_RESULT = 0 ]; then
 				CUR=$(( CUR + 1 ))
