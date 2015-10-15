@@ -5,6 +5,8 @@ This file describes the changes made in the release snapshots. When parsing with
  * Handling the login option improperly is now fixed.
  * Repeated failures to get images don't leave htmls in the zip. I hope.
  * Add a format option. Now you can specify -fFORMAT to get zip, 7z, etc
+ * Added support for Imgur galleries (because of the 'give us your email'
+   bullshit. Now I can actuallu download the weekly touhou doujins.
 == END ==
 Older commit messages are moved down here.
 
