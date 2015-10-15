@@ -4,6 +4,7 @@ This file describes the changes made in the release snapshots. When parsing with
    Sorry.
  * Handling the login option improperly is now fixed.
  * Repeated failures to get images don't leave htmls in the zip. I hope.
+ * Add a format option. Now you can specify -fFORMAT to get zip, 7z, etc
 == END ==
 Older commit messages are moved down here.
 

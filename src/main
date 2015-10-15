@@ -69,7 +69,6 @@ while [ "${CMD_STR:0:1}" = "-" ]; do
 		TYPE=1
 	elif [ "${CMD_STR:0:2}" = "-f" ]; then
 		FORMAT="${CMD_STR:2}"
-		TYPE=1
 	fi
 	shift
 	CMD_STR="$1"
