@@ -2,6 +2,7 @@ This file describes the changes made in the release snapshots. When parsing with
 == START ==
  * Bugfix for E-h login. I was doing it over an insecure http connection.
    Sorry.
+ * Handling the login option improperly is now fixed.
 == END ==
 Older commit messages are moved down here.
 
