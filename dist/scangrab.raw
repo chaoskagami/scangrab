@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=b157dbd0bcb900235780dd9e02cd4b1a92ff6476
+rev=445425e07086cd0871a8c5fa2625c491520479ee
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1492,8 +1492,8 @@ dl_batoto() {
 	# Batoto requires a different strategy.
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
-	
-	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
+
+	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
@@ -1508,7 +1508,7 @@ dl_batoto() {
 	CUR=0
 	PAGES=0
 	RET=0
-	
+
 	base="$1"
 	if [ ! "${base:${#base}-1}" = "/" ]; then
 		base="${base}/"
@@ -1542,7 +1542,7 @@ dl_batoto() {
 		RET=$?
 
 		rm $CUR.htm
-	
+
 		spinner "$CUR"
 	done
 
@@ -1561,7 +1561,7 @@ scrape_batoto() {
 	echo -n "[Batoto] Scraping Chapters..."
 
 	fetch "$1" scrape.htm
-		
+
 	# Batoto sometimes gives out gunzips. We need to account for that... =_=
 	if [ "$(mimetype scrape.htm)" = "application/x-gzip" ]; then
 		mv $CUR.htm $CUR.htm.gz
@@ -1599,13 +1599,13 @@ scrape_batoto() {
 	if [ "$2" = "" ]; then
 		# Delete Language text, leaving urls
 		sed -ni '0~2p' batch.txtf
-		
+
 		cat batch.txtf >> batch.txt
 	else
 		echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b Applying Language Filter '$2'..."
 
 		grep -A 1 "$2" batch.txtf > batch.txtf2
-		
+
 		# Delete '--' lines
 		sed -i '/^[[:space:]]*--[[:space:]]*$/d' batch.txtf2
 
@@ -1620,7 +1620,7 @@ scrape_batoto() {
 
 	# We've scraped a batch file from the URL list. Clean up.
 	rm scrape.htm batch.txtr batch.txtf*
-	
+
 	echo -en "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
 
 	for ((n=0;n < ${#2}; n++)); do
@@ -2258,7 +2258,7 @@ dl_fakku() {
 
 	DATA="$(printf "$PAGEDATA")"
 
-	folder="$(echo -n "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
+	folder="$(echo -n "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
@@ -2287,7 +2287,7 @@ dl_fakku() {
 	spinner_done
 
 	cd ..
-	
+
 	cbz_make "$folder"
 
 	SAFETY_HACKS=0
@@ -2295,7 +2295,7 @@ dl_fakku() {
 
 scrape_fakku() {
 	echo -n "[Fakku] Scraping Chapters..."
-	
+
 	fetch "$1" scrape.htm
 
 	grep 'class="content-title"' scrape.htm > batch.txtf
@@ -2350,13 +2350,13 @@ auto_dynsc() {
 }
 
 dl_dynsc() {
-	
+
 	# Now loop-de-loop. First, make a decent name. Dynasty always has
 	# a short-title at the end of the URL.
 
 	PAGEDATA="$(fetch "$1" "-")"
 
-	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+	folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
@@ -2394,7 +2394,7 @@ dl_dynsc() {
 	done
 
 	spinner_done
-	
+
 	cd ..
 
 	cbz_make "$folder"
@@ -2529,10 +2529,10 @@ dl_mpark() {
 
 	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
 	sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
-	
+
 	FETCH="$(fetch "$sitepage" "-")"
 
-	folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g')"
+	folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
@@ -2555,7 +2555,7 @@ dl_mpark() {
 		spinner "$CUR"
 		CUR=$(( CUR + 1 ))
 	done
-	
+
 	spinner_done
 
 	cd ..
@@ -2632,7 +2632,7 @@ dl_imgur() {
 
 	PAGEDATA="$(fetch "$1" "-")"
 
-	folder="$(echo "$PAGEDATA" | grep "</title>" | sed -e 's|<title>||g' -e 's/^[[:space:]]*//g' -e 's|</title>||g' | sed 's| - Album on Imgur||g')"
+	folder="$(echo "$PAGEDATA" | grep "</title>" | sed -e 's|<title>||g' -e 's/^[[:space:]]*//g' -e 's|</title>||g' | sed 's| - Album on Imgur||g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?

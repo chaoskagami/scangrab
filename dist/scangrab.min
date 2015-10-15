@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=b157dbd0bcb900235780dd9e02cd4b1a92ff6476
+rev=445425e07086cd0871a8c5fa2625c491520479ee
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1067,7 +1067,7 @@ fi
 return 0
 }
 dl_batoto() {
-folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char)"
+folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
@@ -1571,7 +1571,7 @@ SAFETY_HACKS=1
 PAGE="$(fetch "$1/read" "-")"
 PAGEDATA="$(echo "$PAGE" | grep "window.params.thumbs =" | sed -e 's/\\\//\//g' -e 's/\];/)/g' -e 's/window.params.thumbs = \[/pages=(/g' -e 's/\.thumb//g' -e 's/","/" "/g' -e 's/\/thumbs\//\/images\//g')"
 DATA="$(printf "$PAGEDATA")"
-folder="$(echo -n "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char)"
+folder="$(echo -n "$PAGE" | grep '<title>' | sed -e 's/[[:space:]]*<title>Read //g' -e 's|</title>||g' | entity_to_char | remove_illegal)"
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
@@ -1624,7 +1624,7 @@ return 0
 }
 dl_dynsc() {
 PAGEDATA="$(fetch "$1" "-")"
-folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g')"
+folder="$(echo "$PAGEDATA" | grep "<title>" | sed -e 's/<title>Dynasty Reader &raquo; //g' -e 's|</title>||g' | entity_to_char | remove_illegal)"
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
@@ -1718,7 +1718,7 @@ dl_mpark() {
 sitepage="$1"
 sitepage=`echo $sitepage | sed "s|/1$||g" | sed "s|/3-1$||g" | sed "s|/6-1$||g" | sed "s|/10-1$||g"`
 FETCH="$(fetch "$sitepage" "-")"
-folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g')"
+folder="$(echo "$FETCH" | grep '<title>' | sed -e 's/<title>//g' -e 's/ Online For Free.*$//g' -e 's/.* - Read //g' | entity_to_char | remove_illegal)"
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
@@ -1775,7 +1775,7 @@ return 0
 }
 dl_imgur() {
 PAGEDATA="$(fetch "$1" "-")"
-folder="$(echo "$PAGEDATA" | grep "</title>" | sed -e 's|<title>||g' -e 's/^[[:space:]]*//g' -e 's|</title>||g' | sed 's| - Album on Imgur||g')"
+folder="$(echo "$PAGEDATA" | grep "</title>" | sed -e 's|<title>||g' -e 's/^[[:space:]]*//g' -e 's|</title>||g' | sed 's| - Album on Imgur||g' | entity_to_char | remove_illegal)"
 is_done "$folder"
 R=$?
 if [ $R = 1 ]; then
