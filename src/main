@@ -70,7 +70,8 @@ while [ "${CMD_STR:0:1}" = "-" ]; do
 	CMD_STR="$1"
 done
 
-if [ "$1" = "" ]; then
+# Any operation except login is invalid without a URL
+if [ "$1" = "" ] && [ ! "$OPERATION" = "l" ]; then
 	echo "Invalid syntax. See usage (-u) or help (-h) for more info."
 	exit 1
 fi

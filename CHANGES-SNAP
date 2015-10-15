@@ -1,5 +1,10 @@
 This file describes the changes made in the release snapshots. When parsing with scangrab, this line is skipped.
 == START ==
+ * Bugfix for E-h login. I was doing it over an insecure http connection.
+   Sorry.
+== END ==
+Older commit messages are moved down here.
+
  * Fix for FAT filesystems. No more errors for '<' and '>'.
    I'd like to detect this, though...
  * Another fix for an anomaly I found on E-h. Tabs and Newlines in
@@ -8,9 +13,6 @@ This file describes the changes made in the release snapshots. When parsing with
  * Minor fix for mangabox.
  * Handle the 'Filename too long' situation that sometimes happens due
    to overnaming on E-H. Seriously, though, why do they do that?
-== END ==
-Older commit messages are moved down here.
-
  * Fixed double filename bug. No more Suika Suika\nSuika Suika nonsense!
  * Work made on a fancy-pants bash fetcher for if a stupid device is used
    but said device has access to bash sockets. See functions/bash_get.

@@ -26,10 +26,10 @@ login_eh() {
 	use_cookies=1
 
 	# Lots of extra shat they use to prevent bots. If it gets updated; let me know so I can fix it.
-	
-	s_login "UserName" "PassWord" "$1" "$2" "http://forums.e-hentai.org/index.php?act=Login&CODE=01" \
-		"CookieDate=1&b=&bt=&referer=http://forums.e-hentai.org/?act=idx"
-	user="$(fetch "http://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
+
+	s_login "UserName" "PassWord" "$1" "$2" "https://forums.e-hentai.org/index.php?act=Login&CODE=01" \
+		"CookieDate=1&b=&bt=&referer=https://forums.e-hentai.org/?act=idx"
+	user="$(fetch "https://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
 	if [ ! "$user" = "" ]; then
 		echo -e "\n[E-H] Logged in as: $user"
 		exit 0
@@ -139,7 +139,7 @@ check_eh() {
 		echo "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
 		exit 1
 	fi
-	
+
 	if [ $LOGGEDIN = 0 ]; then
 		echo "[E-H] Not logged in. Expect random failures at anoymous quota cap."
 	fi
@@ -160,7 +160,7 @@ dl_eh_wait() {
 	# image cost more than 100 quota.
 	if (( $LIMIT_LEFT < 100 )); then
 		message=":#"
-						
+
 		zzz=$(( LIMIT_REGEN * 60 ))
 
 		while [ ! $zzz = 0 ]; do
@@ -219,7 +219,7 @@ dl_eh() {
 
 	mkdir -p "$folder"
 	cd "$folder"
-	
+
 	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 
 	MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
@@ -323,7 +323,7 @@ dl_eh() {
 
 		spinner "$CUR / $MAXPAGES"
 	done
-	
+
 	spinner_done
 
 	cd ..
@@ -448,8 +448,8 @@ scrape_eh() {
 
 	# Notes; page=1 is page 2. Pages are base 0 indexed.
 
-	
-	# cat tmp.1 
+
+	# cat tmp.1
 
 	# How many pages of shit?
 	PAGE_COUNT="$(fetch "${FETCH}0" "-" | grep "Jump to page" | sed 's|.*Jump to page: (1-||g' | sed 's|).*||g' | head -n1)"
@@ -460,7 +460,7 @@ scrape_eh() {
 		FETCH_RESULT=1
 		while [ ! $FETCH_RESULT = 0 ]; do
 			fetch "${FETCH}${i}" "-" >> data
-			
+
 			echo "[E-H] Grabbing page $((i + 1))..."
 		done
 	done
