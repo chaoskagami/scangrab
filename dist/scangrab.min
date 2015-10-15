@@ -12,7 +12,7 @@ B="\b\b\b\b\b\b\b\b\b\b"
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=8dccd0a302a50f3dc5214528bed987433c7ef094
+rev=ae4f84812acf640f6941e394b68cf412055fe712
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
@@ -1186,9 +1186,9 @@ eh_note="Logging in will result in HQ images, cap detection, and if you can, Ex 
 eh_uselogin=1
 login_eh() {
 use_cookies=1
-s_login "UserName" "PassWord" "$1" "$2" "http://forums.e-hentai.org/index.php?act=Login&CODE=01" \
-"CookieDate=1&b=&bt=&referer=http://forums.e-hentai.org/?act=idx"
-user="$(fetch "http://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
+s_login "UserName" "PassWord" "$1" "$2" "https://forums.e-hentai.org/index.php?act=Login&CODE=01" \
+"CookieDate=1&b=&bt=&referer=https://forums.e-hentai.org/?act=idx"
+user="$(fetch "https://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
 if [ ! "$user" = "" ]; then
 e "\n[E-H] Logged in as: $user"
 exit 0
@@ -2105,7 +2105,7 @@ fi
 shift
 CMD_STR="$1"
 done
-if [ "$1" = "" ]; then
+if [ "$1" = "" ] && [ ! "$OPERATION" = "l" ]; then
 o "Invalid syntax. See usage (-u) or help (-h) for more info."
 exit 1
 fi
