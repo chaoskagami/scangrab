@@ -59,11 +59,11 @@ help() {
 	echo ""
 	echo -e "     -fFORMAT    Output as 'FORMAT'"
 	type 0
-	echo -e "             Outputs the resulting download to a specified format."
-	echo -e "             Valid options are:"
-	echo -e "                 zip cbz 7z cb7 tar cbt raw"
-	echo -e "             The following are recognized but ignored:"
-	echo -e "                 rar cbr"
+	echo -e "          Outputs the resulting download to a specified format."
+	echo -e "          Valid options are:"
+	echo -e "              zip cbz 7z cb7 tar cbt raw"
+	echo -e "          The following are recognized but ignored:"
+	echo -e "              rar cbr"
 	echo ""
 	color 3
 	echo -e "     -h   Display help"
