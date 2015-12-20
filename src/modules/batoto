@@ -16,9 +16,9 @@
 
 batoto_longname="Batoto"
 batoto_url="bato.to"
-batoto_state=1
+batoto_state=0
 batoto_filt=1
-batoto_note="Their page template is highly unstable."
+batoto_note="Broken until further notice."
 
 auto_batoto() {
 	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
