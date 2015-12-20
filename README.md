@@ -19,7 +19,7 @@ I removed 'bash' from the tools list since the scripts are bash and zsh compatib
 Here's the list of sites it currently handles:
 
  * Mangapark
- * Batoto
+ * ~~Batoto~~ Broken badly.
  * Dynasty Scans
  * Fakku
  * FoolSlide Sites (working: foolrulez, vortex-scans, etc)
