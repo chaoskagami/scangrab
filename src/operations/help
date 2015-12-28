@@ -9,6 +9,11 @@
 #
 
 help() {
+	if [ ! "$MODULE" = "a" ]; then
+		${MODULE}_help
+		exit 1
+	fi
+
 	type 1
 	echo -e "Usage:"
 	type 0
@@ -126,25 +131,6 @@ help() {
 		echo ""
 	done
 	type 1
-	echo -e "Misc Info"
-	type 0
-	echo -e "     If you see an emote in the output, it means we had to deal"
-	echo -e "     with a retrieval quirk."
-	echo -e "\n     [ :/ ]       Given GZip'd data even though we said it wasn't"
-	echo -e "                  supported in the GET."
-	type 2
-	echo -e "                  This happens frequently with batoto when doing"
-	echo -e "                  multiple fetches. :/"
-	type 0
-	echo -e "\n     [ :( ]       Site didn't respond and so the DL failed"
-	echo -e "                  We had to revert to a fallback method."
-
-	echo -e "\n     [ >:( ]      Too many normal requests failed; we reverted"
-	echo -e "                  to using entirely the fallback method."
-	echo ""
-	echo -e "     Some modules accept an extra parameter. Usually, this"
-	echo -e "     is a filter. Try values like 'English' or 'French'."
-	type 1
 	echo -e "System Tools"
 	type 0
 	if [ ! "$_wget" = "" ]; then
@@ -172,6 +158,7 @@ help() {
 		echo -ne "no tool. Install one of: "
 	fi
 	echo " (wget, curl, aria2c)"
+	echo -e "     JS fetching tool:    $_JSCOMMAND"
 	echo -ne "     Check broken images: "
 	if [ $_CHECK_VALID = 1 ]; then
 		if [ -f $_identify ]; then

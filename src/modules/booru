@@ -59,66 +59,74 @@ auto_booru() {
 }
 
 # Because the syntax is hell.
-booru_syntax_help() {
-	echo "The booru downloader requires parameters. For reference, this is after the booru name/url:"
-	echo "    Usage: booru NAME TAGLIST SPEC [FOLDERNAME]"
+booru_help() {
+	echo "Usage: NAME TAGLIST SPEC [FOLDERNAME]"
+	echo ""
 	echo "TAGLIST:"
-	echo "  Here's some quick help: after the booru name, you should specify some of these:"
-	echo "     tagname                   - Specify a tag."
-	echo "     tagname1,tagname2,...     - Specify multiple tags."
-	echo "     pool:poolname             - Download from a pool."
+	echo "    tagname                   - Specify a tag"
+	echo "    tagname1,tagname2,...     - Specify multiple tags"
+	echo "    pool:poolname             - Download from a pool"
 	echo ""
-	echo "  The same syntax as with boorus can be used with tags. For example:"
-	echo "     art:tagname               - Search by artist."
-	echo "     char:tagname              - Search by character."
-	echo "     copy:tagname              - Search by copyright."
-	echo "     user:username             - Anything uploaded by username."
-	echo "     fav:username              - Anything favorited by username."
-	echo "     ordfav:username           - Anything favorited by username (chronological.)"
-	echo "     md5:hash                  - Posts with a specific MD5 hash."
-	echo "     rating:rate               - Safety rating, e.g. safe, questionable, explicit..."
-	echo "     And so on. See http://safebooru.donmai.us/wiki_pages/43049 for a more exhaustive reference."
+	echo "  Specifiers:"
+	echo "      art:tagname               - Search by artist"
+	echo "      char:tagname              - Search by character"
+	echo "      copy:tagname              - Search by copyright"
+	echo "      user:username             - Anything uploaded by username"
+	echo "      fav:username              - Anything favorited by username"
+	echo "      ordfav:username           - Anything favorited by username (chrono)"
+	echo "      md5:hash                  - Posts with a specific MD5 hash."
+	echo "      rating:rate               - Safety rating, e.g. s, q, e"
+	echo "      See http://safebooru.donmai.us/wiki_pages/43049 for a more"
+	echo "      exhaustive reference."
 	echo ""
-	echo "  And a quick reference on modifiers:"
-	echo "     tag1,-tag2        - Anything matching tag1, but not tag2."
-	echo "     ~tag1,~tag2       - Anything marked tag1 or tag2."
-	echo "     tag1,tag2         - Anything marked with both tag1 AND tag2."
-	echo "     *tag*             - All tags containing 'tag'."
+	echo "  Modifers:"
+	echo "      tag1,-tag2        - Anything matching tag1, but not tag2"
+	echo "      ~tag1,~tag2       - Anything marked tag1 or tag2"
+	echo "      tag1,tag2         - Anything marked with both tag1 AND tag2"
+	echo "      *tag*             - All tags containing 'tag'"
 	echo ""
 	echo "SPEC:"
-	echo "  Syntax:"
 	echo "    p10                - Download page 10."
-	echo "    l50,p10            - 50 images per page, download page 10. (This is a lowercase L if your font doesn't distinguish.)"
-	echo "    i100               - Download 100 images."
-	echo "    i5-100             - Download images 5-100."
-	echo "    p10-50             - Download from page 10 to 50 inclusive."
-	echo "    l50,p10,i100       - Pages with 50 images, save the first 100 images starting at page 10."
-	echo "    l50,p5-10,i100     - Pages with 50 images, save the first 100 images starting at page 5."
-	echo "                         This syntax is legal, but -10 is ignored."
-	echo "    pages:50           - Download 50 pages. Long syntax."
-	echo "    images:100         - Download 100 images. Long syntax."
-	echo "    limit:50           - 50 images on a page. Long syntax."
-	echo "    resume             - Resume a previous Ctrl+C'd download."
-	echo "    r                  - Short for resume."
-	echo "  A minor note is that *technically* limit:N/lN is a tag for booru."
-	echo "  It can be specified as a tag, but may screw up download code, so do that here."
+	echo "    l50,p10            - 50 images per page, download page 10. (This is a"
+	echo "                         lowercase L if your font doesn't distinguish)"
+	echo "    i100               - Download 100 images"
+	echo "    i5-100             - Download images 5-100"
+	echo "    p10-50             - Download from page 10 to 50 inclusive"
+	echo "    l50,p10,i100       - Pages with 50 images, save the first 100 images,"
+	echo "                         starting at page 10"
+	echo "    l50,p5-10,i100     - Pages with 50 images, save the first 100 images,"
+	echo "                         starting at page 5"
+	echo "                         (This syntax is legal, but -10 is ignored.)"
+	echo "    pages:50           - Download 50 pages, Long syntax"
+	echo "    images:100         - Download 100 images, Long syntax"
+	echo "    limit:50           - 50 images on a page, Long syntax"
+	echo "    resume             - Resume a previous Ctrl+C'd download,"
+	echo "    r                  - Short for resume"
+	echo ""
+	echo "  Minor note is that *technically* limit:N/lN is a tag."
 	echo ""
 	echo "FOLDERNAME (optional):"
-	echo "  If not specified, it uses the format 'NAME - TAGLIST'."
+	echo "    Output folder. If not specified, it uses the format:"
+	echo "    'NAME - TAGLIST'"
 	echo ""
-	echo "Also, please note that the following sites are either alternate source bases or NOT boorus,"
-	echo "but will eventually be supported here due to some structural similiarities:"
-	echo " Moebooru-based (https://github.com/moebooru/moebooru)"
-	echo "   yande.re (yandere)"
-	echo "   konachan.com (konachan_g) / konachan.net (konachan)"
-	echo " Shimmie-based (https://github.com/shish/shimmie2)"
-	echo "   shimmie.katawa-shoujo.com (mishimme)"
-	echo " Custom / Needs research"
-	echo "   zerochan.net (zerochan)"
-	echo " All the same, dunno what they run"
-	echo "   *.booru.net (Many different things)"
-	echo "   safebooru.net (Not the same as safebooru)"
-	echo "   gelbooru.net"
+	echo "Also, please note that the following sites are either alternate"
+	echo "source bases or NOT boorus, but will eventually be supported"
+	echo "here due to some structural similiarities:"
+	echo ""
+	echo "    Moebooru-based (https://github.com/moebooru/moebooru)"
+	echo "        yande.re (yandere)"
+	echo "        konachan.com (konachan_g) / konachan.net (konachan)"
+	echo ""
+	echo "    Shimmie-based (https://github.com/shish/shimmie2)"
+	echo "        shimmie.katawa-shoujo.com (mishimme)"
+	echo ""
+	echo "    Custom / Needs research"
+	echo "        zerochan.net (zerochan)"
+	echo ""
+	echo "    All the same, dunno what they run"
+	echo "        *.booru.net (Many different things)"
+	echo "        safebooru.net (Not the same as safebooru)"
+	echo "        gelbooru.net"
 	exit 1
 }
 
@@ -239,13 +247,13 @@ dl_booru_page() {
 					spinner "${SLEEP}s"
 					SLEEP=$((SLEEP - 1))
 				done
-				
+
 				spinner_done "DONE"
 
 				echo -en "[Booru] Continuing... "
 			fi
 		fi
-		
+
 		# This is for safety.
 		# A lot of boorus get mad at you for hammering the database repeatedly and punish you
 		# by denying connections for a while. This ensures we aren't hammering *too* hard.
@@ -409,7 +417,7 @@ dl_booru() {
 			if [ $DONE = 0 ]; then
 				RESUME=0
 				DONE=$PRE
-			fi 
+			fi
 		else
 			TOTAL="$LINES"
 			spinner "${DONE} -> ${LINES}"
@@ -446,7 +454,7 @@ dl_booru() {
 			if [ $DONE = 0 ]; then
 				RESUME=0
 				DONE=$PRE
-			fi 
+			fi
 		else
 			TOTAL="$LINES"
 			spinner "${DONE} -> ${LINES}"

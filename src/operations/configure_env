@@ -44,6 +44,7 @@ _firefox="$(which --skip-alias firefox 2>/dev/null)"
 _palemoon="$(which --skip-alias palemoon 2>/dev/null)"
 _xulrunner="$(which --skip-alias xulrunner 2>/dev/null)"
 _HAVE_JSCOMMAND=0 # 1 is a xul browser.
+_JSCOMMAND="unsupported"
 
 if [ -f "$_firefox" ]; then
 	_JSCOMMAND="$_firefox"

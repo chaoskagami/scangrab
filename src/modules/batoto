@@ -16,9 +16,15 @@
 
 batoto_longname="Batoto"
 batoto_url="bato.to"
-batoto_state=0
-batoto_filt=1
-batoto_note="Broken until further notice."
+batoto_filt=0
+
+if [ ! $_HAVE_JSCOMMAND = 0 ]; then
+	batoto_state=2
+	batoto_note="Partially broken - no scraping functionality."
+else
+	batoto_state=0
+	batoto_note="Broken. Get one of these: 'firefox', 'palemoon', 'xulrunner'."
+fi
 
 auto_batoto() {
 	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
@@ -30,12 +36,13 @@ auto_batoto() {
 }
 
 dl_batoto() {
-	# Batoto requires a different strategy.
-	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
-	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
+	# Batoto breaks their stuff. A LOT. Recently, they broke static serving - JS now required.
+
 	fetch_jscommand "$1" "PAGE"
 
 	folder="$(cat PAGE | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
+
+	PAGES="$(cat PAGE | grep -C0 'page 1</option>' | head -n1 | sed -e 's|</option>||g' -e 's|.*>page ||g')"
 
 	rm PAGE
 
@@ -52,14 +59,13 @@ dl_batoto() {
 	cd "$folder"
 
 	CUR=1
-	PAGES=0
 	RET=0
 
 	echo -n "[Batoto] Downloading '$folder' "
 
 	BASE="$1"
 
-	while [ "$RET" = "0" ]; do
+	while (( $CUR <= $PAGES )); do
 		fetch_jscommand "${BASE}_${CUR}" "page"
 
 		img="$(grep -C0 'z-index: 1003' page | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
@@ -70,12 +76,12 @@ dl_batoto() {
 
 		rm page
 
-		spinner "$CUR"
+		spinner "$CUR / $PAGES"
 
-		CUR=$((CUR + 1))
+		if [ $RET = 0 ]; then
+			CUR=$((CUR + 1))
+		fi
 	done
-
-	PAGES=$(( CUR - 1 ))
 
 	spinner_done
 
