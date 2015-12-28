@@ -45,10 +45,8 @@ booru_danbooru_page() {
 		PAGE_SIZE=$((AFTER - BEFORE))
 
 		# We preprocess metadata.
-		sed -i "s|},{|}]\n[{|g" "page${range}.json"
-		# There's no final newline, so the read will miss an ID and have to refetch
-		# later even though that's dumb.
-		echo '' >> "page${range}.json"
+		cat "page${range}.json" | sed "s|},{|}]\n[{|g" | grep '"id"' > tmp
+		mv tmp "page${range}.json"
 
 		LEN=0
 		while read line; do
@@ -57,7 +55,7 @@ booru_danbooru_page() {
 			echo "$line" > meta/meta_${id}.json
 			LEN=$((LEN + 1))
 		done < "page${range}.json"
-	
+
 		rm "page${range}.json"
 
 		# No more pages.
