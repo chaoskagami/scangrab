@@ -12,21 +12,24 @@ The reason for this tool's existence is that I became sick of the lack of manga 
 
 To use this, you'll need GNU coreutils, as well as grep and sed. You'll also need a downloader tool, like wget, curl or aria2 (but caveat, POSTs with aria2 doesn't work so logins will fail. Cookies will need to be manually prepared.)
 
-If you don't have these...well, try not running it on android or a netgear router. For mac people - I'm not testing it there, but if you can submit a PR with notes on how to do stuff so it works there, I'll take note of it for the future. For now, this tool is Linux/Cygwin/Macports w/ Coreutils only.
+Unfortunately, certain sites will not work without extra tools to support them. Batoto requires, for the moment, a xulrunner. This includes xulrunner itself and also 'firefox --app' and 'palemoon --app' I hope to make this compatible with chromium, nw.js, w3m, and maybe phantomjs. Either way; JS needs to be parsed to function for batoto. Sorry.
 
-I removed 'bash' from the tools list since the scripts are bash and zsh compatible (mostly. I test it once in a while to make sure. Wish there was a way to use checkbashisms to check zsh compatibility.) If you want to use zsh, just change the shebang. THIS SCRIPT IS NOT POSIX /bin/sh COMPLIANT. dash, mksh, fish, tcsh and any other random not-bash or zsh shells will fail.
+For mac people - I'm not testing it there, but if you can submit a PR with notes on how to do stuff so it works there, I'll take note of it for the future. For now, this tool is Linux/Cygwin/Macports w/ Coreutils only.
+
+I removed 'bash' from the tools list since the scripts are bash and zsh compatible (mostly. I test it once in a while to make sure. Wish there was a way to use checkbashisms to check zsh compatibility.) If you want to use zsh, just change the shebang. THIS SCRIPT IS NOT POSIX /bin/sh COMPLIANT. dash, mksh, fish, tcsh and any other random not-bash or zsh shells will fail. Sorry.
 
 Here's the list of sites it currently handles:
 
  * Mangapark
- * ~~Batoto~~ Broken badly.
+ * Batoto (Partially working again. Scraper broken, they hide chapters now.)
  * Dynasty Scans
  * Fakku
  * FoolSlide Sites (working: foolrulez, vortex-scans, etc)
  * Niconico Seiga (Manga)
- * MangaBox
- * Boorus (working: Danbooru, Safebooru)
- * E-H ,Ex (The latter requires login first, and will auto-edit cookies. See notes in BUGS.)
+ * MangaBox (Legit source.)
+ * Boorus (working: Danbooru/donmai.us URLs)
+ * Imgur Galleries
+ * E-H, Ex (The latter requires login first, and will auto-edit cookies. See notes in BUGS.)
 
 Some of the modules don't provide a scrape operation (read: E-H, Booru). Some of them support more advanced filters (like Batoto - language) and some of them are just plain syntactically weird (Booru)
 
@@ -38,7 +41,6 @@ You may have noticed that I'm a size optimization freak, by the various versions
 
 A lot of temporary files may show up with some sites. This is normal. I may rewrite to use eval later everywhere, but for now there are some issues with handling newlines.
 
-Note: I will not add support for mangafox. Why? Their scans get run thru jpeg, they don't credit where it's due, and they watermark everything. Have fun coding that yourself.
+Note: I will not add support for mangafox. Why? Their scans get run thru jpeg, they don't credit where it's due, and they watermark everything. Have fun coding that yourself. I WILL NOT IMPLEMENT THIS. Keep yer crap to yerself.
 
-Don't want anything NSFW because you can't or don't want it? Check the sfw branch out. It's pulled every once in a while from master with the stuff removed. That said, by every once in a while, I mean horribly out-of-date.
-
+The sfw branch is stale. I'm not going to bother anymore. Ignore things you don't like or build a custom copy.
