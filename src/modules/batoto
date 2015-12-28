@@ -46,8 +46,6 @@ dl_batoto() {
 
 	rm PAGE
 
-	echo "$folder"
-
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then

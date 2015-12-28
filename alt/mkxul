@@ -11,5 +11,5 @@
 zip -r9 xul.zip xul
 echo -n "XUL_ZIP_DATA=\"" > ../src/xul_dat
 cat xul.zip | base64 -w 0 >> ../src/xul_dat
-echo -n "\"" >> ../src/xul_dat
+echo "\"" >> ../src/xul_dat
 rm xul.zip

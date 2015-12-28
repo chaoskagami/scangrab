@@ -25,6 +25,7 @@ fetch_jscommand() {
 
 		_CMD="echo \"PAGE_URL='$1';\" > xul.tmp/xul/url.js && $_JSCOMMAND --app xul.tmp/xul/application.ini --console > \"$2\""
 
+
 		cd ..
 	else
 		echo "NOT SUPPORTED."
@@ -35,9 +36,22 @@ fetch_jscommand() {
 		echo -e "\n$_CMD"
 	fi
 
+	if [ -f "$_Xvfb" ]; then
+		Xvfb :1 &
+		XPID=$!
+
+		SAVE_D="$DISPLAY"
+		export DISPLAY=":1"
+	fi
+
 	eval $_CMD 2>/dev/null
 	rm -rf ~/.scangrab_xul
 	FETCH_RESULT=$?
+
+	if [ -f "$_Xvfb" ]; then
+		kill $XPID
+		export DISPLAY="$SAVE_D"
+	fi
 
 	rm -rf xul.tmp
 

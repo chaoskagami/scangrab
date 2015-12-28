@@ -57,6 +57,9 @@ elif [ -f "$_xulrunner" ]; then
 	_HAVE_JSCOMMAND=1
 fi
 
+# Used for headless horsemen.
+_Xvfb="$(which --skip-alias Xvfb 2>/dev/null)"
+
 for ((i = 1, n = 2;; n = 1 << ++i)); do
 	if [[ ${n:0:1} == '-' ]]; then
 		MAX_INT=$(((1 << i) - 1))
