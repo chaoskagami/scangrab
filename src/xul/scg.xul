@@ -7,7 +7,9 @@
             width     ="0"
             height    ="0">
     <xul:script type="application/javascript"
-                src="chrome://myapp/content/scangrab.js" />
+                src="chrome://scangrab_xul/content/url.js" />
+    <xul:script type="application/javascript"
+                src="chrome://scangrab_xul/content/scg.js" />
     <xul:browser flex="1"
                  id  ="browser"
                  src =""
