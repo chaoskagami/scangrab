@@ -32,12 +32,29 @@ _SPINNER_CHAR="|"
 _NUM=0
 
 # Tools. Use these variables instead of actual command names.
-_tput="$(which tput 2>/dev/null)"
-_identify="$(which identify 2>/dev/null)"
-_convert="$(which convert 2>/dev/null)"
-_wget="$(which wget 2>/dev/null)"
-_curl="$(which curl 2>/dev/null)"
-_aria="$(which aria2c 2>/dev/null)"
+_tput="$(which --skip-alias tput 2>/dev/null)"
+_identify="$(which --skip-alias identify 2>/dev/null)"
+_convert="$(which --skip-alias convert 2>/dev/null)"
+_wget="$(which --skip-alias wget 2>/dev/null)"
+_curl="$(which --skip-alias curl 2>/dev/null)"
+_aria="$(which --skip-alias aria2c 2>/dev/null)"
+
+# Used for things which need to be parsed.
+_firefox="$(which --skip-alias firefox 2>/dev/null)"
+_palemoon="$(which --skip-alias palemoon 2>/dev/null)"
+_xulrunner="$(which --skip-alias xulrunner 2>/dev/null)"
+_HAVE_JSCOMMAND=0 # 1 is a xul browser.
+
+if [ -f "$_firefox" ]; then
+	_JSCOMMAND="$_firefox"
+	_HAVE_JSCOMMAND=1
+elif [ -f "$_palemoon" ]; then
+	_JSCOMMAND="$_palemoon"
+	_HAVE_JSCOMMAND=1
+elif [ -f "$_xulrunner" ]; then
+	_JSCOMMAND="$_xulrunner"
+	_HAVE_JSCOMMAND=1
+fi
 
 for ((i = 1, n = 2;; n = 1 << ++i)); do
 	if [[ ${n:0:1} == '-' ]]; then
@@ -88,4 +105,4 @@ else
 				_FETCHTOOL=3
 		fi
 	fi
-fi	
+fi

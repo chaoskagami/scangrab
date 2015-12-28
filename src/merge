@@ -27,6 +27,10 @@ echo "#############################################" >> $TARGET.tmp
 echo "#####@ORIGINAL-FILE 'rev'" >> $TARGET.tmp
 cat rev >> $TARGET.tmp
 
+echo "#############################################" >> $TARGET.tmp
+echo "#####@ORIGINAL-FILE 'xul_dat'" >> $TARGET.tmp
+cat xul_dat >> $TARGET.tmp
+
 # Functions.
 LIST=($(find functions/ -type f))
 for module in ${LIST[@]}; do
@@ -85,45 +89,19 @@ sed -i "/^[[:space:]]*$/d" $TARGET.tmp
 
 # Replace all instances of "echo" and "echo -e" with 'o'.
 
-# First define the replacements.
-echo -e "o() {\necho \"\$@\"\n}" >> $TARGET.fun
-echo -e "n() {\necho -ne \"\$@\"\n}" >> $TARGET.fun
-echo -e "e() {\necho -e \"\$@\"\n}" >> $TARGET.fun
-
-# Now repl.
-sed -i "s/^echo -ne/n/g" $TARGET.tmp
-sed -i "s/^echo -en/n/g" $TARGET.tmp
-sed -i "s/^echo -e/e/g" $TARGET.tmp
-sed -i "s/^echo/o/g" $TARGET.tmp
-
 # More miscellaneous stripdowns.
-echo 'B="\b\b\b\b\b\b\b\b\b\b"' >> $TARGET.fun
+echo 'B="\b\b\b\b\b\b\b\b\b\b"' > $TARGET.fun
 sed -i 's/\\b\\b\\b\\b\\b\\b\\b\\b\\b\\b/$B/g' $TARGET.tmp
 
 # We just nuked the shebang, so fix that.
-echo "#!/bin/bash"|cat - $TARGET.fun $TARGET.tmp >> $TARGET.min && mv $TARGET.min $TARGET
-
-# Some function names and etc can be simplified.
-sed -i "s/auto_/a_/g" $TARGET
-sed -i "s/scrape_/s_/g" $TARGET
-
-sed -i "s/_longname/_l/g" $TARGET
-sed -i "s/_SPINNER_CHAR/_SC/g" $TARGET
-sed -i "s/spinner/ss/g" $TARGET
-sed -i "s/spinner_done/sd/g" $TARGET
+echo "#!/bin/bash"|cat - $TARGET.fun $TARGET.tmp >> $TARGET && cp $TARGET $TARGET.tmp
 
 # Remove tmp.
-rm $TARGET.{fun,tmp}
+rm $TARGET.fun
 
-cp $TARGET $TARGET.min
-sed -i 's|#####@INSERT_TYPE|type="min"|g' $TARGET.min
-
-mv $TARGET $TARGET.tmp
-
-cp $TARGET.tmp $TARGET
 sed -i 's|#####@INSERT_TYPE|type="shxz"|g' $TARGET
 
-xz -9k $TARGET
+xz -9 $TARGET
 echo "#!/bin/bash" > $TARGET.shxz
 echo 'eval "$(cat "$0" | tail -n+4 | xz -d)"' >> $TARGET.shxz
 echo 'exit 0' >> $TARGET.shxz
@@ -132,7 +110,7 @@ cat $TARGET.xz >> $TARGET.shxz
 cp $TARGET.tmp $TARGET
 sed -i 's|#####@INSERT_TYPE|type="shbz2"|g' $TARGET
 
-bzip2 -9k $TARGET
+bzip2 -9 $TARGET
 echo "#!/bin/bash" > $TARGET.shbz2
 echo 'eval "$(cat "$0" | tail -n+4 | bzip2 -d)"' >> $TARGET.shbz2
 echo 'exit 0' >> $TARGET.shbz2
@@ -141,13 +119,13 @@ cat $TARGET.bz2 >> $TARGET.shbz2
 cp $TARGET.tmp $TARGET
 sed -i 's|#####@INSERT_TYPE|type="shgz"|g' $TARGET
 
-gzip -9k $TARGET
+gzip -9 $TARGET
 echo "#!/bin/bash" > $TARGET.shgz
 echo 'eval "$(cat "$0" | tail -n+4 | gzip -d)"' >> $TARGET.shgz
 echo 'exit 0' >> $TARGET.shgz
 cat $TARGET.gz >> $TARGET.shgz
 
-rm $TARGET{.gz,.xz,.bz2,.tmp,}
+rm $TARGET{.gz,.xz,.bz2,.tmp}
 
 chmod +x $TARGET.*
 

@@ -1,8 +1,5 @@
 Things I need to do before another snapshot
 ----------------
- * The current syntax for fetches is very weird and not future proof. Convert it to
-   the usual console flagging behavior, e.g. -s, -a, -U, -b, -f, etc.
-
  * Add a flag that doesn't run any function, so it becomes possible to source the script
    without a separate main init.
 

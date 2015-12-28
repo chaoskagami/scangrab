@@ -21,6 +21,8 @@
 # The revision.
 . ./rev
 
+. ./xul_dat
+
 # Configure env.
 . ./operations/configure_env
 # All misc functions (used to be support.)

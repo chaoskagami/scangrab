@@ -33,8 +33,13 @@ dl_batoto() {
 	# Batoto requires a different strategy.
 	# The URLs are not preloaded like the former, so the fetch one page done thing won't work.
 	# Unfortunately, short of grabbing pages until an image 404's, there's no way of knowing when we're done.
+	fetch_jscommand "$1" "PAGE"
 
-	folder="$(fetch "$1" "-" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
+	folder="$(cat PAGE | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
+
+	rm PAGE
+
+	echo "$folder"
 
 	is_done "$folder"
 	R=$?
@@ -46,45 +51,28 @@ dl_batoto() {
 	mkdir -p "$folder"
 	cd "$folder"
 
-	CUR=0
+	CUR=1
 	PAGES=0
 	RET=0
 
-	base="$1"
-	if [ ! "${base:${#base}-1}" = "/" ]; then
-		base="${base}/"
-	fi
-
 	echo -n "[Batoto] Downloading '$folder' "
 
+	BASE="$1"
+
 	while [ "$RET" = "0" ]; do
-		# Increment CUR.
-		CUR=$(( CUR + 1 ))
+		fetch_jscommand "${BASE}_${CUR}" "page"
 
-		# On batoto, two slashes is a syntax error as of Jun 13, 2015.
-
-		# We also need to fetch to a file here unfortunately, because possible stupidity.
-		fetch "${base}${CUR}" "$CUR.htm"
-
-		# Batoto sometimes gives out gunzips. We need to account for that... =_=
-
-		if [ "$(mimetype $CUR.htm)" = "application/x-gzip" ]; then
-			mv $CUR.htm $CUR.htm.gz
-			gunzip $CUR.htm.gz
-			message=" :/"
-		fi
-
-		img="$(grep -C0 'z-index: 1003' $CUR.htm | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
-
-		ext="${img##*.}"
+		img="$(grep -C0 'z-index: 1003' page | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
 
 		# If this 404's, fetch will return non-zero. Thus, loop breaks.
-		fetch "$img" "${CUR}_${folder}.${ext}"
+		fetch "$img"
 		RET=$?
 
-		rm $CUR.htm
+		rm page
 
 		spinner "$CUR"
+
+		CUR=$((CUR + 1))
 	done
 
 	PAGES=$(( CUR - 1 ))

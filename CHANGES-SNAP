@@ -1,5 +1,18 @@
 This file describes the changes made in the release snapshots. When parsing with scangrab, this line is skipped.
 == START ==
+ * Began working on a way to download batoto again, since they broke
+   everything by disabling the old static pages. Not fully implemented
+   yet, more specifically the scraper. Unfortunately, you now need
+   firefox, palemoon, or xulrunner to have batoto work (may change)
+ * Fixed annoying danbooru issue where IDs glitch out when parsing
+   a pixiv animation; turns out I have to filter them.
+ * Miscellaneous issues.
+ * Proper console command syntax.
+ * I'm going to start making stables. We're far enough along.
+   They'll be dated like youtube-dl.
+== END ==
+Older commit messages are moved down here.
+
  * Bugfix for E-h login. I was doing it over an insecure http connection.
    Sorry.
  * Handling the login option improperly is now fixed.
@@ -7,9 +20,6 @@ This file describes the changes made in the release snapshots. When parsing with
  * Add a format option. Now you can specify -fFORMAT to get zip, 7z, etc
  * Added support for Imgur galleries (because of the 'give us your email'
    bullshit. Now I can actuallu download the weekly touhou doujins.
-== END ==
-Older commit messages are moved down here.
-
  * Fix for FAT filesystems. No more errors for '<' and '>'.
    I'd like to detect this, though...
  * Another fix for an anomaly I found on E-h. Tabs and Newlines in

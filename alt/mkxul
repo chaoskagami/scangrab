@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+zip -r9 xul.zip xul
+echo -n "XUL_ZIP_DATA=\"" > ../src/xul_dat
+cat xul.zip | base64 -w 0 >> ../src/xul_dat
+echo -n "\"" >> ../src/xul_dat
+rm xul.zip

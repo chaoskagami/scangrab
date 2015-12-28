@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+# This version uses an available proper web parser to get output which
+# would otherwise be incomplete due to javascript/ajax/etc
+
+# Currently supports the following backends:
+# * XulRunner / Firefox / Pale Moon
+
+fetch_jscommand() {
+	if [ $_HAVE_JSCOMMAND = 1 ]; then
+		# Firefox / XUL.
+
+		mkdir xul.tmp && cd xul.tmp
+
+		# Not extracted. Do so.
+		echo $XUL_ZIP_DATA | base64 -d > xul.zip && unzip xul.zip >/dev/null 2>&1 && rm xul.zip >/dev/null 2>&1
+
+		_CMD="echo \"PAGE_URL='$1';\" > xul.tmp/xul/url.js && $_JSCOMMAND --app xul.tmp/xul/application.ini --console > \"$2\""
+
+		cd ..
+	else
+		echo "NOT SUPPORTED."
+		return 1
+	fi
+
+	if [ $VERBOSE = 1 ]; then
+		echo -e "\n$_CMD"
+	fi
+
+	eval $_CMD 2>/dev/null
+	rm -rf ~/.scangrab_xul
+	FETCH_RESULT=$?
+
+	rm -rf xul.tmp
+
+	return $FETCH_RESULT
+}

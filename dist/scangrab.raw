@@ -1,9 +1,11 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=445425e07086cd0871a8c5fa2625c491520479ee
+rev=a5eaf97da92eec97564790089602253f46f937e8
 branch=master
 #############################################
+#####@ORIGINAL-FILE 'xul_dat'
+XUL_ZIP_DATA="UEsDBAoAAAAAAB1PnEcAAAAAAAAAAAAAAAAEABwAeHVsL1VUCQADuk2BVt1AgVZ1eAsAAQToAwAABOcDAABQSwMECgACAAAA4k2cRxqPsikdAAAAHQAAABMAHAB4dWwvY2hyb21lLm1hbmlmZXN0VVQJAANnS4FW3UCBVnV4CwABBOgDAAAE5wMAAGNvbnRlbnQgc2NhbmdyYWJfeHVsIGZpbGU6Li8KUEsDBBQAAgAIAOlMnEdXH2dZbwAAAKIAAAATABwAeHVsL2FwcGxpY2F0aW9uLmluaVVUCQADlkmBVt1AgVZ1eAsAAQToAwAABOcDAACLdiwoiOXyS8xNtS1OTsxLL0pMiq8ozeEKSy0qzszPszXQM9Qz4HIqzcxJ8XSxNeQCErmZeWmpJckZDjANeskZifnF2YnpibmZXNHuqcnZ+bFcvpl5MDMM9bS4fBMrYFwjAwOgQLR7fmJeXiJhhQBQSwMEFAACAAgAdE2cRwFyIus2AQAA0QIAAAsAHAB4dWwvc2NnLnh1bFVUCQADnEqBVoFIgVZ1eAsAAQToAwAABOcDAAC9krFuAjEMhneeIspOAuoE4ujWqVtVqVsVgrkEckkUG3LXp2/uOFROMNeTlc/+f8vO5rVtHLtAQht8xZdiwV+3s03/OkfqHKABIGYSHCquTQoNrKWsXdgpJ/FkPWfURag4QUtSIw7t7dmts/X7kBlZcsD6qPiHVr5Oase+Pt/ZG5A2kPiM3UWx9bgu7aXaEMXilXMWTfixzikRUi1P0DUKCZKsFcEJIJaUihIIiyJ414nS/0zWUOMmsvllUFyuVivZ9nTaZfe3rOI4jv79oJ3tnsxYtZgiA7Y2dEPbgQ27QZ1spHFzKkZntaJyAHlUF3WFU6U+MOm7E9wPJHXwBJ7kOTlxRM7kP3ihrh+8dilkhMQODtrymR51h51WfKx7wotx4U/Adf7RfB6TbVTqBveN/Ptu29kvUEsDBBQAAgAIAEVOnEfjj2oVNAEAAPQBAAAKABwAeHVsL3NjZy5qc1VUCQADIkyBVmNIgVZ1eAsAAQToAwAABOcDAACNUTtPwzAQ3vMrTlnqSMEtA1NViUIDVGpRadMJEHKSS2Th2MF2ykv979hNgzow4ME6n7/7HnZQtjK3XEn4INF3AHCt6kZJlNbQXDBj0DwOLmv1xYVgVOlqaJUSr9wOWdOcGcu0bZvx+eCZVmg3qHc8R3LCwaVFXbIcDZVmPm2aTTcS0beW2/8gKd4oneODg0fjYB/8Gq46wzumoYQJrKa3yct2vRgfe5nrFSpva8fuzSUCfXn1OS9ImGn1blCHkUdnVChWbNdzUsYgWyG6/XBn0Ka8RtVa0guTCLwuQNHWDQmf5MQt2KTTdQqz7XIF/vwkO+4jKqO5cvmknfWOemtHWy6+RH2XLhenYz15cj/7i9p9mS/2MVyMRqPD67CiSHaOb8GNk0NNQp8tjKGKoWTCoEP9AFBLAwQKAAIAAAAcT5xHjWYlaFkAAABZAAAACgAcAHh1bC91cmwuanNVVAkAA7dNgVaXSoFWdXgLAAEE6AMAAATnAwAALy8gVGhpcyBmaWxlIGlzbid0IGFjdHVhbGx5IHVzZWQsIGl0IHdpbGwgYmUgb3ZlcndyaXR0ZW4gYnkgc2NyaXB0cy4KUEFHRV9VUkwgPSAiQFVSTEAiOwpQSwMECgAAAAAAQ0icRwAAAAAAAAAAAAAAAA0AHAB4dWwvZGVmYXVsdHMvVVQJAAPdQIFW3UCBVnV4CwABBOgDAAAE5wMAAFBLAwQKAAAAAABgTpxHAAAAAAAAAAAAAAAAGQAcAHh1bC9kZWZhdWx0cy9wcmVmZXJlbmNlcy9VVAkAA1NMgVbdQIFWdXgLAAEE6AMAAATnAwAAUEsDBBQAAgAIAGBOnEdG0rVhbAAAAHsAAAAhABwAeHVsL2RlZmF1bHRzL3ByZWZlcmVuY2VzL3ByZWZzLmpzVVQJAANTTIFW3UCBVnV4CwABBOgDAAAE5wMAAB2MMQ7CMAwA974CZQIJOTuMTKxIzCiJ3VKR2JHrKDy/Ucc7na4qzWdnIvm3GiDNoWV7fFUKvV9Pdz25dMDN+y0FXjTEz79ln4SN2IZcYLC73Kd6rKJK30gBpUBfGaUDtlKBOMRMOI6mjUY+7VBLAQIeAwoAAAAAAB1PnEcAAAAAAAAAAAAAAAAEABgAAAAAAAAAEADtQQAAAAB4dWwvVVQFAAO6TYFWdXgLAAEE6AMAAATnAwAAUEsBAh4DCgACAAAA4k2cRxqPsikdAAAAHQAAABMAGAAAAAAAAQAAAKSBPgAAAHh1bC9jaHJvbWUubWFuaWZlc3RVVAUAA2dLgVZ1eAsAAQToAwAABOcDAABQSwECHgMUAAIACADpTJxHVx9nWW8AAACiAAAAEwAYAAAAAAABAAAApIGoAAAAeHVsL2FwcGxpY2F0aW9uLmluaVVUBQADlkmBVnV4CwABBOgDAAAE5wMAAFBLAQIeAxQAAgAIAHRNnEcBciLrNgEAANECAAALABgAAAAAAAEAAACkgWQBAAB4dWwvc2NnLnh1bFVUBQADnEqBVnV4CwABBOgDAAAE5wMAAFBLAQIeAxQAAgAIAEVOnEfjj2oVNAEAAPQBAAAKABgAAAAAAAEAAACkgd8CAAB4dWwvc2NnLmpzVVQFAAMiTIFWdXgLAAEE6AMAAATnAwAAUEsBAh4DCgACAAAAHE+cR41mJWhZAAAAWQAAAAoAGAAAAAAAAQAAAKSBVwQAAHh1bC91cmwuanNVVAUAA7dNgVZ1eAsAAQToAwAABOcDAABQSwECHgMKAAAAAABDSJxHAAAAAAAAAAAAAAAADQAYAAAAAAAAABAA7UH0BAAAeHVsL2RlZmF1bHRzL1VUBQAD3UCBVnV4CwABBOgDAAAE5wMAAFBLAQIeAwoAAAAAAGBOnEcAAAAAAAAAAAAAAAAZABgAAAAAAAAAEADtQTsFAAB4dWwvZGVmYXVsdHMvcHJlZmVyZW5jZXMvVVQFAANTTIFWdXgLAAEE6AMAAATnAwAAUEsBAh4DFAACAAgAYE6cR0bStWFsAAAAewAAACEAGAAAAAAAAQAAAKSBjgUAAHh1bC9kZWZhdWx0cy9wcmVmZXJlbmNlcy9wcmVmcy5qc1VUBQADU0yBVnV4CwABBOgDAAAE5wMAAFBLBQYAAAAACQAJAAYDAABVBgAAAAA="#############################################
 #####@ORIGINAL-FILE 'functions/s_login'
 #!/bin/bash
 
@@ -698,6 +700,46 @@ cbz_make() {
 
 }
 #############################################
+#####@ORIGINAL-FILE 'functions/fetch_jscommand'
+#!/bin/bash
+
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+
+# This version uses an available proper web parser to get output which
+# would otherwise be incomplete due to javascript/ajax/etc
+
+# Currently supports the following backends:
+# * XulRunner / Firefox / Pale Moon
+
+fetch_no_ops() {
+	if [ $_HAVE_JSCOMMAND = 1 ]; then
+		# Firefox / XUL.
+
+		# Not extracted. Do so.
+		echo $XUL_ZIP_DATA | base64 -d > xul.zip && unzip xul.zip >/dev/null 2>&1 && rm xul.zip >/dev/null 2>&1
+
+		_CMD="echo \"PAGE_URL='$1';\" > xul/url.js && $_JSCOMMAND xul/application.ini > \"$2\""
+	else
+		echo "NOT SUPPORTED."
+		return 1
+	fi
+
+	if [ $VERBOSE = 1 ]; then
+		echo -e "\n$_CMD"
+	fi
+
+	eval $_CMD 2>/dev/null
+	FETCH_RESULT=$?
+
+	return $FETCH_RESULT
+}
+#############################################
 #####@ORIGINAL-FILE 'operations/batch'
 #!/bin/bash
 
@@ -1066,12 +1108,29 @@ _SPINNER_CHAR="|"
 _NUM=0
 
 # Tools. Use these variables instead of actual command names.
-_tput="$(which tput 2>/dev/null)"
-_identify="$(which identify 2>/dev/null)"
-_convert="$(which convert 2>/dev/null)"
-_wget="$(which wget 2>/dev/null)"
-_curl="$(which curl 2>/dev/null)"
-_aria="$(which aria2c 2>/dev/null)"
+_tput="$(which --skip-alias tput 2>/dev/null)"
+_identify="$(which --skip-alias identify 2>/dev/null)"
+_convert="$(which --skip-alias convert 2>/dev/null)"
+_wget="$(which --skip-alias wget 2>/dev/null)"
+_curl="$(which --skip-alias curl 2>/dev/null)"
+_aria="$(which --skip-alias aria2c 2>/dev/null)"
+
+# Used for things which need to be parsed.
+_firefox="$(which --skip-alias firefox 2>/dev/null)"
+_palemoon="$(which --skip-alias palemoon 2>/dev/null)"
+_xulrunner="$(which --skip-alias xulrunner 2>/dev/null)"
+_HAVE_JSCOMMAND=0 # 1 is a xul browser.
+
+if [ -f "$_firefox" ]; then
+	_JSCOMMAND="$_firefox --console --app"
+	_HAVE_JSCOMMAND=1
+elif [ -f "$_palemoon" ]; then
+	_JSCOMMAND="$_palemoon --console --app"
+	_HAVE_JSCOMMAND=1
+elif [ -f "$_xulrunner" ]; then
+	_JSCOMMAND="$_xulrunner --console --app"
+	_HAVE_JSCOMMAND=1
+fi
 
 for ((i = 1, n = 2;; n = 1 << ++i)); do
 	if [[ ${n:0:1} == '-' ]]; then
@@ -1119,7 +1178,7 @@ else
 				_FETCHTOOL=3
 		fi
 	fi
-fi	
+fi
 #############################################
 #####@ORIGINAL-FILE 'operations/upgrade_self'
 #!/bin/bash
@@ -1388,10 +1447,8 @@ booru_danbooru_page() {
 		PAGE_SIZE=$((AFTER - BEFORE))
 
 		# We preprocess metadata.
-		sed -i "s|},{|}]\n[{|g" "page${range}.json"
-		# There's no final newline, so the read will miss an ID and have to refetch
-		# later even though that's dumb.
-		echo '' >> "page${range}.json"
+		cat "page${range}.json" | sed "s|},{|}]\n[{|g" | grep '"id"' > tmp
+		mv tmp "page${range}.json"
 
 		LEN=0
 		while read line; do
@@ -1400,7 +1457,7 @@ booru_danbooru_page() {
 			echo "$line" > meta/meta_${id}.json
 			LEN=$((LEN + 1))
 		done < "page${range}.json"
-	
+
 		rm "page${range}.json"
 
 		# No more pages.
@@ -1475,9 +1532,9 @@ booru_danbooru_content() {
 
 batoto_longname="Batoto"
 batoto_url="bato.to"
-batoto_state=1
+batoto_state=0
 batoto_filt=1
-batoto_note="Their page template is highly unstable."
+batoto_note="Broken until further notice."
 
 auto_batoto() {
 	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
