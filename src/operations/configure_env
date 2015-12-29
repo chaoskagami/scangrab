@@ -57,6 +57,52 @@ elif [ -f "$_xulrunner" ]; then
 	_HAVE_JSCOMMAND=1
 fi
 
+#########################
+# This function is required earlier than usual, so it lives here.
+
+function temp() {
+	type="$1"
+	if [ "$type" = "d" ]; then
+		NAME="$(mktemp -d -p "$(pwd)")"
+	elif [ "$type" = "f" ]; then
+		NAME="$(mktemp -p "$(pwd)")"
+	fi
+	echo "$(basename "$NAME")"
+}
+
+#########################
+# Figure out our mountpoint so we know the limits of the FS.
+
+MINFO="$(temp f)"
+mount -l > "$MINFO"
+
+CURRENT_DIR="$(readlink -f "$(pwd)")"
+
+grep "$CURRENT_DIR" "$MINFO" >/dev/null 2>&1
+M_FOUND=$?
+while [ ! $M_FOUND = 0 ]; do
+	PLEN=$(echo $CURRENT_DIR | tr '/' '\n' | wc -l)
+	PLEN=$((PLEN - 1))
+
+	CURRENT_DIR="$(echo -n $CURRENT_DIR | tr '/' '\n' | head -n$PLEN | tr '\n' '/' | sed 's|/$||g')"
+
+	grep "$CURRENT_DIR" "$MINFO" >/dev/null 2>&1
+	M_FOUND=$?
+done
+
+LINE="$(grep "$CURRENT_DIR" "$MINFO")"
+
+declare -a splitinfo
+splitinfo=($(echo "$LINE" | sed -e "s| on |\n|" -e "s| type |\n|g"))
+
+MOUNTPOINT=${splitinfo[2]}
+FSTYPE=${splitinfo[3]}
+
+rm "$MINFO"
+unset splitinfo
+
+######################
+
 # Used for headless horsemen.
 _Xvfb="$(which --skip-alias Xvfb 2>/dev/null)"
 

@@ -6,7 +6,8 @@ This file describes the changes made in the release snapshots. When parsing with
    firefox, palemoon, or xulrunner to have batoto work (may change)
  * Fixed annoying danbooru issue where IDs glitch out when parsing
    a pixiv animation; turns out I have to filter them.
- * Miscellaneous issues.
+ * Proper temporary file use. 100% less race conditions!
+ * Miscellaneous issues fixed.
  * Proper console command syntax.
  * I'm going to start making stables. We're far enough along.
    They'll be dated like youtube-dl.

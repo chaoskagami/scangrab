@@ -88,23 +88,26 @@ dl_fakku() {
 scrape_fakku() {
 	echo -n "[Fakku] Scraping Chapters..."
 
-	fetch "$1" scrape.htm
+	TEMP="$(temp f)"
+	TEMPR="$(temp f)"
 
-	grep 'class="content-title"' scrape.htm > batch.txtf
+	fetch "$1" "$TEMP"
 
-	sed -i 's|^.*href="||g' batch.txtf
-	sed -i 's|" title=.*||g' batch.txtf
-	sed -i "s/^[[:space:]]*//" batch.txtf
-	sed -i "s/[[:space:]]*$//" batch.txtf
+	grep 'class="content-title"' "$TEMP" > "$TEMPR"
+
+	sed -i 's|^.*href="||g' "$TEMPR"
+	sed -i 's|" title=.*||g' "$TEMPR"
+	sed -i "s/^[[:space:]]*//" "$TEMPR"
+	sed -i "s/[[:space:]]*$//" "$TEMPR"
 
 	# Links are local.
-	sed -i "s|^|https://fakku.net|g" batch.txtf
+	sed -i "s|^|https://fakku.net|g" "$TEMPR"
 
 	# Don't bother doing any re-ordering here, since orders are chaotic.
-	cat batch.txtf >> batch.txt
+	cat "$TEMPR" >> batch.txt
 
 	# Clean up.
-	rm scrape.htm batch.txtf
+	rm "$TEMPR" "$TEMP"
 
 	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Fakku] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

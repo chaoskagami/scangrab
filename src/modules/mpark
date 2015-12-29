@@ -73,29 +73,32 @@ dl_mpark() {
 scrape_mpark() {
 	echo -e "[Mangapark] Scraping Chapters..."
 
-	fetch "$1" scrape.htm
+	TEMP="$(temp f)"
+	RTEMP="$(temp f)"
 
-	grep 'class="ch sts"' scrape.htm > batch.txtr
+	fetch "$1" "$TEMP"
 
-	sed -i 's|^.*href="||g' batch.txtr
-	sed -i 's|">.*||g' batch.txtr
-	sed -i "s/^[[:space:]]*//" batch.txtr
-	sed -i "s/[[:space:]]*$//" batch.txtr
+	grep 'class="ch sts"' "$TEMP" > "$RTEMP"
+
+	sed -i 's|^.*href="||g' "$RTEMP"
+	sed -i 's|">.*||g' "$RTEMP"
+	sed -i "s/^[[:space:]]*//" "$RTEMP"
+	sed -i "s/[[:space:]]*$//" "$RTEMP"
 
 	# URLS are local.
-	sed -i "s|^|http://mangapark.com|g" batch.txtr
+	sed -i "s|^|http://mangapark.com|g" "$RTEMP"
 
 	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
-	sed -i "s|/1$||g" batch.txtr
-	sed -i "s|/3-1$||g" batch.txtr
-	sed -i "s|/6-1$||g" batch.txtr
-	sed -i "s|/10-1$||g" batch.txtr
+	sed -i "s|/1$||g" "$RTEMP"
+	sed -i "s|/3-1$||g" "$RTEMP"
+	sed -i "s|/6-1$||g" "$RTEMP"
+	sed -i "s|/10-1$||g" "$RTEMP"
 
 	# Lines are reverse order.
-	cat batch.txtr | reverse_lines >> batch.txt
+	cat "$RTEMP" | reverse_lines >> batch.txt
 
 	# We've scraped a batch file from the URL list. Clean up.
-	rm scrape.htm batch.txtr
+	rm "$RTEMP" "$TEMP"
 
 	echo -e "[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

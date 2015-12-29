@@ -71,11 +71,11 @@ help() {
 	echo -e "              rar cbr"
 	echo ""
 	color 3
-	echo "        -cCOOKIES   Load alternate file for cookies."
+	echo -e "     -cCOOKIES   Load alternate file for cookies."
 	type 0
-	echo ""
-	echo "             Loads from a cookies.txt compatible format."
+	echo -e "          Loads from a cookies.txt compatible format."
 	color 3
+	echo ""
 	echo -e "     -h   Display help"
 	type 0
 	echo -e "          Print all of this stuff."
@@ -85,7 +85,7 @@ help() {
 	type 0
 	echo -e "          Print a short version of help."
 	echo ""
-	type 1
+	type 0
 	color 3
 	echo -e "     -e   Returns immediately."
 	type 0

@@ -67,7 +67,7 @@ check_eh() {
 
 	LOGGEDIN=0
 	use_cookies=0
-	if [ -e "cookiejar" ]; then
+	if [ -f "$COOKIEJAR" ]; then
 		if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 			echo -ne "[E-H] Checking for Ex cookies..."
 			grep 'exhentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
@@ -77,21 +77,45 @@ check_eh() {
 				use_cookies=1
 				echo -ne "[E-H] Checking for access..."
 
+				TEMP="$(temp f)"
+
 				# This is a good way of checking if it succeeded.
-				fetch "exhentai.org" "exchk"
-				cat exchk | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+				fetch "exhentai.org" "$TEMP"
+				cat "$TEMP" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
 				RES=$?
 				if [ ! $RES = 0 ]; then
 					echo -n "no, "
-					if [ "$(sha256sum exchk | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
-						echo "panda."
+					if [ "$(sha256sum "$TEMP" | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
+						echo "panda. <3"
 					else
-						echo "not cool."
+						echo "format update, world is ending?"
 					fi
 					exit 1
 				else
 					LOGGEDIN=1
 					echo "yes"
+				fi
+
+				rm "$TEMP"
+
+				grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
+				RES=$?
+				if [ $RES = 0 ]; then
+					echo "[E-H] Warning - uconfig is set in cookie jar. This will cause problems."
+					if [ "$COOKIEJAR" = "$(pwd)/cookiejar" ]; then
+						echo -n "[E-H] Attempting to automatically fix the issue..."
+						sed -i "/exhentai\.org.*uconfig/d" "$COOKIEJAR"
+						grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
+						RES=$?
+						if [ ! $RES = 0 ]; then
+							echo "done"
+						else
+							echo "failed"
+						fi
+					else
+						echo "[E-H] User specified custom cookie jar. Will not automatically fix."
+						echo "[E-H] Subsequent download may fail, or get stuck in retry loop."
+					fi
 				fi
 			else
 				echo "no"
@@ -106,19 +130,45 @@ check_eh() {
 
 					echo -ne "[E-H] Fixed cookies. Checking for access..."
 					use_cookies=1
-					fetch "exhentai.org" "-" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+
+					TEMP="$(temp f)"
+					fetch "exhentai.org" "$TEMP"
+
+					grep "The X Makes It Sound Cool" "$TEMP" >/dev/null 2>&1
 					RES=$?
 					if [ ! $RES = 0 ]; then
 						echo -n "no, "
 						if [ "$(sha256sum exchk | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
-							echo "panda."
+							echo "panda. <3"
 						else
-							echo "not cool."
+							echo "format update, world is ending?"
 						fi
 						exit 1
 					else
 						LOGGEDIN=1
 						echo "yes"
+					fi
+
+					rm "$TEMP"
+
+					grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
+					RES=$?
+					if [ $RES = 0 ]; then
+						echo "[E-H] Warning - uconfig is set in cookie jar. This will cause problems."
+						if [ "$COOKIEJAR" = "$(pwd)/cookiejar" ]; then
+							echo -n "[E-H] Attempting to automatically fix the issue..."
+							sed -i "/exhentai\.org.*uconfig/d" "$COOKIEJAR"
+							grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
+							RES=$?
+							if [ ! $RES = 0 ]; then
+								echo "done"
+							else
+								echo "failed"
+							fi
+						else
+							echo "[E-H] User specified custom cookie jar. Will not automatically fix."
+							echo "[E-H] Subsequent download may fail, or get stuck in retry loop."
+						fi
 					fi
 				else
 					echo "no."
@@ -192,39 +242,39 @@ dl_eh() {
 
 	echo "[E-H] Fetching index page..."
 
-	[ -e 'tmp.1' ] && rm tmp.1
-
 	# This is so that we don't get the 'offensive' warning.
 	# XXX - Is this needed for Ex?
 
+	TEMP="$(temp f)"
+
 	# Don't wait here.
-	fetch "${sitepage}/?nw=always" tmp.1
+	fetch "${sitepage}/?nw=always" "$TEMP"
 
 	while [ ! $FETCH_RESULT = 0 ]; do
-		fetch "${sitepage}/?nw=always" tmp.1
+		fetch "${sitepage}/?nw=always" "$TEMP"
 	done
 
 	# Unfortunately e-h has shit system. Time to code page extraction
 	# I'm using pipes for clarity.
 	# the last sed deals with names like fate/stay night which are invalid
-	folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
+	folder="$(cat "$TEMP" | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
 		echo "[E-H] Already downloaded. Skipping."
-		rm tmp.1
+		rm "../$TEMP"
 		return 0
 	fi
 
 	mkdir -p "$folder"
 	cd "$folder"
 
-	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
+	page=$(cat "../$TEMP" | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 
-	MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
+	MAXPAGES=$(cat "../$TEMP" | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
 
-	rm ../tmp.1
+	rm "../$TEMP"
 
 	echo "[E-H] Downloading '$folder'... "
 
@@ -235,7 +285,8 @@ dl_eh() {
 	CUR=1
 	while [ $doneyet = 0 ]; do
 		dl_eh_wait
-		fetch "$page" "$CUR.htm"
+		TMPHT="$(temp f)"
+		fetch "$page" "$TMPHT"
 
 		while [ ! $FETCH_RESULT = 0 ]; do
 			# For the most part, we'll not hit this unless there's network issues.
@@ -246,13 +297,13 @@ dl_eh() {
 			spinner "RETR $CUR / $MAXPAGES"
 
 			dl_eh_wait
-			fetch "$page" "$CUR.htm"
+			fetch "$page" "$TMPHT"
 		done
 
-		lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-		hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+		lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+		hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
 		next_cnt=$((CUR + 1))
-		next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+		next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 
 		extra=""
 
@@ -274,22 +325,22 @@ dl_eh() {
 				CLOBBER=1
 
 				dl_eh_wait
-				fetch "$page" "${CUR}.htm"
+				fetch "$page" "$TMPHT"
 
-				notload=$(cat ${CUR}.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+				notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 
 				dl_eh_wait
 				spinner "FAL $CUR / $MAXPAGES"
 
-				fetch "$page?nl=$notload" "${CUR}nl.htm"
+				fetch "$page?nl=$notload" "${TMPHT}"
 
 				# Turn clobber off now that we're done.
 				CLOBBER=0
 			done
 
-			lq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-			hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-			next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+			lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+			hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+			next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 
 			spinner "IMG $CUR / $MAXPAGES"
 			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
@@ -300,8 +351,7 @@ dl_eh() {
 				fetch "$hq"
 			fi
 
-			rm "${CUR}nl.htm"
-			rm "${CUR}.htm"
+			rm "$TMPHT"
 
 			if [ $FETCH_RESULT = 0 ]; then
 				CUR=$(( CUR + 1 ))
@@ -310,7 +360,7 @@ dl_eh() {
 				fi
 			fi
 		else
-			rm $CUR.htm
+			rm "$TMPHT"
 			CUR=$(( CUR + 1 ))
 			if [ ! "$next" = "" ]; then
 				page="$next"
@@ -449,23 +499,22 @@ scrape_eh() {
 
 	# Notes; page=1 is page 2. Pages are base 0 indexed.
 
-
-	# cat tmp.1
-
 	# How many pages of shit?
 	PAGE_COUNT="$(fetch "${FETCH}0" "-" | grep "Jump to page" | sed 's|.*Jump to page: (1-||g' | sed 's|).*||g' | head -n1)"
 
 	echo "[E-h] Pages: $PAGE_COUNT"
 
+	TEMP="$(temp f)"
+
 	for (( i=0 ; i < $PAGE_COUNT ; i++ )); do
 		FETCH_RESULT=1
 		while [ ! $FETCH_RESULT = 0 ]; do
-			fetch "${FETCH}${i}" "-" >> data
+			fetch "${FETCH}${i}" "-" >> "$TEMP"
 
 			echo "[E-H] Grabbing page $((i + 1))..."
 		done
 	done
 
-	cat data | sed "s|<|\n|g" | grep "a href=\"${BASE_URL}g/" | sed -e 's|a href="||g' -e 's|".*||g' | sort | uniq >> batch.txt
-	rm data
+	cat "$TEMP" | sed "s|<|\n|g" | grep "a href=\"${BASE_URL}g/" | sed -e 's|a href="||g' -e 's|".*||g' | sort | uniq >> batch.txt
+	rm "$TEMP"
 }

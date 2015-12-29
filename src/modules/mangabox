@@ -33,12 +33,14 @@ auto_mangabox() {
 }
 
 dl_mangabox() {
-	
+
 	echo "[MangaBox] Getting list of pages..."
 
-	fetch "$1" "tmp.htm"
+	TEMP="$(temp f)"
 
-	fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
+	fetch "$1" "$TEMP"
+
+	fullname="$(cat "$TEMP" | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
 
 	is_done "$fullname"
 	R=$?
@@ -48,7 +50,7 @@ dl_mangabox() {
 	fi
 
 	declare -a list
-	list=($(cat tmp.htm | grep 'class="jsNext"' | sed -e 's|.*<li><img src="||g' -e 's|?.*||g'))
+	list=($(cat "$TEMP" | grep 'class="jsNext"' | sed -e 's|.*<li><img src="||g' -e 's|?.*||g'))
 
 	mkdir -p "$fullname"
 	cd "$fullname"
@@ -67,14 +69,14 @@ dl_mangabox() {
 
 		if [ $HAVE_IMAGICK = 1 ]; then
 			spinner "Download:$NUM"
-			
+
 			$_convert $(basename $page) -crop 2x1@ +repage +adjoin "${NUM}_%d.png"
 
 			spinner "Reformat:$NUM"
 
 			rm $(basename $page)
 
-			spinner "Collat:$NUM"			
+			spinner "Collat:$NUM"
 
 			mv ${NUM}_0.png ${NUM}_b.png
 			mv ${NUM}_1.png ${NUM}_a.png

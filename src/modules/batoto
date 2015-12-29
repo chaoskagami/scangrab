@@ -38,11 +38,13 @@ auto_batoto() {
 dl_batoto() {
 	# Batoto breaks their stuff. A LOT. Recently, they broke static serving - JS now required.
 
-	fetch_jscommand "$1" "PAGE"
+	TEMP="$(temp f)"
 
-	folder="$(cat PAGE | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
+	fetch_jscommand "$1" "$TEMP"
 
-	PAGES="$(cat PAGE | grep -C0 'page 1</option>' | head -n1 | sed -e 's|</option>||g' -e 's|.*>page ||g')"
+	folder="$(cat "$TEMP" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
+
+	PAGES="$(cat "$TEMP" | grep -C0 'page 1</option>' | head -n1 | sed -e 's|</option>||g' -e 's|.*>page ||g')"
 
 	rm PAGE
 
@@ -64,15 +66,17 @@ dl_batoto() {
 	BASE="$1"
 
 	while (( $CUR <= $PAGES )); do
-		fetch_jscommand "${BASE}_${CUR}" "page"
+		TEMP="$(temp f)"
 
-		img="$(grep -C0 'z-index: 1003' page | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
+		fetch_jscommand "${BASE}_${CUR}" "$TEMP"
+
+		img="$(grep -C0 'z-index: 1003' "$TEMP" | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
 
 		# If this 404's, fetch will return non-zero. Thus, loop breaks.
 		fetch "$img"
 		RET=$?
 
-		rm page
+		rm "$TEMP"
 
 		spinner "$CUR / $PAGES"
 
@@ -89,8 +93,6 @@ dl_batoto() {
 }
 
 scrape_batoto() {
-	notice_batoto
-
 	echo -n "[Batoto] Scraping Chapters..."
 
 	fetch "$1" scrape.htm

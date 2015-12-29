@@ -21,17 +21,27 @@
 # The last head command cuts the string to the max filename length of the system.
 # If getconf isn't a valid command, we use 255 instead.
 
-remove_illegal() {
-
-	sed \
-		-e "s/|/-/g" \
-		-e "s|/|-|g" \
-		-e "s|?|？|g" \
-		-e "s|<|(|g" \
-		-e "s|>|)|g" \
-		-e "s|\t| |g" \
-		-e "s|\n| |g" \
-		-e "s|^[[:space:]]*||g" \
-		-e "s|[[:space:]]*$||g" |
+if [ "$FSTYPE" = "ext4" ] || [ "$FSTYPE" = "ext3" ] || [ "$FSTYPE" = "ext2" ] || [ "$FSTYPE" = "xfs" ] || [ "$FSTYPE" = "jfs" ] || [ "$FSTYPE" = "btrfs" ]; then
+	# Filesystem has support for fanciness.
+	remove_illegal() {
+		sed \
+			-e "s|/|-|g" |
 		head -c $(getconf NAME_MAX . || echo 255)
-}
+	}
+else
+	# We don't know what it is, so apply FAT restrictions.
+	remove_illegal() {
+		sed \
+			-e "s/|/-/g" \
+			-e "s|/|-|g" \
+			-e "s|?|？|g" \
+			-e "s|<|(|g" \
+			-e "s|>|)|g" \
+			-e "s|\t| |g" \
+			-e "s|\"|'|g" \
+			-e "s|\n| |g" \
+			-e "s|^[[:space:]]*||g" \
+			-e "s|[[:space:]]*$||g" |
+			head -c $(getconf NAME_MAX . || echo 255)
+	}
+fi

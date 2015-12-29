@@ -42,22 +42,24 @@ login_niconicoseiga() {
 dl_niconicoseiga() {
 	use_cookies=1
 
-	name="$(basename $1)"
+	TEMP="$(temp f)"
 
-	fetch $1 "$name.htm"
+	fetch $1 "$TEMP"
 
-	fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
+	fullname="$(cat "$TEMP" | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
 
-	if [ ! -f "$name.htm" ]; then
+	if [ ! -f "$TEMP" ]; then
 		echo "[Niconico] No page found, aborting."
 		return 1
 	fi
 
 	echo "[Niconico] Extracting image list..."
 
-	cat $name.htm | grep 'data-image-id' | sed -e 's|^[[:space:]]*data-image-id="||g' -e 's|"[[:space:]]*$||g' > $name.lst
-	
-	if [ "$(cat $name.lst)" = "" ]; then
+	TEMP2="$(temp f)"
+
+	cat "$TEMP" | grep 'data-image-id' | sed -e 's|^[[:space:]]*data-image-id="||g' -e 's|"[[:space:]]*$||g' > "$TEMP2"
+
+	if [ "$(cat "$TEMP2")" = "" ]; then
 		echo "[Niconico] No images in page. Did you login?"
 		return 1
 	fi
@@ -79,13 +81,13 @@ dl_niconicoseiga() {
 		COUNT=$((COUNT + 1))
 		fetch "http://lohas.nicoseiga.jp/thumb/${ID}p" "${COUNT}.jpg"
 		spinner $COUNT
-	done < ../$name.lst
+	done < "../$TEMP2"
 
 	spinner_done
 
 	cd ..
-	rm $name.lst $name.htm
-	
+	rm "$TEMP" "$TEMP2"
+
 	cbz_make "$fullname"
 }
 

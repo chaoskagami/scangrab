@@ -257,7 +257,7 @@ dl_booru_page() {
 		# This is for safety.
 		# A lot of boorus get mad at you for hammering the database repeatedly and punish you
 		# by denying connections for a while. This ensures we aren't hammering *too* hard.
-		sleep 2s
+		sleep 5s
 	done
 	FAILS=0
 }
