@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=cef5ecd3240e459d580b1b601cf2d3fad650b006
+rev=9ca90868067e098f47488f3091acbd7db575e9b7
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -148,7 +148,7 @@ fetch() {
 			_CMD="$_CMD -o \"$2\""
 		fi
 	fi
-	
+
 	if [ $VERBOSE = 1 ]; then
 		echo -e "\n$_CMD"
 	fi
@@ -161,17 +161,17 @@ fetch() {
 	# and move it out afterwards.
 
 	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
-		mkdir -p "wget.tmp"
-		cd wget.tmp
+		WGET_TMP="$(temp d)"
+		cd "$WGET_TMP"
 	fi
 
 	eval $_CMD 2>/dev/null
 	FETCH_RESULT=$?
-	
+
 	if [ $CLOBBER = 1 ] && [ $_FETCHTOOL = 1 ] && [ ! $STDOUT = 1 ]; then
 		mv ./* ../ 2>/dev/null
 		cd ..
-		rm -rf wget.tmp
+		rm -rf "$WGET_TMP"
 	fi
 
 	# If this is an image, check validity.
@@ -452,20 +452,30 @@ spinner_reset() {
 # The last head command cuts the string to the max filename length of the system.
 # If getconf isn't a valid command, we use 255 instead.
 
-remove_illegal() {
-
-	sed \
-		-e "s/|/-/g" \
-		-e "s|/|-|g" \
-		-e "s|?|？|g" \
-		-e "s|<|(|g" \
-		-e "s|>|)|g" \
-		-e "s|\t| |g" \
-		-e "s|\n| |g" \
-		-e "s|^[[:space:]]*||g" \
-		-e "s|[[:space:]]*$||g" |
+if [ "$FSTYPE" = "ext4" ] || [ "$FSTYPE" = "ext3" ] || [ "$FSTYPE" = "ext2" ] || [ "$FSTYPE" = "xfs" ] || [ "$FSTYPE" = "jfs" ] || [ "$FSTYPE" = "btrfs" ]; then
+	# Filesystem has support for fanciness.
+	remove_illegal() {
+		sed \
+			-e "s|/|-|g" |
 		head -c $(getconf NAME_MAX . || echo 255)
-}
+	}
+else
+	# We don't know what it is, so apply FAT restrictions.
+	remove_illegal() {
+		sed \
+			-e "s/|/-/g" \
+			-e "s|/|-|g" \
+			-e "s|?|？|g" \
+			-e "s|<|(|g" \
+			-e "s|>|)|g" \
+			-e "s|\t| |g" \
+			-e "s|\"|'|g" \
+			-e "s|\n| |g" \
+			-e "s|^[[:space:]]*||g" \
+			-e "s|[[:space:]]*$||g" |
+			head -c $(getconf NAME_MAX . || echo 255)
+	}
+fi
 #############################################
 #####@ORIGINAL-FILE 'functions/color'
 #!/bin/bash
@@ -723,12 +733,14 @@ fetch_jscommand() {
 	if [ $_HAVE_JSCOMMAND = 1 ]; then
 		# Firefox / XUL.
 
-		mkdir xul.tmp && cd xul.tmp
+		XUL_TEMP="$(temp d)"
+
+		mkdir "$XUL_TEMP" && cd "$XUL_TEMP"
 
 		# Not extracted. Do so.
 		echo $XUL_ZIP_DATA | base64 -d > xul.zip && unzip xul.zip >/dev/null 2>&1 && rm xul.zip >/dev/null 2>&1
 
-		_CMD="echo \"PAGE_URL='$1';\" > xul.tmp/xul/url.js && $_JSCOMMAND --app xul.tmp/xul/application.ini --console > \"$2\""
+		_CMD="echo \"PAGE_URL='$1';\" > ${XUL_TEMP}/xul/url.js && $_JSCOMMAND --app ${XUL_TEMP}/xul/application.ini --console > \"$2\""
 
 
 		cd ..
@@ -758,7 +770,7 @@ fetch_jscommand() {
 		export DISPLAY="$SAVE_D"
 	fi
 
-	rm -rf xul.tmp
+	rm -rf ${XUL_TEMP}
 
 	return $FETCH_RESULT
 }
@@ -875,6 +887,11 @@ help() {
 	echo -e "              rar cbr"
 	echo ""
 	color 3
+	echo -e "     -cCOOKIES   Load alternate file for cookies."
+	type 0
+	echo -e "          Loads from a cookies.txt compatible format."
+	color 3
+	echo ""
 	echo -e "     -h   Display help"
 	type 0
 	echo -e "          Print all of this stuff."
@@ -883,6 +900,13 @@ help() {
 	echo -e "     -u   Usage"
 	type 0
 	echo -e "          Print a short version of help."
+	echo ""
+	type 0
+	color 3
+	echo -e "     -e   Returns immediately."
+	type 0
+	echo -e "          Used in development for testing internal functions."
+	echo -e "          Please don't use unless you know what you're doing."
 	echo ""
 	type 1
 	echo -e "Download Modules:"
@@ -1143,6 +1167,52 @@ elif [ -f "$_xulrunner" ]; then
 	_HAVE_JSCOMMAND=1
 fi
 
+#########################
+# This function is required earlier than usual, so it lives here.
+
+function temp() {
+	type="$1"
+	if [ "$type" = "d" ]; then
+		NAME="$(mktemp -d -p "$(pwd)")"
+	elif [ "$type" = "f" ]; then
+		NAME="$(mktemp -p "$(pwd)")"
+	fi
+	echo "$(basename "$NAME")"
+}
+
+#########################
+# Figure out our mountpoint so we know the limits of the FS.
+
+MINFO="$(temp f)"
+mount -l > "$MINFO"
+
+CURRENT_DIR="$(readlink -f "$(pwd)")"
+
+grep "$CURRENT_DIR" "$MINFO" >/dev/null 2>&1
+M_FOUND=$?
+while [ ! $M_FOUND = 0 ]; do
+	PLEN=$(echo $CURRENT_DIR | tr '/' '\n' | wc -l)
+	PLEN=$((PLEN - 1))
+
+	CURRENT_DIR="$(echo -n $CURRENT_DIR | tr '/' '\n' | head -n$PLEN | tr '\n' '/' | sed 's|/$||g')"
+
+	grep "$CURRENT_DIR" "$MINFO" >/dev/null 2>&1
+	M_FOUND=$?
+done
+
+LINE="$(grep "$CURRENT_DIR" "$MINFO")"
+
+declare -a splitinfo
+splitinfo=($(echo "$LINE" | sed -e "s| on |\n|" -e "s| type |\n|g"))
+
+MOUNTPOINT=${splitinfo[2]}
+FSTYPE=${splitinfo[3]}
+
+rm "$MINFO"
+unset splitinfo
+
+######################
+
 # Used for headless horsemen.
 _Xvfb="$(which --skip-alias Xvfb 2>/dev/null)"
 
@@ -1348,12 +1418,14 @@ auto_mangabox() {
 }
 
 dl_mangabox() {
-	
+
 	echo "[MangaBox] Getting list of pages..."
 
-	fetch "$1" "tmp.htm"
+	TEMP="$(temp f)"
 
-	fullname="$(cat tmp.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
+	fetch "$1" "$TEMP"
+
+	fullname="$(cat "$TEMP" | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
 
 	is_done "$fullname"
 	R=$?
@@ -1363,7 +1435,7 @@ dl_mangabox() {
 	fi
 
 	declare -a list
-	list=($(cat tmp.htm | grep 'class="jsNext"' | sed -e 's|.*<li><img src="||g' -e 's|?.*||g'))
+	list=($(cat "$TEMP" | grep 'class="jsNext"' | sed -e 's|.*<li><img src="||g' -e 's|?.*||g'))
 
 	mkdir -p "$fullname"
 	cd "$fullname"
@@ -1382,14 +1454,14 @@ dl_mangabox() {
 
 		if [ $HAVE_IMAGICK = 1 ]; then
 			spinner "Download:$NUM"
-			
+
 			$_convert $(basename $page) -crop 2x1@ +repage +adjoin "${NUM}_%d.png"
 
 			spinner "Reformat:$NUM"
 
 			rm $(basename $page)
 
-			spinner "Collat:$NUM"			
+			spinner "Collat:$NUM"
 
 			mv ${NUM}_0.png ${NUM}_b.png
 			mv ${NUM}_1.png ${NUM}_a.png
@@ -1568,11 +1640,13 @@ auto_batoto() {
 dl_batoto() {
 	# Batoto breaks their stuff. A LOT. Recently, they broke static serving - JS now required.
 
-	fetch_jscommand "$1" "PAGE"
+	TEMP="$(temp f)"
 
-	folder="$(cat PAGE | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
+	fetch_jscommand "$1" "$TEMP"
 
-	PAGES="$(cat PAGE | grep -C0 'page 1</option>' | head -n1 | sed -e 's|</option>||g' -e 's|.*>page ||g')"
+	folder="$(cat "$TEMP" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
+
+	PAGES="$(cat "$TEMP" | grep -C0 'page 1</option>' | head -n1 | sed -e 's|</option>||g' -e 's|.*>page ||g')"
 
 	rm PAGE
 
@@ -1594,15 +1668,17 @@ dl_batoto() {
 	BASE="$1"
 
 	while (( $CUR <= $PAGES )); do
-		fetch_jscommand "${BASE}_${CUR}" "page"
+		TEMP="$(temp f)"
 
-		img="$(grep -C0 'z-index: 1003' page | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
+		fetch_jscommand "${BASE}_${CUR}" "$TEMP"
+
+		img="$(grep -C0 'z-index: 1003' "$TEMP" | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
 
 		# If this 404's, fetch will return non-zero. Thus, loop breaks.
 		fetch "$img"
 		RET=$?
 
-		rm page
+		rm "$TEMP"
 
 		spinner "$CUR / $PAGES"
 
@@ -1619,8 +1695,6 @@ dl_batoto() {
 }
 
 scrape_batoto() {
-	notice_batoto
-
 	echo -n "[Batoto] Scraping Chapters..."
 
 	fetch "$1" scrape.htm
@@ -1738,22 +1812,24 @@ login_niconicoseiga() {
 dl_niconicoseiga() {
 	use_cookies=1
 
-	name="$(basename $1)"
+	TEMP="$(temp f)"
 
-	fetch $1 "$name.htm"
+	fetch $1 "$TEMP"
 
-	fullname="$(cat $name.htm | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
+	fullname="$(cat "$TEMP" | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
 
-	if [ ! -f "$name.htm" ]; then
+	if [ ! -f "$TEMP" ]; then
 		echo "[Niconico] No page found, aborting."
 		return 1
 	fi
 
 	echo "[Niconico] Extracting image list..."
 
-	cat $name.htm | grep 'data-image-id' | sed -e 's|^[[:space:]]*data-image-id="||g' -e 's|"[[:space:]]*$||g' > $name.lst
-	
-	if [ "$(cat $name.lst)" = "" ]; then
+	TEMP2="$(temp f)"
+
+	cat "$TEMP" | grep 'data-image-id' | sed -e 's|^[[:space:]]*data-image-id="||g' -e 's|"[[:space:]]*$||g' > "$TEMP2"
+
+	if [ "$(cat "$TEMP2")" = "" ]; then
 		echo "[Niconico] No images in page. Did you login?"
 		return 1
 	fi
@@ -1775,13 +1851,13 @@ dl_niconicoseiga() {
 		COUNT=$((COUNT + 1))
 		fetch "http://lohas.nicoseiga.jp/thumb/${ID}p" "${COUNT}.jpg"
 		spinner $COUNT
-	done < ../$name.lst
+	done < "../$TEMP2"
 
 	spinner_done
 
 	cd ..
-	rm $name.lst $name.htm
-	
+	rm "$TEMP" "$TEMP2"
+
 	cbz_make "$fullname"
 }
 
@@ -1865,7 +1941,7 @@ check_eh() {
 
 	LOGGEDIN=0
 	use_cookies=0
-	if [ -e "cookiejar" ]; then
+	if [ -f "$COOKIEJAR" ]; then
 		if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 			echo -ne "[E-H] Checking for Ex cookies..."
 			grep 'exhentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
@@ -1875,21 +1951,45 @@ check_eh() {
 				use_cookies=1
 				echo -ne "[E-H] Checking for access..."
 
+				TEMP="$(temp f)"
+
 				# This is a good way of checking if it succeeded.
-				fetch "exhentai.org" "exchk"
-				cat exchk | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+				fetch "exhentai.org" "$TEMP"
+				cat "$TEMP" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
 				RES=$?
 				if [ ! $RES = 0 ]; then
 					echo -n "no, "
-					if [ "$(sha256sum exchk | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
-						echo "panda."
+					if [ "$(sha256sum "$TEMP" | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
+						echo "panda. <3"
 					else
-						echo "not cool."
+						echo "format update, world is ending?"
 					fi
 					exit 1
 				else
 					LOGGEDIN=1
 					echo "yes"
+				fi
+
+				rm "$TEMP"
+
+				grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
+				RES=$?
+				if [ $RES = 0 ]; then
+					echo "[E-H] Warning - uconfig is set in cookie jar. This will cause problems."
+					if [ "$COOKIEJAR" = "$(pwd)/cookiejar" ]; then
+						echo -n "[E-H] Attempting to automatically fix the issue..."
+						sed -i "/exhentai\.org.*uconfig/d" "$COOKIEJAR"
+						grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
+						RES=$?
+						if [ ! $RES = 0 ]; then
+							echo "done"
+						else
+							echo "failed"
+						fi
+					else
+						echo "[E-H] User specified custom cookie jar. Will not automatically fix."
+						echo "[E-H] Subsequent download may fail, or get stuck in retry loop."
+					fi
 				fi
 			else
 				echo "no"
@@ -1904,19 +2004,45 @@ check_eh() {
 
 					echo -ne "[E-H] Fixed cookies. Checking for access..."
 					use_cookies=1
-					fetch "exhentai.org" "-" | grep "The X Makes It Sound Cool" >/dev/null 2>&1
+
+					TEMP="$(temp f)"
+					fetch "exhentai.org" "$TEMP"
+
+					grep "The X Makes It Sound Cool" "$TEMP" >/dev/null 2>&1
 					RES=$?
 					if [ ! $RES = 0 ]; then
 						echo -n "no, "
 						if [ "$(sha256sum exchk | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
-							echo "panda."
+							echo "panda. <3"
 						else
-							echo "not cool."
+							echo "format update, world is ending?"
 						fi
 						exit 1
 					else
 						LOGGEDIN=1
 						echo "yes"
+					fi
+
+					rm "$TEMP"
+
+					grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
+					RES=$?
+					if [ $RES = 0 ]; then
+						echo "[E-H] Warning - uconfig is set in cookie jar. This will cause problems."
+						if [ "$COOKIEJAR" = "$(pwd)/cookiejar" ]; then
+							echo -n "[E-H] Attempting to automatically fix the issue..."
+							sed -i "/exhentai\.org.*uconfig/d" "$COOKIEJAR"
+							grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
+							RES=$?
+							if [ ! $RES = 0 ]; then
+								echo "done"
+							else
+								echo "failed"
+							fi
+						else
+							echo "[E-H] User specified custom cookie jar. Will not automatically fix."
+							echo "[E-H] Subsequent download may fail, or get stuck in retry loop."
+						fi
 					fi
 				else
 					echo "no."
@@ -1990,39 +2116,39 @@ dl_eh() {
 
 	echo "[E-H] Fetching index page..."
 
-	[ -e 'tmp.1' ] && rm tmp.1
-
 	# This is so that we don't get the 'offensive' warning.
 	# XXX - Is this needed for Ex?
 
+	TEMP="$(temp f)"
+
 	# Don't wait here.
-	fetch "${sitepage}/?nw=always" tmp.1
+	fetch "${sitepage}/?nw=always" "$TEMP"
 
 	while [ ! $FETCH_RESULT = 0 ]; do
-		fetch "${sitepage}/?nw=always" tmp.1
+		fetch "${sitepage}/?nw=always" "$TEMP"
 	done
 
 	# Unfortunately e-h has shit system. Time to code page extraction
 	# I'm using pipes for clarity.
 	# the last sed deals with names like fate/stay night which are invalid
-	folder="$(cat tmp.1 | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
+	folder="$(cat "$TEMP" | grep 'title>' | sed -e 's/<title>//g'  -e 's/<\/title>//g' -e 's/ - E-Hentai Galleries//g' -e 's/ - ExHentai.org//g' -e 's|/|_|g' | entity_to_char | remove_illegal)"
 
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
 		echo "[E-H] Already downloaded. Skipping."
-		rm tmp.1
+		rm "../$TEMP"
 		return 0
 	fi
 
 	mkdir -p "$folder"
 	cd "$folder"
 
-	page=$(cat ../tmp.1 | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
+	page=$(cat "../$TEMP" | sed 's/0 no-repeat\"><a href=\"/\nurl:/' | sed 's/"><img alt.*//g' | grep 'url:' | sed 's/url://g')
 
-	MAXPAGES=$(cat ../tmp.1 | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
+	MAXPAGES=$(cat "../$TEMP" | grep 'Length:' | sed -e 's|.*Length:</td><td class="gdt2">||g' -e 's| pages.*||g')
 
-	rm ../tmp.1
+	rm "../$TEMP"
 
 	echo "[E-H] Downloading '$folder'... "
 
@@ -2033,7 +2159,8 @@ dl_eh() {
 	CUR=1
 	while [ $doneyet = 0 ]; do
 		dl_eh_wait
-		fetch "$page" "$CUR.htm"
+		TMPHT="$(temp f)"
+		fetch "$page" "$TMPHT"
 
 		while [ ! $FETCH_RESULT = 0 ]; do
 			# For the most part, we'll not hit this unless there's network issues.
@@ -2044,13 +2171,13 @@ dl_eh() {
 			spinner "RETR $CUR / $MAXPAGES"
 
 			dl_eh_wait
-			fetch "$page" "$CUR.htm"
+			fetch "$page" "$TMPHT"
 		done
 
-		lq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-		hq=$(cat $CUR.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+		lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+		hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
 		next_cnt=$((CUR + 1))
-		next=$(cat $CUR.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+		next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 
 		extra=""
 
@@ -2072,22 +2199,22 @@ dl_eh() {
 				CLOBBER=1
 
 				dl_eh_wait
-				fetch "$page" "${CUR}.htm"
+				fetch "$page" "$TMPHT"
 
-				notload=$(cat ${CUR}.htm | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+				notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 
 				dl_eh_wait
 				spinner "FAL $CUR / $MAXPAGES"
 
-				fetch "$page?nl=$notload" "${CUR}nl.htm"
+				fetch "$page?nl=$notload" "${TMPHT}"
 
 				# Turn clobber off now that we're done.
 				CLOBBER=0
 			done
 
-			lq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-			hq=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-			next=$(cat ${CUR}nl.htm | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+			lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+			hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
+			next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
 
 			spinner "IMG $CUR / $MAXPAGES"
 			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
@@ -2098,8 +2225,7 @@ dl_eh() {
 				fetch "$hq"
 			fi
 
-			rm "${CUR}nl.htm"
-			rm "${CUR}.htm"
+			rm "$TMPHT"
 
 			if [ $FETCH_RESULT = 0 ]; then
 				CUR=$(( CUR + 1 ))
@@ -2108,7 +2234,7 @@ dl_eh() {
 				fi
 			fi
 		else
-			rm $CUR.htm
+			rm "$TMPHT"
 			CUR=$(( CUR + 1 ))
 			if [ ! "$next" = "" ]; then
 				page="$next"
@@ -2247,25 +2373,24 @@ scrape_eh() {
 
 	# Notes; page=1 is page 2. Pages are base 0 indexed.
 
-
-	# cat tmp.1
-
 	# How many pages of shit?
 	PAGE_COUNT="$(fetch "${FETCH}0" "-" | grep "Jump to page" | sed 's|.*Jump to page: (1-||g' | sed 's|).*||g' | head -n1)"
 
 	echo "[E-h] Pages: $PAGE_COUNT"
 
+	TEMP="$(temp f)"
+
 	for (( i=0 ; i < $PAGE_COUNT ; i++ )); do
 		FETCH_RESULT=1
 		while [ ! $FETCH_RESULT = 0 ]; do
-			fetch "${FETCH}${i}" "-" >> data
+			fetch "${FETCH}${i}" "-" >> "$TEMP"
 
 			echo "[E-H] Grabbing page $((i + 1))..."
 		done
 	done
 
-	cat data | sed "s|<|\n|g" | grep "a href=\"${BASE_URL}g/" | sed -e 's|a href="||g' -e 's|".*||g' | sort | uniq >> batch.txt
-	rm data
+	cat "$TEMP" | sed "s|<|\n|g" | grep "a href=\"${BASE_URL}g/" | sed -e 's|a href="||g' -e 's|".*||g' | sort | uniq >> batch.txt
+	rm "$TEMP"
 }
 #############################################
 #####@ORIGINAL-FILE 'modules/fakku'
@@ -2359,23 +2484,26 @@ dl_fakku() {
 scrape_fakku() {
 	echo -n "[Fakku] Scraping Chapters..."
 
-	fetch "$1" scrape.htm
+	TEMP="$(temp f)"
+	TEMPR="$(temp f)"
 
-	grep 'class="content-title"' scrape.htm > batch.txtf
+	fetch "$1" "$TEMP"
 
-	sed -i 's|^.*href="||g' batch.txtf
-	sed -i 's|" title=.*||g' batch.txtf
-	sed -i "s/^[[:space:]]*//" batch.txtf
-	sed -i "s/[[:space:]]*$//" batch.txtf
+	grep 'class="content-title"' "$TEMP" > "$TEMPR"
+
+	sed -i 's|^.*href="||g' "$TEMPR"
+	sed -i 's|" title=.*||g' "$TEMPR"
+	sed -i "s/^[[:space:]]*//" "$TEMPR"
+	sed -i "s/[[:space:]]*$//" "$TEMPR"
 
 	# Links are local.
-	sed -i "s|^|https://fakku.net|g" batch.txtf
+	sed -i "s|^|https://fakku.net|g" "$TEMPR"
 
 	# Don't bother doing any re-ordering here, since orders are chaotic.
-	cat batch.txtf >> batch.txt
+	cat "$TEMPR" >> batch.txt
 
 	# Clean up.
-	rm scrape.htm batch.txtf
+	rm "$TEMPR" "$TEMP"
 
 	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Fakku] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
@@ -2629,29 +2757,32 @@ dl_mpark() {
 scrape_mpark() {
 	echo -e "[Mangapark] Scraping Chapters..."
 
-	fetch "$1" scrape.htm
+	TEMP="$(temp f)"
+	RTEMP="$(temp f)"
 
-	grep 'class="ch sts"' scrape.htm > batch.txtr
+	fetch "$1" "$TEMP"
 
-	sed -i 's|^.*href="||g' batch.txtr
-	sed -i 's|">.*||g' batch.txtr
-	sed -i "s/^[[:space:]]*//" batch.txtr
-	sed -i "s/[[:space:]]*$//" batch.txtr
+	grep 'class="ch sts"' "$TEMP" > "$RTEMP"
+
+	sed -i 's|^.*href="||g' "$RTEMP"
+	sed -i 's|">.*||g' "$RTEMP"
+	sed -i "s/^[[:space:]]*//" "$RTEMP"
+	sed -i "s/[[:space:]]*$//" "$RTEMP"
 
 	# URLS are local.
-	sed -i "s|^|http://mangapark.com|g" batch.txtr
+	sed -i "s|^|http://mangapark.com|g" "$RTEMP"
 
 	# We need a specific type of URL - the 'all on one page' type. Remove specifiers.
-	sed -i "s|/1$||g" batch.txtr
-	sed -i "s|/3-1$||g" batch.txtr
-	sed -i "s|/6-1$||g" batch.txtr
-	sed -i "s|/10-1$||g" batch.txtr
+	sed -i "s|/1$||g" "$RTEMP"
+	sed -i "s|/3-1$||g" "$RTEMP"
+	sed -i "s|/6-1$||g" "$RTEMP"
+	sed -i "s|/10-1$||g" "$RTEMP"
 
 	# Lines are reverse order.
-	cat batch.txtr | reverse_lines >> batch.txt
+	cat "$RTEMP" | reverse_lines >> batch.txt
 
 	# We've scraped a batch file from the URL list. Clean up.
-	rm scrape.htm batch.txtr
+	rm "$RTEMP" "$TEMP"
 
 	echo -e "[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
@@ -2995,7 +3126,7 @@ dl_booru_page() {
 		# This is for safety.
 		# A lot of boorus get mad at you for hammering the database repeatedly and punish you
 		# by denying connections for a while. This ensures we aren't hammering *too* hard.
-		sleep 2s
+		sleep 5s
 	done
 	FAILS=0
 }
@@ -3284,6 +3415,11 @@ while [ "${CMD_STR:0:1}" = "-" ]; do
 		TYPE=1
 	elif [ "${CMD_STR:0:2}" = "-f" ]; then
 		FORMAT="${CMD_STR:2}"
+	elif [ "${CMD_STR:0:2}" = "-c" ]; then
+		COOKIEJAR="${CMD_STR:2}"
+		if [ "${COOKIEJAR:0:1}" = "~" ]; then
+			COOKIEJAR="${HOME}${COOKIEJAR:1}"
+		fi
 	fi
 	shift
 	CMD_STR="$1"
