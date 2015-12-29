@@ -71,6 +71,11 @@ help() {
 	echo -e "              rar cbr"
 	echo ""
 	color 3
+	echo "        -cCOOKIES   Load alternate file for cookies."
+	type 0
+	echo ""
+	echo "             Loads from a cookies.txt compatible format."
+	color 3
 	echo -e "     -h   Display help"
 	type 0
 	echo -e "          Print all of this stuff."
@@ -79,6 +84,13 @@ help() {
 	echo -e "     -u   Usage"
 	type 0
 	echo -e "          Print a short version of help."
+	echo ""
+	type 1
+	color 3
+	echo -e "     -e   Returns immediately."
+	type 0
+	echo -e "          Used in development for testing internal functions."
+	echo -e "          Please don't use unless you know what you're doing."
 	echo ""
 	type 1
 	echo -e "Download Modules:"
