@@ -20,16 +20,21 @@ I removed 'bash' from the tools list since the scripts are bash and zsh compatib
 
 Here's the list of sites it currently handles:
 
+Image sites:
+ * Boorus (working: Danbooru/donmai.us URLs)
+ * Imgur Galleries
+
+Scanlations
  * Mangapark
  * Batoto (Partially working again. Scraper broken, they hide chapters now.)
  * Dynasty Scans
- * Fakku
  * FoolSlide Sites (working: foolrulez, vortex-scans, etc)
  * Niconico Seiga (Manga)
- * MangaBox (Legit source.)
- * Boorus (working: Danbooru/donmai.us URLs)
- * Imgur Galleries
  * E-H, Ex (The latter requires login first, and will auto-edit cookies. See notes in BUGS.)
+
+Official/Legal
+ * Fakku (untested since purge. probably needs overhaul and login code)
+ * MangaBox
 
 Some of the modules don't provide a scrape operation (read: E-H, Booru). Some of them support more advanced filters (like Batoto - language) and some of them are just plain syntactically weird (Booru)
 
