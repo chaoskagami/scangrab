@@ -26,6 +26,8 @@ if [ "$FSTYPE" = "ext4" ] || [ "$FSTYPE" = "ext3" ] || [ "$FSTYPE" = "ext2" ] ||
 	remove_illegal() {
 		sed \
 			-e "s|/|-|g" |
+			-e "s|^[[:space:]]*||g" \
+			-e "s|[[:space:]]*$||g" |
 		head -c $(getconf NAME_MAX . || echo 255)
 	}
 else
@@ -40,6 +42,7 @@ else
 			-e "s|\t| |g" \
 			-e "s|\"|'|g" \
 			-e "s|\n| |g" \
+			-e "s|:|-|g" \
 			-e "s|^[[:space:]]*||g" \
 			-e "s|[[:space:]]*$||g" |
 			head -c $(getconf NAME_MAX . || echo 255)
