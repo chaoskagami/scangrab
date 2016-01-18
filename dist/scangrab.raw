@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=96d050710b4cc89963c7b2289fe1cf3903d8c293
+rev=e4906ead28840a9ae5bba0d8034e5f3d20ece88c
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -28,17 +28,17 @@ XUL_ZIP_DATA="UEsDBAoAAAAAAE9mnEcAAAAAAAAAAAAAAAAEABwAeHVsL1VUCQADZXaBVt1AgVZ1eA
 s_login() {
 	if [ $_FETCHTOOL = 1 ]; then
 		# WGET
-		_CMD="$_FETCH_CMD --post-data='$1=$3&$2=$4&$6' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O/dev/null"
+		_CMD="$_FETCH_CMD --post-data='$1=$3&$2=$4&$6' \"$5\"  --load-cookies='$COOKIEJAR' --save-cookies='$COOKIEJAR' --keep-session-cookies -O/dev/null"
 
 	elif [ $_FETCHTOOL = 2 ]; then
 		# CURL
-		_CMD="$_FETCH_CMD -d '$1=$3&$2=$4&$6' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
+		_CMD="$_FETCH_CMD -d '$1=$3&$2=$4&$6' $5 -b '$COOKIEJAR' -c '$COOKIEJAR' >/dev/null"
 
 	elif [ $_FETCHTOOL = 3 ]; then
 		#ARIA2C
 		# How the fuck do I post? Maybe I can't with araia2c...meh.
 		echo "[Warn] aria2c can't post at the moment; this will fail to get required cookies."
-		_CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
+		_CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies='$COOKIEJAR' -o/dev/null"
 
 	fi
 	
@@ -103,7 +103,7 @@ fetch() {
 		fi
 
 		if [ $use_cookies = 1 ]; then
-			_CMD="$_CMD --load-cookies=$COOKIEJAR"
+			_CMD="$_CMD --load-cookies='$COOKIEJAR'"
 		fi
 
 		# Wget uses content-disposition to hopefully get a good name in abscence of one.
@@ -121,7 +121,7 @@ fetch() {
 
 		_CMD="$_FETCH_CMD $1"
 		if [ $use_cookies = 1 ]; then
-			_CMD="$_CMD -b $COOKIEJAR -c $COOKIEJAR"
+			_CMD="$_CMD -b '$COOKIEJAR' -c '$COOKIEJAR'"
 		fi
 
 		if [ "$2" = "" ]; then
@@ -136,7 +136,7 @@ fetch() {
 
 		_CMD="$_FETCH_CMD $1"
 		if [ $use_cookies = 1 ]; then
-			_CMD="$_CMD --load-cookies=$COOKIEJAR"
+			_CMD="$_CMD --load-cookies='$COOKIEJAR'"
 		fi
 
 		if [ "$2" = "" ]; then
