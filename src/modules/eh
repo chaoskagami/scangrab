@@ -28,14 +28,15 @@ login_eh() {
 	# Lots of extra shat they use to prevent bots. If it gets updated; let me know so I can fix it.
 
 	s_login "UserName" "PassWord" "$1" "$2" "https://forums.e-hentai.org/index.php?act=Login&CODE=01" \
-		"CookieDate=1&b=&bt=&referer=https://forums.e-hentai.org/?act=idx"
+		"CookieDate=1&Privacy=1&b=&bt=&referer=https://forums.e-hentai.org/?act=Login&temporary_https="
 	user="$(fetch "https://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
 	if [ ! "$user" = "" ]; then
 		echo -e "\n[E-H] Logged in as: $user"
 		exit 0
+	else
+		echo -e "\n[E-H] Login seems to have failed."
+		exit 1
 	fi
-
-	exit 1
 }
 
 limitcheck_eh() {
