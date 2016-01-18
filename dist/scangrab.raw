@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=e4906ead28840a9ae5bba0d8034e5f3d20ece88c
+rev=f303025322944a45de4d4540a46a7d0e727ec91e
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -1948,7 +1948,7 @@ check_eh() {
 	if [ -f "$COOKIEJAR" ]; then
 		if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 			echo -ne "[E-H] Checking for Ex cookies..."
-			grep 'exhentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+			grep 'exhentai.org' "$COOKIEJAR" | grep 'ipb_member_id' >/dev/null
 			RES=$?
 			if [ $RES = 0 ]; then
 				echo "yes"
@@ -1998,11 +1998,11 @@ check_eh() {
 			else
 				echo "no"
 				echo -ne "[E-H] Checking for E-H cookies..."
-				grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+				grep 'e-hentai.org' "$COOKIEJAR" | grep 'ipb_member_id' >/dev/null
 				RES=$?
 				if [ $RES = 0 ]; then
 					echo "yes, copying them"
-					grep 'e-hentai.org' $COOKIEJAR >> cookiejar.edit
+					grep 'e-hentai.org' "$COOKIEJAR" >> cookiejar.edit
 					sed 's|e-hentai.org|exhentai.org|g' cookiejar.edit >> cookiejar
 					rm cookiejar.edit
 
@@ -2055,7 +2055,7 @@ check_eh() {
 				fi
 			fi
 		else
-			grep 'e-hentai.org' $COOKIEJAR | grep 'ipb_member_id' >/dev/null
+			grep 'e-hentai.org' "$COOKIEJAR" | grep 'ipb_member_id' >/dev/null
 			RES=$?
 			if [ $RES = 0 ]; then
 				echo "[E-H] We seem to have cookies...using them."
