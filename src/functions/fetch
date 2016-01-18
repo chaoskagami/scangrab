@@ -23,7 +23,7 @@ fetch() {
 		fi
 
 		if [ $use_cookies = 1 ]; then
-			_CMD="$_CMD --load-cookies=$COOKIEJAR"
+			_CMD="$_CMD --load-cookies='$COOKIEJAR'"
 		fi
 
 		# Wget uses content-disposition to hopefully get a good name in abscence of one.
@@ -41,7 +41,7 @@ fetch() {
 
 		_CMD="$_FETCH_CMD $1"
 		if [ $use_cookies = 1 ]; then
-			_CMD="$_CMD -b $COOKIEJAR -c $COOKIEJAR"
+			_CMD="$_CMD -b '$COOKIEJAR' -c '$COOKIEJAR'"
 		fi
 
 		if [ "$2" = "" ]; then
@@ -56,7 +56,7 @@ fetch() {
 
 		_CMD="$_FETCH_CMD $1"
 		if [ $use_cookies = 1 ]; then
-			_CMD="$_CMD --load-cookies=$COOKIEJAR"
+			_CMD="$_CMD --load-cookies='$COOKIEJAR'"
 		fi
 
 		if [ "$2" = "" ]; then

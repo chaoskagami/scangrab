@@ -18,17 +18,17 @@
 s_login() {
 	if [ $_FETCHTOOL = 1 ]; then
 		# WGET
-		_CMD="$_FETCH_CMD --post-data='$1=$3&$2=$4&$6' \"$5\"  --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR --keep-session-cookies -O/dev/null"
+		_CMD="$_FETCH_CMD --post-data='$1=$3&$2=$4&$6' \"$5\"  --load-cookies='$COOKIEJAR' --save-cookies='$COOKIEJAR' --keep-session-cookies -O/dev/null"
 
 	elif [ $_FETCHTOOL = 2 ]; then
 		# CURL
-		_CMD="$_FETCH_CMD -d '$1=$3&$2=$4&$6' $5 -b $COOKIEJAR -c $COOKIEJAR >/dev/null"
+		_CMD="$_FETCH_CMD -d '$1=$3&$2=$4&$6' $5 -b '$COOKIEJAR' -c '$COOKIEJAR' >/dev/null"
 
 	elif [ $_FETCHTOOL = 3 ]; then
 		#ARIA2C
 		# How the fuck do I post? Maybe I can't with araia2c...meh.
 		echo "[Warn] aria2c can't post at the moment; this will fail to get required cookies."
-		_CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies=$COOKIEJAR -o/dev/null"
+		_CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies='$COOKIEJAR' -o/dev/null"
 
 	fi
 	
