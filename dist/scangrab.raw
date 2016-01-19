@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=f303025322944a45de4d4540a46a7d0e727ec91e
+rev=c1f822f3945529b62aead22d5cd3ef07d1850f8f
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -1965,10 +1965,15 @@ check_eh() {
 					echo -n "no, "
 					if [ "$(sha256sum "$TEMP" | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
 						echo "panda. <3"
+						exit 1
+					elif [ ! "$(grep 'Your IP address has been temporarily banned' "$TEMP")" = "" ]; then
+						echo "tempban. Hilarious."
+						ban_eh_wait
+						LOGGEDIN=1
 					else
 						echo "format update, world is ending?"
+						exit 1
 					fi
-					exit 1
 				else
 					LOGGEDIN=1
 					echo "yes"
@@ -2016,12 +2021,17 @@ check_eh() {
 					RES=$?
 					if [ ! $RES = 0 ]; then
 						echo -n "no, "
-						if [ "$(sha256sum exchk | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
+						if [ "$(sha256sum "$TEMP" | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
 							echo "panda. <3"
+							exit 1
+						elif [ ! "$(grep 'Your IP address has been temporarily banned' "$TEMP")" = "" ]; then
+							echo "tempban. Hilarious."
+							ban_eh_wait
+							LOGGEDIN=1
 						else
 							echo "format update, world is ending?"
+							exit 1
 						fi
-						exit 1
 					else
 						LOGGEDIN=1
 						echo "yes"
@@ -2077,7 +2087,62 @@ check_eh() {
 	return 0
 }
 
+ban_eh_wait() {
+	ipbanned="$(fetch "http://g.e-hentai.org/home.php" "-" | grep "^Your IP address has been temporarily banned for")"
+	if [ ! "$ipbanned" = "" ]; then
+		# Hoo boy, you like downloading stuff, yeah?
+		# We're IP banned now until their clock is up. Figure out how long.
+		BANSTR="$(echo "$ipbanned" | grep "^Your IP address has been temporarily banned for" | sed -e 's|.*The ban expires in ||' -e 's| and||g' )"
+
+		echo "$BANSTR" | grep "days"
+		R=?
+		if [ $R = 0 ]; then
+			echo "Banned for at least a day, apparently. Just giving up."
+			exit 1
+		fi
+		echo "$BANSTR" | grep "months"
+		R=?
+		if [ $R = 0 ]; then
+			echo "Banned for months? Are you trying to circumvent a ban? It won't work."
+			exit 1
+		fi
+		echo "$BANSTR" | grep "years"
+		R=?
+		if [ $R = 0 ]; then
+			echo "Now would be a good time to find another source to use, Mr. Banned-for-life."
+			exit 1
+		fi
+
+		declare -a ban_time
+		ban_time=($BANSTR)
+
+		ban_str=""
+
+		seconds=0
+
+		for (( i=0 ; i < ${ban_time#} ; i+=2 )); do
+			time="${ban_time[$i]}"
+			unit="${ban_time[$((i+1))]}"
+
+			ban_str="${ban_str}${time}${unit:0:1}"
+
+			if [ "$unit" = "seconds" ]; then
+				seconds=$((seconds + $time))
+			elif [ "$unit" = "minutes" ]; then
+				time=$((time * 60))
+				seconds=$((seconds + $time))
+			fi
+		done
+
+		echo "[E-H] Banned for $ban_str..."
+
+		sleep "$seconds"
+	fi
+}
+
 dl_eh_wait() {
+	ban_eh_wait
+
 	# Check to see (again) if CUR > MAX.
 	# If it is, sit around and sleep until we have enough credits.
 	limitcheck_eh
