@@ -257,9 +257,14 @@ ban_eh_wait() {
 			fi
 		done
 
-		echo "[E-H] Banned for $ban_str..."
+		echo -n "[E-H] Banned for $ban_str..."
 
-		sleep "$seconds"
+		while (( $seconds > 0 )); do
+			seconds=$((seconds - 1))
+			spinner "${seconds}"
+		done
+
+		echo "[E-H] Resuming..."
 	fi
 }
 
@@ -351,6 +356,7 @@ dl_eh() {
 	CUR=1
 	while [ $doneyet = 0 ]; do
 		dl_eh_wait
+
 		TMPHT="$(temp f)"
 		fetch "$page" "$TMPHT"
 
