@@ -328,8 +328,8 @@ dl_eh() {
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
-		echo "[E-H] Already downloaded. Skipping."
-		rm "../$TEMP"
+		echo "[E-H] Already downloaded."
+		rm "./$TEMP"
 		return 0
 	fi
 
