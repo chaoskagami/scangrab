@@ -1,5 +1,8 @@
 This file describes the changes made in the release snapshots. When parsing with scangrab, this line is skipped.
 == START ==
+ * Fixed some rather nasty mishandling of parent directories containing
+   spaces.
+ * Now handles some auto-ip-bans properly by waiting.
  * Began working on a way to download batoto again, since they broke
    everything by disabling the old static pages. Not fully implemented
    yet, more specifically the scraper. Unfortunately, you now need
