@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=5407f09a5c789e5b621fafbc7eb582dd22ab3e4e
+rev=45127e690b5d8da763f7ec95e5d35091c32fe8c1
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -2134,9 +2134,14 @@ ban_eh_wait() {
 			fi
 		done
 
-		echo "[E-H] Banned for $ban_str..."
+		echo -n "[E-H] Banned for $ban_str..."
 
-		sleep "$seconds"
+		while (( $seconds > 0 )); do
+			seconds=$((seconds - 1))
+			spinner "${seconds}"
+		done
+
+		echo "[E-H] Resuming..."
 	fi
 }
 
@@ -2228,6 +2233,7 @@ dl_eh() {
 	CUR=1
 	while [ $doneyet = 0 ]; do
 		dl_eh_wait
+
 		TMPHT="$(temp f)"
 		fetch "$page" "$TMPHT"
 
