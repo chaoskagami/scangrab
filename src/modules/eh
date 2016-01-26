@@ -254,17 +254,22 @@ ban_eh_wait() {
 			elif [ "$unit" = "minutes" ]; then
 				time=$((time * 60))
 				seconds=$((seconds + $time))
+			elif [ "$unit" = "hours" ]; then
+				time=$((time * 60 * 60))
+				seconds=$((seconds + $time))
 			fi
 		done
 
-		echo -n "[E-H] Banned for $ban_str..."
+		echo "[E-H] Banned for $ban_str seconds. :<"
+		echo -n "[E-H] Sleeping..."
 
 		while (( $seconds > 0 )); do
 			seconds=$((seconds - 1))
+			sleep 1s
 			spinner "${seconds}"
 		done
 
-		echo "[E-H] Resuming..."
+		echo -e "\n[E-H] Resuming..."
 	fi
 }
 
