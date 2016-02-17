@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=fe059125eaa6bfec1add60d4a0f3b01c2919092e
+rev=78154bf39ebddbe97b373af0f941d1ce6e05b3df
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -2345,7 +2345,7 @@ scrape_eh() {
 	S=$?
 	if [ $S = 0 ]; then
 		# This is a URL.
-		FETCH="$1"
+		FETCH="${1}&page="
 	else
 		KEYW=""
 
@@ -2452,9 +2452,14 @@ scrape_eh() {
 	fi
 
 	# Notes; page=1 is page 2. Pages are base 0 indexed.
+	check_eh "${FETCH}0"
 
 	# How many pages of shit?
 	PAGE_COUNT="$(fetch "${FETCH}0" "-" | grep "Jump to page" | sed 's|.*Jump to page: (1-||g' | sed 's|).*||g' | head -n1)"
+
+	if [ "$PAGE_COUNT" = "" ]; then
+		PAGE_COUNT=1
+	fi
 
 	echo "[E-h] Pages: $PAGE_COUNT"
 
@@ -2469,7 +2474,7 @@ scrape_eh() {
 		done
 	done
 
-	cat "$TEMP" | sed "s|<|\n|g" | grep "a href=\"${BASE_URL}g/" | sed -e 's|a href="||g' -e 's|".*||g' | sort | uniq >> batch.txt
+	cat "$TEMP" | sed "s|<|\n|g" | grep "a href=\"http://\(g.\)\?e.hentai.org/g/" | sed -e 's|a href="||g' -e 's|".*||g' | sort | uniq >> batch.txt
 	rm "$TEMP"
 }
 #############################################
