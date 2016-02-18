@@ -358,34 +358,51 @@ dl_eh() {
 
 	CDNFAIL=0
 
+	if [ "$STARTAT" = "" ]; then
+		STARTAT=1
+	fi
+
 	CUR=1
 	while [ $doneyet = 0 ]; do
 		dl_eh_wait
 
 		TMPHT="$(temp f)"
-		fetch "$page" "$TMPHT"
+		fetch "${page}${extra}" "$TMPHT"
 
 		while [ ! $FETCH_RESULT = 0 ]; do
 			# For the most part, we'll not hit this unless there's network issues.
 			# However, it can cause a failed fetch to go uncaught, causing next to be ''
 			# And if the next loop "succeeds" with a zero length page, it will propogate
 			# to next, and the 'done' check will trigger incorrectly.
-			message=":O"
+			message="???"
 			spinner "RETR $CUR / $MAXPAGES"
 
 			dl_eh_wait
-			fetch "$page" "$TMPHT"
+			fetch "${page}${extra}" "$TMPHT"
 		done
 
-		lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+		lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' -e 'image.php' -e '/im/' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
 		hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-		next_cnt=$((CUR + 1))
 		next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+		next_cnt=$((CUR + 1))
 
-		extra=""
+		if [ "$VERBOSE" = "1" ]; then
+			echo "This page: '$page'"
+			echo "LQ Image:  '$lq'"
+			echo "HQ Image:  '$hq'"
+			echo "Next page: '$next'"
+		fi
 
 		spinner "IMG $CUR / $MAXPAGES"
-		if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
+
+		if (( $CUR < $STARTAT )); then
+			rm "$TMPHT"
+			page="$next"
+			CUR=$((CUR + 1))
+			continue
+		fi
+
+		if [ ! "$LOGGEDIN" = 1 ] || [ "$hq" = "" ]; then
 			dl_eh_wait
 			fetch "$lq" "$(basename "$lq")"
 		else
@@ -394,55 +411,18 @@ dl_eh() {
 			fetch "$hq"
 		fi
 
-		if [ ! $FETCH_RESULT = 0 ]; then
-			message="=_="
-
-			while [ ! $FETCH_RESULT = 0 ]; do
-				# Clobber existing pages.
-				CLOBBER=1
-
-				dl_eh_wait
-				fetch "$page" "$TMPHT"
-
-				notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
-
-				dl_eh_wait
-				spinner "FAL $CUR / $MAXPAGES"
-
-				fetch "$page?nl=$notload" "${TMPHT}"
-
-				# Turn clobber off now that we're done.
-				CLOBBER=0
-			done
-
-			lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-			hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-			next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
-
-			spinner "IMG $CUR / $MAXPAGES"
-			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
-				dl_eh_wait
-				fetch "$lq"
-			else
-				dl_eh_wait
-				fetch "$hq"
-			fi
-
-			rm "$TMPHT"
-
-			if [ $FETCH_RESULT = 0 ]; then
-				CUR=$(( CUR + 1 ))
-				if [ ! "$next" = "" ]; then
-					page="$next"
-				fi
-			fi
-		else
-			rm "$TMPHT"
+		if [ $FETCH_RESULT = 0 ]; then
+			extra=""
 			CUR=$(( CUR + 1 ))
 			if [ ! "$next" = "" ]; then
 				page="$next"
 			fi
+		else
+			notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+			extra="?nl=${notload}"
 		fi
+
+		rm "$TMPHT"
 
 		# This is a much saner condition than checking if next is null.
 		if (( $CUR > $MAXPAGES )); then
