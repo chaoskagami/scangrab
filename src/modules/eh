@@ -61,7 +61,8 @@ auto_eh() {
 	return 0
 }
 
-check_eh() {
+# This returns a code corresponding to whether it can fetch from there, waiting out bans if needed.
+check_low_eh() {
 	if [ "$check_eh_done" = "1" ]; then
 		return 0
 	fi
@@ -88,14 +89,17 @@ check_eh() {
 					echo -n "no, "
 					if [ "$(sha256sum "$TEMP" | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
 						echo "panda. <3"
-						exit 1
+						return 1
 					elif [ ! "$(grep 'Your IP address has been temporarily banned' "$TEMP")" = "" ]; then
 						echo "tempban. Hilarious."
 						ban_eh_wait
 						LOGGEDIN=1
+						check_low_eh "$1"
+						R=$?
+						return $R
 					else
 						echo "format update, world is ending?"
-						exit 1
+						return 1
 					fi
 				else
 					LOGGEDIN=1
@@ -146,14 +150,17 @@ check_eh() {
 						echo -n "no, "
 						if [ "$(sha256sum "$TEMP" | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
 							echo "panda. <3"
-							exit 1
+							return 1
 						elif [ ! "$(grep 'Your IP address has been temporarily banned' "$TEMP")" = "" ]; then
 							echo "tempban. Hilarious."
 							ban_eh_wait
 							LOGGEDIN=1
+							check_low_eh "$1"
+							R=$?
+							return $R
 						else
 							echo "format update, world is ending?"
-							exit 1
+							return 1
 						fi
 					else
 						LOGGEDIN=1
@@ -184,7 +191,7 @@ check_eh() {
 				else
 					echo "no."
 					echo "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
-					exit 1
+					return 1
 				fi
 			fi
 		else
@@ -208,6 +215,15 @@ check_eh() {
 	check_eh_done=1
 
 	return 0
+}
+
+check_eh() {
+	# This runs check_low_eh, and will abort on error.
+	check_low_eh "$1"
+	R=$?
+	if [ $R = 1 ]; then
+		exit 1
+	fi
 }
 
 ban_eh_wait() {
@@ -450,102 +466,87 @@ scrape_eh() {
 		# This is a URL.
 		FETCH="${1}&page="
 	else
+		# This is all broken and needs to be fixed.
 		KEYW=""
 
-		# Mode strings: dmagwnicpx
+		# Mode strings: dtagwnicpx
 		DEFAULT=1
 		M_D=$DEFAULT # Doujinshi
-		M_M=$DEFAULT # Manga
-		M_A=$DEFAULT # Artist CG
+		M_M=$DEFAULT # Manga.
+		M_A=$DEFAULT # Artist CG.
 		M_G=$DEFAULT # Game CG
 		M_W=$DEFAULT # Western
 		M_N=$DEFAULT # Non-H
 		M_I=$DEFAULT # Imageset
 		M_C=$DEFAULT # Cosplay
-		M_P=$DEFAULT # That category which nobody uses E-h for
+		M_P=$DEFAULT # That category which nobody uses E-h for (maybe)
 		M_X=$DEFAULT # Misc
 
-		BASE_URL="http://g.e-hentai.org/"
+		check_low_eh "http://exhentai.org/"
+		EX_WORKS=$?
 
-		# By default, all of them are enabled. By putting a '-' in the mode string as first char, this behavior will reverse.
-
-		# This is a query.
-
-		if [ "$1" = "-m" ]; then
-			# Apply mode.
-			shift
-			MODE="$1"
-			shift
-
-			if [ "${MODE:0:1}" = "-" ]; then
-				DEFAULT=0
-				M_D=$DEFAULT # Doujinshi
-				M_M=$DEFAULT # Manga
-				M_A=$DEFAULT # Artist CG
-				M_G=$DEFAULT # Game CG
-				M_W=$DEFAULT # Western
-				M_N=$DEFAULT # Non-H
-				M_I=$DEFAULT # Imageset
-				M_C=$DEFAULT # Cosplay
-				M_P=$DEFAULT # That category which nobody uses E-h for
-				M_X=$DEFAULT # Misc
-			fi
-
-			for (( i=0; i<${#MODE}; i++ )); do
-				C="${MODE:$i:1}"
-				case "$C" in
-					D )
-						M_D=1 ;;
-					d )
-						M_D=0 ;;
-					M )
-						M_M=1 ;;
-					m )
-						M_M=0 ;;
-					A )
-						M_A=1 ;;
-					a )
-						M_A=0 ;;
-					G )
-						M_G=1 ;;
-					g )
-						M_G=0 ;;
-					W )
-						M_W=1 ;;
-					w )
-						M_W=0 ;;
-					N )
-						M_N=1 ;;
-					n )
-						M_N=0 ;;
-					I )
-						M_I=1 ;;
-					i )
-						M_I=0 ;;
-					C )
-						M_C=1 ;;
-					c )
-						M_C=0 ;;
-					P )
-						M_P=1 ;;
-					p )
-						M_P=0 ;;
-					Z )
-						M_X=1 ;;
-					z )
-						M_X=0 ;;
-					X )
-						BASE_URL="http://exhentai.org/" ;;
-				esac
-			done
+		# We *should* use exhentai if the user has access.
+		if [ $EX_WORKS = 0 ]; then
+			BASE_URL="http://exhentai.org/"
+		else
+			BASE_URL="http://g.e-hentai.org/"
 		fi
+
+		for((i=0; i<${#SUBTYPES}; i++)); do
+			INDEX=${SUBTYPES:i:1}
+			if [ $i = 0 ] && [ "$INDEX" = "^" ]; then
+				# Invert all set values.
+				[ $M_D = 0 ] && M_D=1 || M_D=0 # This is equivalent to !M_D in a 1 -> 0 -> 1 sense.
+				[ $M_M = 0 ] && M_M=1 || M_M=0
+				[ $M_A = 0 ] && M_A=1 || M_A=0
+				[ $M_G = 0 ] && M_G=1 || M_G=0
+				[ $M_W = 0 ] && M_W=1 || M_W=0
+				[ $M_N = 0 ] && M_N=1 || M_N=0
+				[ $M_I = 0 ] && M_I=1 || M_I=0
+				[ $M_C = 0 ] && M_C=1 || M_C=0
+				[ $M_P = 0 ] && M_P=1 || M_P=0
+				[ $M_X = 0 ] && M_X=1 || M_X=0
+			else
+				case "$INDEX" in
+					"d")
+						[ $M_D = 0 ] && M_D=1 || M_D=0
+					;;
+					"m")
+						[ $M_M = 0 ] && M_M=1 || M_M=0
+					;;
+					"a")
+						[ $M_A = 0 ] && M_A=1 || M_A=0
+					;;
+					"g")
+						[ $M_G = 0 ] && M_G=1 || M_G=0
+					;;
+					"w")
+						[ $M_W = 0 ] && M_W=1 || M_W=0
+					;;
+					"n")
+						[ $M_N = 0 ] && M_N=1 || M_N=0
+					;;
+					"i")
+						[ $M_I = 0 ] && M_I=1 || M_I=0
+					;;
+					"c")
+						[ $M_C = 0 ] && M_C=1 || M_C=0
+					;;
+					"p")
+						[ $M_P = 0 ] && M_P=1 || M_P=0
+					;;
+					"x")
+						[ $M_X = 0 ] && M_X=1 || M_X=0
+					;;
+				esac
+			fi
+		done
 
 		MODE_PART="f_doujinshi=$M_D&f_manga=$M_M&f_artistcg=$M_A&f_gamecg=$M_G&f_western=$M_W&f_non-h=$M_N&f_imageset=$M_I&f_cosplay=$M_C&f_asianporn=$M_P&f_misc=$M_X"
 
 		# Read search keywords.
 		while [ ! -z "$1" ]; do
 			KEYW="$KEYW+\"$(echo $1 | sed -e 's| |+|g' -e 's|:|%3A|g')\""
-
 			shift
 		done
 
