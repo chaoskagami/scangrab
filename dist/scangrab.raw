@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=75720c24d921fc8e09ee6398078264d160289403
+rev=88d3f7bdc3d9ceae5f46bdc8f209f0bc24d5ae98
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -28,20 +28,17 @@ XUL_ZIP_DATA="UEsDBAoAAAAAALkVOEgAAAAAAAAAAAAAAAAEABwAeHVsL1VUCQADLoGkVt1AgVZ1eA
 s_login() {
 	if [ $_FETCHTOOL = 1 ]; then
 		# WGET
-		_CMD="$_FETCH_CMD --post-data='$1=$3&$2=$4&$6' \"$5\"  --load-cookies='$COOKIEJAR' --save-cookies='$COOKIEJAR' --keep-session-cookies -O/dev/null"
-
+		_CMD="$_FETCH_CMD --post-data='${1}=${3}&${2}=${4}&${6}' \"$5\"  --load-cookies='$COOKIEJAR' --save-cookies='$COOKIEJAR' --keep-session-cookies -O/dev/null"
 	elif [ $_FETCHTOOL = 2 ]; then
 		# CURL
-		_CMD="$_FETCH_CMD -d '$1=$3&$2=$4&$6' $5 -b '$COOKIEJAR' -c '$COOKIEJAR' >/dev/null"
-
+		_CMD="$_FETCH_CMD -d '${1}=${3}&${2}=${4}&${6}' '${5}' -b '$COOKIEJAR' -c '$COOKIEJAR' >/dev/null"
 	elif [ $_FETCHTOOL = 3 ]; then
 		#ARIA2C
 		# How the fuck do I post? Maybe I can't with araia2c...meh.
 		echo "[Warn] aria2c can't post at the moment; this will fail to get required cookies."
-		_CMD="$_FETCH_CMD $5 --load-cookies=$COOKIEJAR --save-cookies='$COOKIEJAR' -o/dev/null"
-
+		_CMD="$_FETCH_CMD ${5} --load-cookies=$COOKIEJAR --save-cookies='$COOKIEJAR' -o/dev/null"
 	fi
-	
+
 	if [ $VERBOSE = 1 ]; then
 		echo -e "\n$_CMD"
 		return
@@ -1904,8 +1901,10 @@ login_eh() {
 
 	# Lots of extra shat they use to prevent bots. If it gets updated; let me know so I can fix it.
 
-	s_login "UserName" "PassWord" "$1" "$2" "https://forums.e-hentai.org/index.php?act=Login&CODE=01" \
-		"CookieDate=1&Privacy=1&b=&bt=&referer=https://forums.e-hentai.org/?act=Login&temporary_https="
+	s_login "UserName"	"PassWord" \
+			"$1"		"$2" \
+			"https://forums.e-hentai.org/index.php?act=Login&CODE=01" \
+			"CookieDate=1&Privacy=1&b=&bt=&referer=https://forums.e-hentai.org/?act=Login&temporary_https="
 	user="$(fetch "https://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
 	if [ ! "$user" = "" ]; then
 		echo -e "\n[E-H] Logged in as: $user"
@@ -2194,7 +2193,7 @@ dl_eh_wait() {
 }
 
 dl_eh() {
-	sitepage=$1
+	sitepage="$1"
 
 	check_eh "$1"
 
@@ -2232,7 +2231,7 @@ dl_eh() {
 	R=$?
 	if [ $R = 1 ]; then
 		echo "[E-H] Already downloaded."
-		rm "./$TEMP"
+		rm "$TEMP"
 		return 0
 	fi
 
@@ -2310,11 +2309,10 @@ dl_eh() {
 		if [ $FETCH_RESULT = 0 ]; then
 			extra=""
 			if [ ! "$next" = "" ]; then
-				page="$next"
 				CUR=$((CUR + 1))
+				page="$next"
 			fi
 		else
-			# Didn't fetch properly.
 			notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 			extra="?nl=${notload}"
 		fi

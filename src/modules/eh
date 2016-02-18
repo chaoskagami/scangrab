@@ -27,8 +27,10 @@ login_eh() {
 
 	# Lots of extra shat they use to prevent bots. If it gets updated; let me know so I can fix it.
 
-	s_login "UserName" "PassWord" "$1" "$2" "https://forums.e-hentai.org/index.php?act=Login&CODE=01" \
-		"CookieDate=1&Privacy=1&b=&bt=&referer=https://forums.e-hentai.org/?act=Login&temporary_https="
+	s_login "UserName"	"PassWord" \
+			"$1"		"$2" \
+			"https://forums.e-hentai.org/index.php?act=Login&CODE=01" \
+			"CookieDate=1&Privacy=1&b=&bt=&referer=https://forums.e-hentai.org/?act=Login&temporary_https="
 	user="$(fetch "https://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
 	if [ ! "$user" = "" ]; then
 		echo -e "\n[E-H] Logged in as: $user"
@@ -317,7 +319,7 @@ dl_eh_wait() {
 }
 
 dl_eh() {
-	sitepage=$1
+	sitepage="$1"
 
 	check_eh "$1"
 
@@ -355,7 +357,7 @@ dl_eh() {
 	R=$?
 	if [ $R = 1 ]; then
 		echo "[E-H] Already downloaded."
-		rm "./$TEMP"
+		rm "$TEMP"
 		return 0
 	fi
 
@@ -433,11 +435,10 @@ dl_eh() {
 		if [ $FETCH_RESULT = 0 ]; then
 			extra=""
 			if [ ! "$next" = "" ]; then
-				page="$next"
 				CUR=$((CUR + 1))
+				page="$next"
 			fi
 		else
-			# Didn't fetch properly.
 			notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 			extra="?nl=${notload}"
 		fi
