@@ -378,8 +378,12 @@ dl_eh() {
 		STARTAT=1
 	fi
 
+	extra=""
+
 	CUR=1
 	while [ $doneyet = 0 ]; do
+		spinner "$CUR / $MAXPAGES"
+
 		dl_eh_wait
 
 		TMPHT="$(temp f)"
@@ -397,9 +401,9 @@ dl_eh() {
 			fetch "${page}${extra}" "$TMPHT"
 		done
 
-		lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' -e 'image.php' -e '/im/' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-		hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-		next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+		lq="$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' -e 'image.php' -e '/im/' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)"
+		hq="$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)"
+		next="$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)"
 		next_cnt=$((CUR + 1))
 
 		if [ "$VERBOSE" = "1" ]; then
@@ -409,14 +413,14 @@ dl_eh() {
 			echo "Next page: '$next'"
 		fi
 
-		spinner "IMG $CUR / $MAXPAGES"
-
 		if (( $CUR < $STARTAT )); then
 			rm "$TMPHT"
 			page="$next"
-			CUR=$((CUR + 1))
+			CUR=${next_cnt}
 			continue
 		fi
+
+		spinner "IMG $CUR / $MAXPAGES"
 
 		if [ ! "$LOGGEDIN" = 1 ] || [ "$hq" = "" ]; then
 			dl_eh_wait
@@ -429,7 +433,7 @@ dl_eh() {
 
 		if [ $FETCH_RESULT = 0 ]; then
 			extra=""
-			CUR=$(( CUR + 1 ))
+			CUR=${next_cnt}
 			if [ ! "$next" = "" ]; then
 				page="$next"
 			fi
@@ -444,8 +448,6 @@ dl_eh() {
 		if (( $CUR > $MAXPAGES )); then
 			break
 		fi
-
-		spinner "$CUR / $MAXPAGES"
 	done
 
 	spinner_done
