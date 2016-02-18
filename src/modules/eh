@@ -404,7 +404,7 @@ dl_eh() {
 		lq="$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' -e 'image.php' -e '/im/' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)"
 		hq="$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)"
 		next="$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)"
-		next_cnt=$((CUR + 1))
+		next_cnt=
 
 		if [ "$VERBOSE" = "1" ]; then
 			echo "This page: '$page'"
@@ -416,7 +416,7 @@ dl_eh() {
 		if (( $CUR < $STARTAT )); then
 			rm "$TMPHT"
 			page="$next"
-			CUR=${next_cnt}
+			CUR=$((CUR + 1))
 			continue
 		fi
 
@@ -433,11 +433,12 @@ dl_eh() {
 
 		if [ $FETCH_RESULT = 0 ]; then
 			extra=""
-			CUR=${next_cnt}
 			if [ ! "$next" = "" ]; then
 				page="$next"
+				$((CUR + 1))
 			fi
 		else
+			# Didn't fetch properly.
 			notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
 			extra="?nl=${notload}"
 		fi
