@@ -233,7 +233,7 @@ check_low_eh() {
 
 # This should only be run once.
 check_ro_eh() {
-	TMP="$(temp f)"
+	TMPHT="$(temp f)"
 	fetch "http://g.e-hentai.org/" "$TMPHT"
 	grep "The site is currently in Read Only" "$TMPHT"
 	RO=$?
@@ -243,6 +243,7 @@ check_ro_eh() {
 	else
 		READ_ONLY_MODE=0
 	fi
+	rm "$TMPHT"
 }
 
 check_eh() {
