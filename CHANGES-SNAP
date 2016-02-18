@@ -1,5 +1,9 @@
 This file describes the changes made in the release snapshots. When parsing with scangrab, this line is skipped.
 == START ==
+ * Basically, a bunch of code simplification and bugfixes. That's all.
+== END ==
+Older commit messages are moved down here.
+
  * Fixed some rather nasty mishandling of parent directories containing
    spaces.
  * Now handles some auto-ip-bans properly by waiting.
@@ -14,9 +18,6 @@ This file describes the changes made in the release snapshots. When parsing with
  * Proper console command syntax.
  * I'm going to start making stables. We're far enough along.
    They'll be dated like youtube-dl.
-== END ==
-Older commit messages are moved down here.
-
  * Bugfix for E-h login. I was doing it over an insecure http connection.
    Sorry.
  * Handling the login option improperly is now fixed.
