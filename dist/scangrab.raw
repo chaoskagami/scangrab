@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=78154bf39ebddbe97b373af0f941d1ce6e05b3df
+rev=5ddbcb03e51fc8ddc636c7ca22d929dc2c02b30e
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -1938,7 +1938,8 @@ auto_eh() {
 	return 0
 }
 
-check_eh() {
+# This returns a code corresponding to whether it can fetch from there, waiting out bans if needed.
+check_low_eh() {
 	if [ "$check_eh_done" = "1" ]; then
 		return 0
 	fi
@@ -1965,14 +1966,17 @@ check_eh() {
 					echo -n "no, "
 					if [ "$(sha256sum "$TEMP" | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
 						echo "panda. <3"
-						exit 1
+						return 1
 					elif [ ! "$(grep 'Your IP address has been temporarily banned' "$TEMP")" = "" ]; then
 						echo "tempban. Hilarious."
 						ban_eh_wait
 						LOGGEDIN=1
+						check_low_eh "$1"
+						R=$?
+						return $R
 					else
 						echo "format update, world is ending?"
-						exit 1
+						return 1
 					fi
 				else
 					LOGGEDIN=1
@@ -2023,14 +2027,17 @@ check_eh() {
 						echo -n "no, "
 						if [ "$(sha256sum "$TEMP" | sed 's| .*||g')" = "a279e4ccd74cffbf20baa41459a17916333c5dd55d23a518e7f10ae1c288644f" ]; then
 							echo "panda. <3"
-							exit 1
+							return 1
 						elif [ ! "$(grep 'Your IP address has been temporarily banned' "$TEMP")" = "" ]; then
 							echo "tempban. Hilarious."
 							ban_eh_wait
 							LOGGEDIN=1
+							check_low_eh "$1"
+							R=$?
+							return $R
 						else
 							echo "format update, world is ending?"
-							exit 1
+							return 1
 						fi
 					else
 						LOGGEDIN=1
@@ -2061,7 +2068,7 @@ check_eh() {
 				else
 					echo "no."
 					echo "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
-					exit 1
+					return 1
 				fi
 			fi
 		else
@@ -2085,6 +2092,15 @@ check_eh() {
 	check_eh_done=1
 
 	return 0
+}
+
+check_eh() {
+	# This runs check_low_eh, and will abort on error.
+	check_low_eh "$1"
+	R=$?
+	if [ $R = 1 ]; then
+		exit 1
+	fi
 }
 
 ban_eh_wait() {
@@ -2235,34 +2251,51 @@ dl_eh() {
 
 	CDNFAIL=0
 
+	if [ "$STARTAT" = "" ]; then
+		STARTAT=1
+	fi
+
 	CUR=1
 	while [ $doneyet = 0 ]; do
 		dl_eh_wait
 
 		TMPHT="$(temp f)"
-		fetch "$page" "$TMPHT"
+		fetch "${page}${extra}" "$TMPHT"
 
 		while [ ! $FETCH_RESULT = 0 ]; do
 			# For the most part, we'll not hit this unless there's network issues.
 			# However, it can cause a failed fetch to go uncaught, causing next to be ''
 			# And if the next loop "succeeds" with a zero length page, it will propogate
 			# to next, and the 'done' check will trigger incorrectly.
-			message=":O"
+			message="???"
 			spinner "RETR $CUR / $MAXPAGES"
 
 			dl_eh_wait
-			fetch "$page" "$TMPHT"
+			fetch "${page}${extra}" "$TMPHT"
 		done
 
-		lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
+		lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' -e 'image.php' -e '/im/' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
 		hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-		next_cnt=$((CUR + 1))
 		next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
+		next_cnt=$((CUR + 1))
 
-		extra=""
+		if [ "$VERBOSE" = "1" ]; then
+			echo "This page: '$page'"
+			echo "LQ Image:  '$lq'"
+			echo "HQ Image:  '$hq'"
+			echo "Next page: '$next'"
+		fi
 
 		spinner "IMG $CUR / $MAXPAGES"
-		if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
+
+		if (( $CUR < $STARTAT )); then
+			rm "$TMPHT"
+			page="$next"
+			CUR=$((CUR + 1))
+			continue
+		fi
+
+		if [ ! "$LOGGEDIN" = 1 ] || [ "$hq" = "" ]; then
 			dl_eh_wait
 			fetch "$lq" "$(basename "$lq")"
 		else
@@ -2271,55 +2304,18 @@ dl_eh() {
 			fetch "$hq"
 		fi
 
-		if [ ! $FETCH_RESULT = 0 ]; then
-			message="=_="
-
-			while [ ! $FETCH_RESULT = 0 ]; do
-				# Clobber existing pages.
-				CLOBBER=1
-
-				dl_eh_wait
-				fetch "$page" "$TMPHT"
-
-				notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
-
-				dl_eh_wait
-				spinner "FAL $CUR / $MAXPAGES"
-
-				fetch "$page?nl=$notload" "${TMPHT}"
-
-				# Turn clobber off now that we're done.
-				CLOBBER=0
-			done
-
-			lq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'image.php' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)
-			hq=$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)
-			next=$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)
-
-			spinner "IMG $CUR / $MAXPAGES"
-			if [ $LOGGEDIN = 0 ] || [ "$hq" = "" ]; then
-				dl_eh_wait
-				fetch "$lq"
-			else
-				dl_eh_wait
-				fetch "$hq"
-			fi
-
-			rm "$TMPHT"
-
-			if [ $FETCH_RESULT = 0 ]; then
-				CUR=$(( CUR + 1 ))
-				if [ ! "$next" = "" ]; then
-					page="$next"
-				fi
-			fi
-		else
-			rm "$TMPHT"
+		if [ $FETCH_RESULT = 0 ]; then
+			extra=""
 			CUR=$(( CUR + 1 ))
 			if [ ! "$next" = "" ]; then
 				page="$next"
 			fi
+		else
+			notload=$(cat "$TMPHT" | grep 'nl(' | sed -e "s|^.*nl('||g" -e "s|'.*$||g")
+			extra="?nl=${notload}"
 		fi
+
+		rm "$TMPHT"
 
 		# This is a much saner condition than checking if next is null.
 		if (( $CUR > $MAXPAGES )); then
@@ -2347,102 +2343,87 @@ scrape_eh() {
 		# This is a URL.
 		FETCH="${1}&page="
 	else
+		# This is all broken and needs to be fixed.
 		KEYW=""
 
-		# Mode strings: dmagwnicpx
+		# Mode strings: dtagwnicpx
 		DEFAULT=1
 		M_D=$DEFAULT # Doujinshi
-		M_M=$DEFAULT # Manga
-		M_A=$DEFAULT # Artist CG
+		M_M=$DEFAULT # Manga.
+		M_A=$DEFAULT # Artist CG.
 		M_G=$DEFAULT # Game CG
 		M_W=$DEFAULT # Western
 		M_N=$DEFAULT # Non-H
 		M_I=$DEFAULT # Imageset
 		M_C=$DEFAULT # Cosplay
-		M_P=$DEFAULT # That category which nobody uses E-h for
+		M_P=$DEFAULT # That category which nobody uses E-h for (maybe)
 		M_X=$DEFAULT # Misc
 
-		BASE_URL="http://g.e-hentai.org/"
+		check_low_eh "http://exhentai.org/"
+		EX_WORKS=$?
 
-		# By default, all of them are enabled. By putting a '-' in the mode string as first char, this behavior will reverse.
-
-		# This is a query.
-
-		if [ "$1" = "-m" ]; then
-			# Apply mode.
-			shift
-			MODE="$1"
-			shift
-
-			if [ "${MODE:0:1}" = "-" ]; then
-				DEFAULT=0
-				M_D=$DEFAULT # Doujinshi
-				M_M=$DEFAULT # Manga
-				M_A=$DEFAULT # Artist CG
-				M_G=$DEFAULT # Game CG
-				M_W=$DEFAULT # Western
-				M_N=$DEFAULT # Non-H
-				M_I=$DEFAULT # Imageset
-				M_C=$DEFAULT # Cosplay
-				M_P=$DEFAULT # That category which nobody uses E-h for
-				M_X=$DEFAULT # Misc
-			fi
-
-			for (( i=0; i<${#MODE}; i++ )); do
-				C="${MODE:$i:1}"
-				case "$C" in
-					D )
-						M_D=1 ;;
-					d )
-						M_D=0 ;;
-					M )
-						M_M=1 ;;
-					m )
-						M_M=0 ;;
-					A )
-						M_A=1 ;;
-					a )
-						M_A=0 ;;
-					G )
-						M_G=1 ;;
-					g )
-						M_G=0 ;;
-					W )
-						M_W=1 ;;
-					w )
-						M_W=0 ;;
-					N )
-						M_N=1 ;;
-					n )
-						M_N=0 ;;
-					I )
-						M_I=1 ;;
-					i )
-						M_I=0 ;;
-					C )
-						M_C=1 ;;
-					c )
-						M_C=0 ;;
-					P )
-						M_P=1 ;;
-					p )
-						M_P=0 ;;
-					Z )
-						M_X=1 ;;
-					z )
-						M_X=0 ;;
-					X )
-						BASE_URL="http://exhentai.org/" ;;
-				esac
-			done
+		# We *should* use exhentai if the user has access.
+		if [ $EX_WORKS = 0 ]; then
+			BASE_URL="http://exhentai.org/"
+		else
+			BASE_URL="http://g.e-hentai.org/"
 		fi
+
+		for((i=0; i<${#SUBTYPES}; i++)); do
+			INDEX=${SUBTYPES:i:1}
+			if [ $i = 0 ] && [ "$INDEX" = "^" ]; then
+				# Invert all set values.
+				[ $M_D = 0 ] && M_D=1 || M_D=0 # This is equivalent to !M_D in a 1 -> 0 -> 1 sense.
+				[ $M_M = 0 ] && M_M=1 || M_M=0
+				[ $M_A = 0 ] && M_A=1 || M_A=0
+				[ $M_G = 0 ] && M_G=1 || M_G=0
+				[ $M_W = 0 ] && M_W=1 || M_W=0
+				[ $M_N = 0 ] && M_N=1 || M_N=0
+				[ $M_I = 0 ] && M_I=1 || M_I=0
+				[ $M_C = 0 ] && M_C=1 || M_C=0
+				[ $M_P = 0 ] && M_P=1 || M_P=0
+				[ $M_X = 0 ] && M_X=1 || M_X=0
+			else
+				case "$INDEX" in
+					"d")
+						[ $M_D = 0 ] && M_D=1 || M_D=0
+					;;
+					"m")
+						[ $M_M = 0 ] && M_M=1 || M_M=0
+					;;
+					"a")
+						[ $M_A = 0 ] && M_A=1 || M_A=0
+					;;
+					"g")
+						[ $M_G = 0 ] && M_G=1 || M_G=0
+					;;
+					"w")
+						[ $M_W = 0 ] && M_W=1 || M_W=0
+					;;
+					"n")
+						[ $M_N = 0 ] && M_N=1 || M_N=0
+					;;
+					"i")
+						[ $M_I = 0 ] && M_I=1 || M_I=0
+					;;
+					"c")
+						[ $M_C = 0 ] && M_C=1 || M_C=0
+					;;
+					"p")
+						[ $M_P = 0 ] && M_P=1 || M_P=0
+					;;
+					"x")
+						[ $M_X = 0 ] && M_X=1 || M_X=0
+					;;
+				esac
+			fi
+		done
 
 		MODE_PART="f_doujinshi=$M_D&f_manga=$M_M&f_artistcg=$M_A&f_gamecg=$M_G&f_western=$M_W&f_non-h=$M_N&f_imageset=$M_I&f_cosplay=$M_C&f_asianporn=$M_P&f_misc=$M_X"
 
 		# Read search keywords.
 		while [ ! -z "$1" ]; do
 			KEYW="$KEYW+\"$(echo $1 | sed -e 's| |+|g' -e 's|:|%3A|g')\""
-
 			shift
 		done
 
@@ -3498,6 +3479,8 @@ while [ "${CMD_STR:0:1}" = "-" ]; do
 	elif [ "${CMD_STR:0:2}" = "-m" ]; then
 		MODULE="${CMD_STR:2}"
 		TYPE=1
+	elif [ "${CMD_STR:0:2}" = "-t" ]; then
+		SUBTYPES="${CMD_STR:2}" # Used as a filter in some modules.
 	elif [ "${CMD_STR:0:2}" = "-f" ]; then
 		FORMAT="${CMD_STR:2}"
 	elif [ "${CMD_STR:0:2}" = "-c" ]; then
