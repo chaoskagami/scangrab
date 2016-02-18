@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=8ed127bf2873aed2c91d1316a846bd3bbfa943d7
+rev=5fa2466c2296a4c3fd0419937f70254ce4fe472c
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -1118,6 +1118,9 @@ auto() {
 # (at your option) any later version.
 #
 
+# This is usually all that needs to be sent to get a proper page.
+USERAGENT="Mozilla/5.0"
+
 COOKIEJAR="$(pwd)/cookiejar"
 HAVE_IMAGICK=0
 FETCH_RESULT=0
@@ -1242,11 +1245,11 @@ if [ -f "$_identify" ]; then
 fi
 
 if [ ! "$_wget" = "" ]; then
-	common_opts=" --quiet --no-cache --user-agent=\"Mozilla/5.0\" -t 1 -T 10 --random-wait "
+	common_opts=" --quiet --no-cache --user-agent=\"$USERAGENT\" -t 1 -T 10 --random-wait "
 
 	if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
-		echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
-		common_opts=" -q -U \"Mozilla/5.0\""
+		echo "[Warning] Your system wget is busybox, which is crippled."
+		common_opts=" -q -U \"$USERAGENT\""
 		_BUSYBOX=1
 	fi
 
@@ -2192,7 +2195,7 @@ dl_eh() {
 
 		lq="$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' -e 'image.php' -e '/im/' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)"
 		hq="$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)"
-		next="$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)"
+		next="$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$((CUR + 1))\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)"
 
 		if [ "$VERBOSE" = "1" ]; then
 			echo "This page: '$page'"
@@ -2210,19 +2213,18 @@ dl_eh() {
 
 		spinner "IMG $CUR / $MAXPAGES"
 
+		dl_eh_wait
 		if [ ! "$LOGGEDIN" = 1 ] || [ "$hq" = "" ]; then
-			dl_eh_wait
 			fetch "$lq" "$(basename "$lq")"
 		else
 			# HQ version; this is the 'Download source resolution' button.
-			dl_eh_wait
 			fetch "$hq"
 		fi
 
-		if [ $FETCH_RESULT = 0 ]; then
+		if [ "$FETCH_RESULT" = "0" ]; then
 			extra=""
+			CUR=$((CUR + 1))
 			if [ ! "$next" = "" ]; then
-				CUR=$((CUR + 1))
 				page="$next"
 			fi
 		else
