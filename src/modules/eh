@@ -23,6 +23,8 @@ eh_note="Logging in will result in HQ images, cap detection, and if you can, Ex 
 eh_uselogin=1
 
 login_eh() {
+	check_ro_eh
+
 	use_cookies=1
 
 	# Lots of extra shat they use to prevent bots. If it gets updated; let me know so I can fix it.
@@ -46,9 +48,19 @@ limitcheck_eh() {
 
 	line="$(fetch "http://g.e-hentai.org/home.php" "-" | grep "<p>You are currently at")"
 
-	LIMIT_AT="$(echo $line | sed -e 's|.*<p>You are currently at <strong>||g' -e 's|</strong>.*||g')"
-	LIMIT_OF="$(echo $line | sed -e 's|.*</strong> towards a limit of <strong>||g' -e 's|</strong>.*||g')"
-	LIMIT_REGEN="$(echo $line | sed -e 's|.*</strong>. This regenerates at a rate of <strong>||g' -e 's|</strong>.*||g')"
+	LIMIT_AT_NEW="$(echo $line | sed -e 's|.*<p>You are currently at <strong>||g' -e 's|</strong>.*||g')"
+	LIMIT_OF_NEW="$(echo $line | sed -e 's|.*</strong> towards a limit of <strong>||g' -e 's|</strong>.*||g')"
+	LIMIT_REGEN_NEW="$(echo $line | sed -e 's|.*</strong>. This regenerates at a rate of <strong>||g' -e 's|</strong>.*||g')"
+
+	if [ ! "$LIMIT_AT_NEW" = "" ]; then
+		LIMIT_AT="$LIMIT_AT_NEW"
+	fi
+	if [ ! "$LIMIT_OF_NEW" = "" ]; then
+		LIMIT_OF="$LIMIT_OF_NEW"
+	fi
+	if [ ! "$LIMIT_REGEN_NEW" = "" ]; then
+		LIMIT_REGEN="$LIMIT_REGEN_NEW"
+	fi
 }
 
 auto_eh() {
@@ -219,6 +231,20 @@ check_low_eh() {
 	return 0
 }
 
+# This should only be run once.
+check_ro_eh() {
+	TMP="$(temp f)"
+	fetch "http://g.e-hentai.org/" "$TMPHT"
+	grep "The site is currently in Read Only" "$TMPHT"
+	RO=$?
+	if [ $RO = 0 ]; then
+		echo "[E-H] Site is currently RO for maintenance. Downloads and logins may fail."
+		READ_ONLY_MODE=1
+	else
+		READ_ONLY_MODE=0
+	fi
+}
+
 check_eh() {
 	# This runs check_low_eh, and will abort on error.
 	check_low_eh "$1"
@@ -322,6 +348,7 @@ dl_eh() {
 	sitepage="$1"
 
 	check_eh "$1"
+	check_ro_eh
 
 	if [ $LOGGEDIN = 1 ]; then
 		limitcheck_eh
