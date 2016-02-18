@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=88d3f7bdc3d9ceae5f46bdc8f209f0bc24d5ae98
+rev=8ed127bf2873aed2c91d1316a846bd3bbfa943d7
 branch=master
 #############################################
 #####@ORIGINAL-FILE 'xul_dat'
@@ -1485,120 +1485,6 @@ scrape_mangabox() {
 	exit 1
 }
 #############################################
-#####@ORIGINAL-FILE 'modules/booru.mods/danbooru'
-#!/bin/bash
-# Copyright (C) 2015  Jon Feldman/@chaoskagami
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>
-
-# This should set up any variables needed by this module.
-
-booru_danbooru_init() {
-	final[0]="$source/posts.json?tags="
-}
-
-
-# This should build a URL which can download a page; call dl_booru_page,
-# And then extract the pages. It should not itself do the download.
-
-booru_danbooru_page() {
-	final[4]=$1
-
-	if [ $RESUME = 1 ]; then
-		# Assume this is done.
-		return 1
-	fi
-
-	if [ $is_pool = 0 ]; then
-		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
-
-		BEFORE=$(wc -l meta.txt | sed 's| .*||g')
-		cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
-		AFTER=$(wc -l meta.txt | sed 's| .*||g')
-
-		if [ "$BEFORE" = '' ]; then
-			BEFORE=0
-		fi
-		PAGE_SIZE=$((AFTER - BEFORE))
-
-		# We preprocess metadata.
-		cat "page${range}.json" | sed "s|},{|}]\n[{|g" | grep '"id"' > tmp
-		mv tmp "page${range}.json"
-
-		LEN=0
-		while read line; do
-			FIRST=$((PAGE_SIZE - LEN))
-			id="$(cat meta.txt | tail -n $FIRST | head -n 1)"
-			echo "$line" > meta/meta_${id}.json
-			LEN=$((LEN + 1))
-		done < "page${range}.json"
-
-		rm "page${range}.json"
-
-		# No more pages.
-		if (( BEFORE == AFTER )); then
-			return 1
-		fi
-
-		# Still more.
-		return 0
-	else
-		final[0]="${source}/pools.json?commit=Search&search[order]=updated_at&search[name_matches]="
-
-		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "${final[1]}.json"
-
-		cat "${final[1]}.json" | tr ',' "\n" | grep '"post_ids"' | sed -e 's|.*:||g' -e 's|"||g' | tr ' ' "\n" >> meta.txt
-	fi
-}
-
-# This should download a page's meta info. If there isn't any, it should copy the ID to a file named as the ID.
-
-booru_danbooru_meta() {
-	declare -a base
-	base[0]="$source/posts/"
-	base[1]="${1}.json"
-
-	if [ ! -e "meta_${base[1]}" ]; then
-		message="fetch ${1}"
-		spinner "${DONE} -> ${LINES}"
-		message=""
-
-		dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
-	fi
-}
-
-booru_danbooru_content() {
-	declare -a base
-	base[0]="$source/posts/"
-	base[1]="${1}.json"
-
-	url_img="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
-	file_ext="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
-
-	if [ "$file_ext" = "" ] || [ "$url_img" = "" ]; then
-		spinner_done
-		echo "[Booru] ID:${1} appears to be deleted/hidden. Skipping."
-
-		# ID is deleted. Skip.
-		return
-	fi
-
-	if [ ! -e "image_${1}.${file_ext}" ]; then
-		dl_booru_page "${source}${url_img}" "image_${1}.${file_ext}"
-	fi
-}
-#############################################
 #####@ORIGINAL-FILE 'modules/batoto'
 #!/bin/bash
 # Copyright (C) 2015  Jon Feldman/@chaoskagami
@@ -1897,6 +1783,8 @@ eh_note="Logging in will result in HQ images, cap detection, and if you can, Ex 
 eh_uselogin=1
 
 login_eh() {
+	check_ro_eh
+
 	use_cookies=1
 
 	# Lots of extra shat they use to prevent bots. If it gets updated; let me know so I can fix it.
@@ -1920,9 +1808,19 @@ limitcheck_eh() {
 
 	line="$(fetch "http://g.e-hentai.org/home.php" "-" | grep "<p>You are currently at")"
 
-	LIMIT_AT="$(echo $line | sed -e 's|.*<p>You are currently at <strong>||g' -e 's|</strong>.*||g')"
-	LIMIT_OF="$(echo $line | sed -e 's|.*</strong> towards a limit of <strong>||g' -e 's|</strong>.*||g')"
-	LIMIT_REGEN="$(echo $line | sed -e 's|.*</strong>. This regenerates at a rate of <strong>||g' -e 's|</strong>.*||g')"
+	LIMIT_AT_NEW="$(echo $line | sed -e 's|.*<p>You are currently at <strong>||g' -e 's|</strong>.*||g')"
+	LIMIT_OF_NEW="$(echo $line | sed -e 's|.*</strong> towards a limit of <strong>||g' -e 's|</strong>.*||g')"
+	LIMIT_REGEN_NEW="$(echo $line | sed -e 's|.*</strong>. This regenerates at a rate of <strong>||g' -e 's|</strong>.*||g')"
+
+	if [ ! "$LIMIT_AT_NEW" = "" ]; then
+		LIMIT_AT="$LIMIT_AT_NEW"
+	fi
+	if [ ! "$LIMIT_OF_NEW" = "" ]; then
+		LIMIT_OF="$LIMIT_OF_NEW"
+	fi
+	if [ ! "$LIMIT_REGEN_NEW" = "" ]; then
+		LIMIT_REGEN="$LIMIT_REGEN_NEW"
+	fi
 }
 
 auto_eh() {
@@ -2093,6 +1991,20 @@ check_low_eh() {
 	return 0
 }
 
+# This should only be run once.
+check_ro_eh() {
+	TMP="$(temp f)"
+	fetch "http://g.e-hentai.org/" "$TMPHT"
+	grep "The site is currently in Read Only" "$TMPHT"
+	RO=$?
+	if [ $RO = 0 ]; then
+		echo "[E-H] Site is currently RO for maintenance. Downloads and logins may fail."
+		READ_ONLY_MODE=1
+	else
+		READ_ONLY_MODE=0
+	fi
+}
+
 check_eh() {
 	# This runs check_low_eh, and will abort on error.
 	check_low_eh "$1"
@@ -2196,6 +2108,7 @@ dl_eh() {
 	sitepage="$1"
 
 	check_eh "$1"
+	check_ro_eh
 
 	if [ $LOGGEDIN = 1 ]; then
 		limitcheck_eh
@@ -3407,6 +3320,120 @@ dl_booru() {
 
 scrape_booru() {
 	exit 1
+}
+#############################################
+#####@ORIGINAL-FILE 'modules/booru.mods/danbooru'
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+# This should set up any variables needed by this module.
+
+booru_danbooru_init() {
+	final[0]="$source/posts.json?tags="
+}
+
+
+# This should build a URL which can download a page; call dl_booru_page,
+# And then extract the pages. It should not itself do the download.
+
+booru_danbooru_page() {
+	final[4]=$1
+
+	if [ $RESUME = 1 ]; then
+		# Assume this is done.
+		return 1
+	fi
+
+	if [ $is_pool = 0 ]; then
+		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "page${range}.json"
+
+		BEFORE=$(wc -l meta.txt | sed 's| .*||g')
+		cat "page${range}.json" | tr ',' "\n" | grep '"id"' | sed 's|.*:||g' >> meta.txt
+		AFTER=$(wc -l meta.txt | sed 's| .*||g')
+
+		if [ "$BEFORE" = '' ]; then
+			BEFORE=0
+		fi
+		PAGE_SIZE=$((AFTER - BEFORE))
+
+		# We preprocess metadata.
+		cat "page${range}.json" | sed "s|},{|}]\n[{|g" | grep '"id"' > tmp
+		mv tmp "page${range}.json"
+
+		LEN=0
+		while read line; do
+			FIRST=$((PAGE_SIZE - LEN))
+			id="$(cat meta.txt | tail -n $FIRST | head -n 1)"
+			echo "$line" > meta/meta_${id}.json
+			LEN=$((LEN + 1))
+		done < "page${range}.json"
+
+		rm "page${range}.json"
+
+		# No more pages.
+		if (( BEFORE == AFTER )); then
+			return 1
+		fi
+
+		# Still more.
+		return 0
+	else
+		final[0]="${source}/pools.json?commit=Search&search[order]=updated_at&search[name_matches]="
+
+		dl_booru_page "$(echo ${final[@]} | tr -d ' ')" "${final[1]}.json"
+
+		cat "${final[1]}.json" | tr ',' "\n" | grep '"post_ids"' | sed -e 's|.*:||g' -e 's|"||g' | tr ' ' "\n" >> meta.txt
+	fi
+}
+
+# This should download a page's meta info. If there isn't any, it should copy the ID to a file named as the ID.
+
+booru_danbooru_meta() {
+	declare -a base
+	base[0]="$source/posts/"
+	base[1]="${1}.json"
+
+	if [ ! -e "meta_${base[1]}" ]; then
+		message="fetch ${1}"
+		spinner "${DONE} -> ${LINES}"
+		message=""
+
+		dl_booru_page "$(echo ${base[@]} | tr -d ' ')" "meta_${base[1]}"
+	fi
+}
+
+booru_danbooru_content() {
+	declare -a base
+	base[0]="$source/posts/"
+	base[1]="${1}.json"
+
+	url_img="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_url"' | sed -e 's|.*:||g' -e "s|\"||g")"
+	file_ext="$(cat "${META_DIR}/meta_${base[1]}" | tr ',' "\n" | grep '"file_ext"' | sed 's|.*:||g')"
+
+	if [ "$file_ext" = "" ] || [ "$url_img" = "" ]; then
+		spinner_done
+		echo "[Booru] ID:${1} appears to be deleted/hidden. Skipping."
+
+		# ID is deleted. Skip.
+		return
+	fi
+
+	if [ ! -e "image_${1}.${file_ext}" ]; then
+		dl_booru_page "${source}${url_img}" "image_${1}.${file_ext}"
+	fi
 }
 #############################################
 #####@ORIGINAL-FILE 'main'
