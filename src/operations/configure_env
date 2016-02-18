@@ -8,6 +8,9 @@
 # (at your option) any later version.
 #
 
+# This is usually all that needs to be sent to get a proper page.
+USERAGENT="Mozilla/5.0"
+
 COOKIEJAR="$(pwd)/cookiejar"
 HAVE_IMAGICK=0
 FETCH_RESULT=0
@@ -135,11 +138,11 @@ if [ -f "$_identify" ]; then
 fi
 
 if [ ! "$_wget" = "" ]; then
-	common_opts=" --quiet --no-cache --user-agent=\"Mozilla/5.0\" -t 1 -T 10 --random-wait "
+	common_opts=" --quiet --no-cache --user-agent=\"$USERAGENT\" -t 1 -T 10 --random-wait "
 
 	if [ ! "$($_wget --help 2>&1 | grep busybox)" = "" ]; then
-		echo "[Warning] Your system wget is busybox, which can't actually do some things like reject cache and retry."
-		common_opts=" -q -U \"Mozilla/5.0\""
+		echo "[Warning] Your system wget is busybox, which is crippled."
+		common_opts=" -q -U \"$USERAGENT\""
 		_BUSYBOX=1
 	fi
 

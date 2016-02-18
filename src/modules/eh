@@ -432,7 +432,7 @@ dl_eh() {
 
 		lq="$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'keystamp' -e 'image.php' -e '/im/' | sed -e 's|.*src="||g' -e 's|".*||' | entity_to_char)"
 		hq="$(cat "$TMPHT" | tr '<' '\n' | grep -e 'a href' -e 'img src' -e 'img id="img"' | grep -e 'source' | sed -e 's|.*href="||g' -e 's|".*||g' | entity_to_char)"
-		next="$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$next_cnt\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)"
+		next="$(cat "$TMPHT" | tr '<' '\n' | grep -e "-$((CUR + 1))\"" | sed -e 's|.*href="||g' -e 's|">||g' | head -n1)"
 
 		if [ "$VERBOSE" = "1" ]; then
 			echo "This page: '$page'"
@@ -450,19 +450,18 @@ dl_eh() {
 
 		spinner "IMG $CUR / $MAXPAGES"
 
+		dl_eh_wait
 		if [ ! "$LOGGEDIN" = 1 ] || [ "$hq" = "" ]; then
-			dl_eh_wait
 			fetch "$lq" "$(basename "$lq")"
 		else
 			# HQ version; this is the 'Download source resolution' button.
-			dl_eh_wait
 			fetch "$hq"
 		fi
 
-		if [ $FETCH_RESULT = 0 ]; then
+		if [ "$FETCH_RESULT" = "0" ]; then
 			extra=""
+			CUR=$((CUR + 1))
 			if [ ! "$next" = "" ]; then
-				CUR=$((CUR + 1))
 				page="$next"
 			fi
 		else
