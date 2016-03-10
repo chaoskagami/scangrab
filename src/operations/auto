@@ -17,5 +17,6 @@ auto() {
 			return 0
 		fi
 	done
-	return 1
+	dl_generic "$@"
+	return 0
 }

@@ -1,0 +1,157 @@
+#!/bin/bash
+# Copyright (C) 2015  Jon Feldman/@chaoskagami
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+#######################################################################
+# This is the 'generic' extractor. It never automatically matches a URL
+# but is called when all others fail.
+#
+# It by default extracts all img and a links from a page in order,
+# downloads them, checks if they are images and keeps them if
+# greater than 400x400 resolution - large enough to avoid ads,
+# small enough to account for most meaningful images.
+#
+# This can be used on Imgur Galleries, for example, although such
+# an extractor already exists in the source.
+#
+# It is not capable of paging. All images must be on one page. Sorry.
+
+generic_longname="Generic"
+generic_url="*"
+generic_state=1
+# No filter possible here.
+generic_filt=0
+
+to_abs_url() {
+	BASE="$1"
+	URL="$2"
+
+	# Transform URL if need be.
+	# //                      -> copy host access type before
+	# Doesn't start with http -> relative link
+
+	prefix="$(echo "$BASE" | sed 's|//.*|//|g')"
+	fixd="$(echo "${URL}" | sed -e "s|^//|${prefix}|g" )"
+
+	if [ ! "${fixd:0:5}" = "http:" ] && [ ! "${fixd:0:6}" = "https:" ] && [ ! "${fixd:0:5}" = "data:" ]; then
+		# Relative URI.
+		fixd="$(echo "$BASE" | sed 's|/$||g')/${fixd}"
+	fi
+
+	echo "${fixd}"
+}
+
+auto_generic() {
+	return 0 # THIS MUST NEVER RETURN 1, SINCE IT IS AUTOMATICALLY USED AS A FALLBACK.
+}
+
+dl_generic() {
+	PAGEDATA="$(fetch "$1" "-")"
+
+	# Use the title of the page.
+	folder="$(echo "$PAGEDATA" | grep "</title>" | sed -e 's|<title>||g' -e 's/^[[:space:]]*//g' -e 's|</title>||g' | entity_to_char | remove_illegal)"
+
+	# Check done.
+	is_done "$folder"
+	R=$?
+	if [ $R = 1 ]; then
+		echo "[Generic] Already downloaded. Skipping."
+		return 0
+	fi
+
+	mkdir -p "$folder"
+	cd "$folder"
+
+	# Extract all images from page.
+	#   This includes...
+	#   <img> tags
+	#   <a> when href is a file ending in an image extension
+
+	# There's some filtering going on here to exclude *non-hq* stuff.
+	# It requires identify, otherwise you'll get every piece of crap on the page.
+
+	echo "$PAGEDATA" | grep "<img" 2>/dev/null >  list
+	echo "$PAGEDATA" | grep "<a"   2>/dev/null >> list
+	while read line; do
+		echo "$line" | grep "<img" 2>&1 >/dev/null
+		IMG=$?
+		if [ $IMG = 0 ]; then
+			# image src
+			src="$(echo "$line" | sed -e 's|.*<img||g' -e "s|.*src=[\"']||g" -e "s|[\"'].*||g")"
+			fixd="$(to_abs_url "$1" "$src")"
+			echo "$fixd"
+		fi
+
+		echo "$line" | grep "<a" 2>&1 >/dev/null
+		HR=$?
+		if [ $HR = 0 ]; then
+			# Get href.
+			href="$(echo "$line" | sed -e 's|.*<a||g' -e "s|.*href=[\"']||g" -e "s|[\"'].*||g")"
+			fixd="$(to_abs_url "$1" "$href")"
+			echo "${fixd}"
+		fi
+	done < list > urls
+
+	echo -n "[Generic] Downloading '$folder' "
+
+	CUR=0
+	while read image; do
+		[ "$image" = "" ] && break
+
+		fetch "$image" "${CUR}"
+
+		valid=0
+		# Check MIME. Should be image/*.
+		mime="$(mimetype "${CUR}")"
+		if [ "${mime:0:6}" = "image/" ]; then
+			# Check size. Less than 400x400 is rejected.
+			W="$(identify -format "%w" "${CUR}")"
+			H="$(identify -format "%h" "${CUR}")"
+			if [ $W -ge 400 ] && [ $H -ge 400 ]; then
+				valid=1 # Yep, valid.
+			fi
+		fi
+
+		# If this is valid, keep it and increment CUR.
+		# Otherwise, delete, move on and don't increment.
+		if [ $valid = 1 ]; then
+			# Fix extension from mime.
+			mv "$CUR" "${CUR}.$(echo $mime | sed 's|image/||')"
+			CUR=$(( CUR + 1 ))
+		else
+			rm "$CUR"
+		fi
+
+		spinner "$CUR"
+	done < urls
+
+	rm urls
+	rm list
+
+	rename ".jpeg" ".jpg" *
+
+	spinner_done
+
+	cd ..
+
+	cbz_make "$folder"
+}
+
+scrape_generic() {
+	echo -n ""
+}
+
+
+

@@ -121,7 +121,7 @@ done
 type="repo"
 #####@MERGE_DEL 0
 
-if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ]; then
+if [ "$TERM" = "xterm" ] || [ "$TERM" = "linux" ] || [ "$TERM" = "screen" ] || [ "$TERM" = "screen-256color" ]; then
 	_COLOR=1
 	if [ -f $_tput ]; then
 		# Better method.
