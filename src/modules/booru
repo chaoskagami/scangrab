@@ -60,7 +60,12 @@ auto_booru() {
 
 # Because the syntax is hell.
 booru_help() {
-	echo "Usage: NAME TAGLIST SPEC [FOLDERNAME]"
+	echo "Usage: BOORU_NAME TAGLIST SPEC [FOLDERNAME]"
+	echo "BOORU_NAME:"
+	echo "  The following boorus are currently supported:"
+	echo "    danbooru   (danbooru.donmai.us)"
+	echo "    safebooru  (safebooru.donmai.us)"
+	echo "    testbooru  (testbooru.donmai.us)"
 	echo ""
 	echo "TAGLIST:"
 	echo "    tagname                   - Specify a tag"
@@ -100,6 +105,7 @@ booru_help() {
 	echo "    pages:50           - Download 50 pages, Long syntax"
 	echo "    images:100         - Download 100 images, Long syntax"
 	echo "    limit:50           - 50 images on a page, Long syntax"
+	echo "    all                - Download ALL images for tag."
 	echo "    resume             - Resume a previous Ctrl+C'd download,"
 	echo "    r                  - Short for resume"
 	echo ""
@@ -241,7 +247,7 @@ dl_booru_page() {
 				spinner_done "!!!"
 
 				echo -en "[Booru] Server refused us. Waiting a bit... "
-				SLEEP=$((60 * FAILS))
+				SLEEP=$((10 * FAILS))
 				while [ ! $SLEEP = 0 ]; do
 					sleep 1s
 					spinner "${SLEEP}s"
@@ -257,7 +263,7 @@ dl_booru_page() {
 		# This is for safety.
 		# A lot of boorus get mad at you for hammering the database repeatedly and punish you
 		# by denying connections for a while. This ensures we aren't hammering *too* hard.
-		sleep 5s
+		sleep 1s
 	done
 	FAILS=0
 }
