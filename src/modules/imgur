@@ -49,7 +49,7 @@ dl_imgur() {
 	cd "$folder"
 
 	declare -a PAGELIST
-	PAGELIST=($(echo "$PAGEDATA" | grep '<meta property="og:image"' | sed -e 's|^.*content="||g' -e 's|".*$||g' -e '/?fb/d'))
+	PAGELIST=($(echo "$PAGEDATA" | grep '<img src="//i\.imgur\.com/' | sed -e 's|.*<img src="||g' -e 's|" alt=.*||g' -e 's|^|http:|g'))
 
 	echo -n "[Imgur] Downloading '$folder' "
 
