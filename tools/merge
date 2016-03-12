@@ -14,15 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-mkdir -p ./dist
-TARGET="./dist/scangrab"
+mkdir -p ./out
+TARGET="./out/scangrab"
 
 # Shebang.
 echo "#!/bin/bash" > $TARGET.tmp
 
-# Regenerate revision file.
-git show | head -n1 | sed -e 's|commit |rev=|' > rev
-git branch | grep '*' | sed -e 's|* |branch=|g' >> rev
 echo "#############################################" >> $TARGET.tmp
 echo "#####@ORIGINAL-FILE 'rev'" >> $TARGET.tmp
 cat rev >> $TARGET.tmp
