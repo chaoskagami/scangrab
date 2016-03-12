@@ -34,6 +34,9 @@ auto_foolsl() {
 	elif [ -n "`echo $1 | grep 'vortex-scans.com/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# VortexScans
 		return 1
+	elif [ -n "`echo $1 | grep 'dokusha.info/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# ray=out
+		return 1
 	fi
 
 	return 0
@@ -42,16 +45,55 @@ auto_foolsl() {
 dl_foolsl() {
 	# Attempt a lazy download first. Only image scrape if rejected.
 
-	LAZYURL=`echo $1 | sed "s|/read/|/download/|g"`
-
 	echo -n "[FoolSlide] Attempting Lazy Download..."
 
+	LAZYURL=`echo $1 | sed "s|/read/|/download/|g"`
+
 	FAILED=0
-
 	fetch "$LAZYURL" || export FAILED=1
-
 	if [ $FAILED = 1 ]; then
-		echo "Requesting zip failed."
+		echo "Nope."
+
+		# Get the main page.
+		DATA="$(fetch "$1" "-")"
+
+		# Get page count.
+		PAGES="$(echo "$DATA" | grep '<div class=\"tbtitle dropdown_parent dropdown_right\">' | sed -e 's| ⤵</div>||g' -e 's|.*>||g')"
+
+		# Get title.
+		TITLE="$(echo "$DATA" | grep "<title>.*</title>" | sed -e 's|.*<title>||g' -e 's|</title>.*||g' | entity_to_char | remove_illegal)"
+
+		BASE="$(echo "$1" | sed 's|/$||g')/page/"
+
+		mkdir -p "$TITLE"
+		cd "$TITLE"
+
+		echo -n "[FoolSlide] Downloading '$TITLE'... "
+
+		for (( on=1 ; on <= $PAGES ; on++ )); do
+			# Download pages and extract images.
+			spinner "$on / $PAGES"
+
+			IMG_URL=""
+			while [ "$IMG_URL" = "" ]; do
+				IMG_URL="$(fetch "${BASE}${on}" "-" | grep '<img class="open" src=' | sed -e 's|.* src="||g' -e 's|".*||g')"
+			done
+			IMG_NAM=""
+			while [ "$IMG_URL" = "" ]; do
+				IMG_NAM="$(basename "${IMG_URL}")"
+			done
+
+			FETCH_RESULT=1
+			while [ ! $FETCH_RESULT = 0 ]; do
+				fetch "$IMG_URL" "$IMG_NAM"
+			done
+		done
+
+		spinner_done
+
+		cd ..
+
+		cbz_make "$TITLE"
 	else
 		echo "[OK]"
 	fi
@@ -68,6 +110,6 @@ scrape_foolsl() {
 	-e "s/^[[:space:]]*//"						\
 	-e "s/[[:space:]]*$//"					  | \
 	reverse_lines >> batch.txt
-	
+
 	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }
