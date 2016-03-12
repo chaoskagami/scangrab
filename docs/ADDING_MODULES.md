@@ -29,7 +29,7 @@ Variables:
  * (mod)_loginreq - You need to login before this can be used. If set, you need to provide a login_(mod)
  * login_(mod)    - Logs into the site, creating a cookie jar.
 
-These are internal functions meant to be used by you in your scripts. They abstract detail so you can simply do what you need to without resorting to calling commands directly in most cases. If you want to look through for more comprehensive docs, check the file src/support.
+These are internal functions meant to be used by you in your scripts. They abstract detail so you can simply do what you need to without resorting to calling commands directly in most cases. If you want to look through for more comprehensive docs, check the source code. It's rather well documented.
 
  * type $textstyle
     Sets text style. 0=normal, 1=bold, 2=dim
@@ -56,7 +56,7 @@ These are internal functions meant to be used by you in your scripts. They abstr
 
  * s_login $userfield $passfield $user $pass $url $extra
     Logs into a site $url, putting $user and $pass into named fields $userfield and $passfield, respectively.
-    Anything specified in extra will be added to the POST. Useful for getting around bot filters.
+    Anything specified in extra will be added to the POST, which is useful for getting around bot filters.
 
  * fetch $url $dest
     Fetches a webpage/image/anything from $url to $dest. If $dest is not supplied,
@@ -67,8 +67,7 @@ These are internal functions meant to be used by you in your scripts. They abstr
     Accepts input from stdin, outputs to stdout. Translates most common html entitities to utf8.
 
  * remove_illegal
-    Accepts input from stdin, outputs to stdout. Removes filesystem-illegal characters, such as '|' and '/'.
+    Accepts input from stdin, outputs to stdout. Removes filesystem-illegal characters, such as '/' on unix systems and '?' when on FAT, etc.
 
  * reverse_lines
-    Reverses lines read from stdin, outputs to stdout. Use this instead of tail -r or tac.
-
+    Reverses lines read from stdin, outputs to stdout. Use this instead of tail -r or tac. It's guaranteed to function regardless of platform.

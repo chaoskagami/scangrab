@@ -1,9 +1,9 @@
 This file describes the changes made in the release snapshots. When parsing with scangrab, this line is skipped.
 == START ==
- * Basically, a bunch of code simplification and bugfixes. That's all.
 == END ==
 Older commit messages are moved down here.
 
+ * Basically, a bunch of code simplification and bugfixes. That's all.
  * Fixed some rather nasty mishandling of parent directories containing
    spaces.
  * Now handles some auto-ip-bans properly by waiting.
