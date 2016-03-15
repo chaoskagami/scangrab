@@ -11,4 +11,4 @@ merge: rev
 	mv out/* ../out
 
 clean:
-	rm -rf out rev xul_dat
+	rm -rf out rev

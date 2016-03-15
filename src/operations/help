@@ -170,7 +170,6 @@ help() {
 		echo -ne "no tool. Install one of: "
 	fi
 	echo " (wget, curl, aria2c)"
-	echo -e "     JS fetching tool:    $_JSCOMMAND"
 	echo -ne "     Check broken images: "
 	if [ $_CHECK_VALID = 1 ]; then
 		if [ -f $_identify ]; then

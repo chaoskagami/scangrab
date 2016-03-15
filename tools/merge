@@ -24,10 +24,6 @@ echo "#############################################" >> $TARGET.tmp
 echo "#####@ORIGINAL-FILE 'rev'" >> $TARGET.tmp
 cat rev >> $TARGET.tmp
 
-echo "#############################################" >> $TARGET.tmp
-echo "#####@ORIGINAL-FILE 'xul_dat'" >> $TARGET.tmp
-cat xul_dat >> $TARGET.tmp
-
 # Functions.
 LIST=($(find functions/ -type f))
 for module in ${LIST[@]}; do
