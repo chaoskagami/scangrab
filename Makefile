@@ -7,7 +7,8 @@ merge:
 	cd src && make -f Makefile merge
 
 dist: merge
-	cp -ra out dist
+	mkdir -p dist
+	cp -ra out/* dist/
 
 .PHONY: clean
 clean:

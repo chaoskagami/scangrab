@@ -1,11 +1,8 @@
 #!/bin/bash
 #############################################
 #####@ORIGINAL-FILE 'rev'
-rev=0a6570112f631e9c6d5c4dda4fbd035e1b5c034d
+rev=6ec58e688dd9e0c13797c9e0cc6ffbca64dd43f8
 branch=master
-#############################################
-#####@ORIGINAL-FILE 'xul_dat'
-XUL_ZIP_DATA="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"
 #############################################
 #####@ORIGINAL-FILE 'functions/s_login'
 #!/bin/bash
@@ -712,69 +709,6 @@ cbz_make() {
 
 }
 #############################################
-#####@ORIGINAL-FILE 'functions/fetch_jscommand'
-#!/bin/bash
-
-# Copyright (C) 2015  Jon Feldman/@chaoskagami
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-
-# This version uses an available proper web parser to get output which
-# would otherwise be incomplete due to javascript/ajax/etc
-
-# Currently supports the following backends:
-# * XulRunner / Firefox / Pale Moon
-
-fetch_jscommand() {
-	if [ $_HAVE_JSCOMMAND = 1 ]; then
-		# Firefox / XUL.
-
-		XUL_TEMP="$(temp d)"
-
-		mkdir "$XUL_TEMP" && cd "$XUL_TEMP"
-
-		# Not extracted. Do so.
-		echo $XUL_ZIP_DATA | base64 -d > xul.zip && unzip xul.zip >/dev/null 2>&1 && rm xul.zip >/dev/null 2>&1
-
-		_CMD="echo \"PAGE_URL='$1';\" > ${XUL_TEMP}/xul/url.js && $_JSCOMMAND --app ${XUL_TEMP}/xul/application.ini --console > \"$2\""
-
-
-		cd ..
-	else
-		echo "NOT SUPPORTED."
-		return 1
-	fi
-
-	if [ $VERBOSE = 1 ]; then
-		echo -e "\n$_CMD"
-	fi
-
-	if [ -f "$_Xvfb" ]; then
-		Xvfb :1 &
-		XPID=$!
-
-		SAVE_D="$DISPLAY"
-		export DISPLAY=":1"
-	fi
-
-	eval $_CMD 2>/dev/null
-	rm -rf ~/.scangrab_xul
-	FETCH_RESULT=$?
-
-	if [ -f "$_Xvfb" ]; then
-		kill $XPID
-		export DISPLAY="$SAVE_D"
-	fi
-
-	rm -rf ${XUL_TEMP}
-
-	return $FETCH_RESULT
-}
-#############################################
 #####@ORIGINAL-FILE 'operations/batch'
 #!/bin/bash
 
@@ -986,7 +920,6 @@ help() {
 		echo -ne "no tool. Install one of: "
 	fi
 	echo " (wget, curl, aria2c)"
-	echo -e "     JS fetching tool:    $_JSCOMMAND"
 	echo -ne "     Check broken images: "
 	if [ $_CHECK_VALID = 1 ]; then
 		if [ -f $_identify ]; then
@@ -1152,24 +1085,6 @@ _convert="$(which --skip-alias convert 2>/dev/null)"
 _wget="$(which --skip-alias wget 2>/dev/null)"
 _curl="$(which --skip-alias curl 2>/dev/null)"
 _aria="$(which --skip-alias aria2c 2>/dev/null)"
-
-# Used for things which need to be parsed.
-_firefox="$(which --skip-alias firefox 2>/dev/null)"
-_palemoon="$(which --skip-alias palemoon 2>/dev/null)"
-_xulrunner="$(which --skip-alias xulrunner 2>/dev/null)"
-_HAVE_JSCOMMAND=0 # 1 is a xul browser.
-_JSCOMMAND="unsupported"
-
-if [ -f "$_firefox" ]; then
-	_JSCOMMAND="$_firefox"
-	_HAVE_JSCOMMAND=1
-elif [ -f "$_palemoon" ]; then
-	_JSCOMMAND="$_palemoon"
-	_HAVE_JSCOMMAND=1
-elif [ -f "$_xulrunner" ]; then
-	_JSCOMMAND="$_xulrunner"
-	_HAVE_JSCOMMAND=1
-fi
 
 #########################
 # This function is required earlier than usual, so it lives here.
@@ -1383,7 +1298,7 @@ mod_login() {
 }
 #############################################
 #####@AUTOGENERATED 'MODS'
-MODS=(mangabox generic batoto niconicoseiga eh fakku dynsc foolsl mpark imgur booru)
+MODS=(mangabox generic niconicoseiga eh fakku dynsc foolsl mpark imgur booru)
 #############################################
 #############################################
 #####@ORIGINAL-FILE 'modules/mangabox'
@@ -1761,174 +1676,6 @@ scrape_generic() {
 
 
 
-#############################################
-#####@ORIGINAL-FILE 'modules/batoto'
-#!/bin/bash
-# Copyright (C) 2015  Jon Feldman/@chaoskagami
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>
-
-batoto_longname="Batoto"
-batoto_url="bato.to"
-batoto_filt=0
-
-if [ ! $_HAVE_JSCOMMAND = 0 ]; then
-	batoto_state=2
-	batoto_note="Partially broken - no scraping functionality."
-else
-	batoto_state=0
-	batoto_note="Broken. Get one of these: 'firefox', 'palemoon', 'xulrunner'."
-fi
-
-auto_batoto() {
-	if [ -n "`echo $1 | grep 'bato.to/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
-		# Batoto
-		return 1
-	fi
-
-	return 0
-}
-
-dl_batoto() {
-	# Batoto breaks their stuff. A LOT. Recently, they broke static serving - JS now required.
-
-	TEMP="$(temp f)"
-
-	fetch_jscommand "$1" "$TEMP"
-
-	folder="$(cat "$TEMP" | grep -C0 "<title>" | sed -e "s/^[[:space:]]*<title>//" -e "s/ Page .*//" -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$/\n/" | entity_to_char | remove_illegal)"
-
-	PAGES="$(cat "$TEMP" | grep -C0 'page 1</option>' | head -n1 | sed -e 's|</option>||g' -e 's|.*>page ||g')"
-
-	rm PAGE
-
-	is_done "$folder"
-	R=$?
-	if [ $R = 1 ]; then
-		echo "[Batoto] Already downloaded. Skipping."
-		return 0
-	fi
-
-	mkdir -p "$folder"
-	cd "$folder"
-
-	CUR=1
-	RET=0
-
-	echo -n "[Batoto] Downloading '$folder' "
-
-	BASE="$1"
-
-	while (( $CUR <= $PAGES )); do
-		TEMP="$(temp f)"
-
-		fetch_jscommand "${BASE}_${CUR}" "$TEMP"
-
-		img="$(grep -C0 'z-index: 1003' "$TEMP" | sed -e 's/^[[:space:]]*<img src="//g' -e 's/".*$//g')"
-
-		# If this 404's, fetch will return non-zero. Thus, loop breaks.
-		fetch "$img"
-		RET=$?
-
-		rm "$TEMP"
-
-		spinner "$CUR / $PAGES"
-
-		if [ $RET = 0 ]; then
-			CUR=$((CUR + 1))
-		fi
-	done
-
-	spinner_done
-
-	cd ..
-
-	cbz_make "$folder"
-}
-
-scrape_batoto() {
-	echo -n "[Batoto] Scraping Chapters..."
-
-	fetch "$1" scrape.htm
-
-	# Batoto sometimes gives out gunzips. We need to account for that... =_=
-	if [ "$(mimetype scrape.htm)" = "application/x-gzip" ]; then
-		mv $CUR.htm $CUR.htm.gz
-		gunzip $CUR.htm.gz
-		message=" :/"
-	fi
-
-	grep -A 2 'Sort:' scrape.htm >> batch.txtr
-
-	# Delete the useless lines.
-	sed -i "s|^[[:space:]]*</td>[[:space:]]*||g" batch.txtr
-
-	# Remove Language lines.
-	sed -i 's|^[[:space:]]*<td style="border-top:0;"><div title="||g' batch.txtr
-	sed -i 's|" style="display: inline-block; width:16px; height: 12px;.*$||g' batch.txtr
-
-	# Edit up URL.
-	sed -i "s|<a href=\"||g" batch.txtr
-	sed -i "s|\" title=.*||g" batch.txtr
-
-	# Delete blank lines/space lines
-	sed -i '/^[[:space:]]*$/d' batch.txtr
-
-	# Strip.
-	sed -i "s/^[[:space:]]*//" batch.txtr
-	sed -i "s/[[:space:]]*$//" batch.txtr
-
-	sed -i 's|^--$||g' batch.txtr
-
-	# Delete Blank lines.
-	sed -i '/^$/d' batch.txtr
-
-	cat batch.txtr | reverse_lines > batch.txtf
-
-	if [ "$2" = "" ]; then
-		# Delete Language text, leaving urls
-		sed -ni '0~2p' batch.txtf
-
-		cat batch.txtf >> batch.txt
-	else
-		echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b Applying Language Filter '$2'..."
-
-		grep -A 1 "$2" batch.txtf > batch.txtf2
-
-		# Delete '--' lines
-		sed -i '/^[[:space:]]*--[[:space:]]*$/d' batch.txtf2
-
-		# Delete Blank lines.
-		sed -i '/^$/d' batch.txtf2
-
-		# Delete Language text, leaving urls
-		sed -ni '0~2p' batch.txtf2
-
-		cat batch.txtf2 >> batch.txt
-	fi
-
-	# We've scraped a batch file from the URL list. Clean up.
-	rm scrape.htm batch.txtr batch.txtf*
-
-	echo -en "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
-
-	for ((n=0;n < ${#2}; n++)); do
-		echo -en '\b'
-	done
-
-	echo -e " Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
-}
 #############################################
 #####@ORIGINAL-FILE 'modules/niconicoseiga'
 #!/bin/bash
