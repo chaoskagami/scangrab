@@ -37,6 +37,9 @@ auto_foolsl() {
 	elif [ -n "`echo $1 | grep 'dokusha.info/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
 		# ray=out
 		return 1
+	elif [ -n "`echo $1 | grep 'kobato.hologfx.com/reader/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Doki
+		return 1
 	fi
 
 	return 0

@@ -23,10 +23,10 @@
 # greater than 400x400 resolution - large enough to avoid ads,
 # small enough to account for most meaningful images.
 #
-# This can be used on Imgur Galleries, for example, although such
-# an extractor already exists in the source.
+# Imgur gallery support was removed in favor of the generic.
 #
-# It is not capable of paging. All images must be on one page. Sorry.
+# This is not capable of paging. All images must be on one page.
+# Sorry.
 
 generic_longname="Generic"
 generic_url="*"

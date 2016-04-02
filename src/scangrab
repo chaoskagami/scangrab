@@ -18,33 +18,42 @@
 # This file is literally the 'load everything' file. It doesn't really
 # do much work on its own. Merge generates it's own method of loading everything.
 
-# The revision.
-. ./rev
+BASEDIR=$(pwd)
 
-. ./xul_dat
+#@OVERRIDE_BASEDIR@
+
+# The revision.
+if [ -e "${BASEDIR}/.git" ] || [ -e "${BASEDIR}/../.git" ]; then
+	eval $(git show | head -n1 | sed -e 's|commit |rev=|')
+	eval $(git branch | grep '*' | sed -e 's|* |branch=|g')
+else
+	rev=unknown
+	branch=unknown
+fi
 
 # Configure env.
-. ./operations/configure_env
+. "${BASEDIR}/operations/configure_env"
+
 # All misc functions (used to be support.)
-OPERS=($(find operations/ -type f))
+OPERS=($(find "${BASEDIR}/operations/" -type f))
 for script in ${OPERS[@]}; do
 	source "${script}"
 done
 
 # All misc functions (used to be support.)
-FUNCS=($(find functions/ -type f))
+FUNCS=($(find "${BASEDIR}/functions/" -type f))
 for script in ${FUNCS[@]}; do
 	source "${script}"
 done
 
 # Load modules sources.
-LIST=($(find modules/ -type f))
+LIST=($(find "${BASEDIR}/modules/" -type f))
 for script in ${LIST[@]}; do
 	source "${script}"
 done
 
 # Export module names.
-MODS=($(find modules/ -maxdepth 1 -type f | sed 's|modules/||g'))
+MODS=($(find "${BASEDIR}/modules/" -maxdepth 1 -type f | sed 's|.*/modules/||g'))
 
 # Run main code.
 . ./main
