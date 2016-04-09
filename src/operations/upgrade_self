@@ -10,7 +10,9 @@
 
 upgrade_self() {
 	if [ "$type" = "repo" ]; then
-		echo "[Upgrade] You're in a git repo. Use 'git pull' instead."
+		echo "[Upgrade] Attempting to forward repository..."
+		cd $BASEDIR
+		git pull
 		exit 0
 	fi
 	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
