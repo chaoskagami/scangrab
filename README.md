@@ -6,6 +6,8 @@ Installing
 
 tl;dr - To install, fetch whatever blob floats your boat from the dist folder and put it somewhere as +x. Run `scangrab -U` to get a new copy in the future (saves commands manually typed.)
 
+Or if you're a developer, there's also `make install` which functions a bit different.
+
 Do not report bugs unless you can reproduce them with the git repo or a raw build.
 
 About
