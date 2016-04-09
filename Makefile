@@ -15,7 +15,6 @@ dist: merge
 	cp -ra out/* dist/
 
 install:
-	mkdir -p $(DESTDIR)
 	mkdir -p $(DESTDIR)$(SHARE)
 	mkdir -p $(DESTDIR)$(BIN)
 	cp -r "$(shell pwd)" "$(DESTDIR)$(SHARE)/scangrab"
