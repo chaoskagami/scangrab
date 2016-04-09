@@ -44,7 +44,7 @@ dl_mpark() {
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
-		echo "[MangaPark] Already downloaded. Skipping."
+		message "Already downloaded. Skipping."
 		return 0
 	fi
 
@@ -54,7 +54,7 @@ dl_mpark() {
 	declare -a DATA
 	DATA=$(echo "$FETCH" | grep 'target="_blank"' - | sed -e '1d' -e 's|^[[:space:]]*<a.*target="_blank" href=||g' -e "s/ title=.*$//" -e "s/\"//g"| tr '\n' ' ')
 
-	echo -n "[Mangapark] Downloading '$folder' "
+	message "Downloading '$folder' "
 
 	CUR=0
 	for image in ${DATA[@]}; do
@@ -71,7 +71,7 @@ dl_mpark() {
 }
 
 scrape_mpark() {
-	echo -e "[Mangapark] Scraping Chapters..."
+	message "Scraping Chapters..."
 
 	TEMP="$(temp f)"
 	RTEMP="$(temp f)"
@@ -100,5 +100,5 @@ scrape_mpark() {
 	# We've scraped a batch file from the URL list. Clean up.
 	rm "$RTEMP" "$TEMP"
 
-	echo -e "[Mangapark] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+	message "Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

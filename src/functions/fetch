@@ -37,6 +37,10 @@ fetch() {
 			_CMD="$_CMD -O \"$2\""
 		fi
 
+		if [ "$NO_CHECK_CERT" = "1" ]; then
+			_CMD="$_CMD --no-check-certificate"
+		fi
+
 	elif [ $_FETCHTOOL = 2 ]; then
 
 		_CMD="$_FETCH_CMD $1"
@@ -50,6 +54,10 @@ fetch() {
 			_CMD="$_CMD"
 		else
 			_CMD="$_CMD > \"$2\""
+		fi
+
+		if [ "$NO_CHECK_CERT" = "1" ]; then
+			_CMD="$_CMD -k"
 		fi
 
 	elif [ $_FETCHTOOL = 3 ]; then

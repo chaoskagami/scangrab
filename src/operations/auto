@@ -13,10 +13,12 @@ auto() {
 		auto_${module} "$@"
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
+			MODULE_NAME=$(eval echo \$${module}_longname)
 			dl_${module} "$@"
 			return 0
 		fi
 	done
+	MODULE_NAME="Generic"
 	dl_generic "$@"
 	return 0
 }

@@ -100,7 +100,7 @@ booru_danbooru_content() {
 
 	if [ "$file_ext" = "" ] || [ "$url_img" = "" ]; then
 		spinner_done
-		echo "[Booru] ID:${1} appears to be deleted/hidden. Skipping."
+		message "ID ${1} appears to be deleted/hidden/gold. Skipping."
 
 		# ID is deleted. Skip.
 		return

@@ -48,14 +48,19 @@ auto_foolsl() {
 dl_foolsl() {
 	# Attempt a lazy download first. Only image scrape if rejected.
 
-	echo -n "[FoolSlide] Attempting Lazy Download..."
+	message "Attempting Lazy Download..."
 
 	LAZYURL=`echo $1 | sed "s|/read/|/download/|g"`
+
+	if [ -n "`echo $1 | grep 'kobato.hologfx.com/reader/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Fixup for LE-based cert. A lot of system trust stores don't include LE yet.
+		NO_CHECK_CERT=1
+	fi
 
 	FAILED=0
 	fetch "$LAZYURL" || export FAILED=1
 	if [ $FAILED = 1 ]; then
-		echo "Nope."
+		message "Nope."
 
 		# Get the main page.
 		DATA="$(fetch "$1" "-")"
@@ -71,7 +76,7 @@ dl_foolsl() {
 		mkdir -p "$TITLE"
 		cd "$TITLE"
 
-		echo -n "[FoolSlide] Downloading '$TITLE'... "
+		message "Downloading '$TITLE'... "
 
 		for (( on=1 ; on <= $PAGES ; on++ )); do
 			# Download pages and extract images.
@@ -98,21 +103,29 @@ dl_foolsl() {
 
 		cbz_make "$TITLE"
 	else
-		echo "[OK]"
+		message "OK"
 	fi
+
+	unset NO_CHECK_CERT
 }
 
 scrape_foolsl() {
+	if [ -n "`echo $1 | grep 'kobato.hologfx.com/reader/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
+		# Fixup for LE-based cert. A lot of system trust stores don't include LE yet.
+		NO_CHECK_CERT=1
+	fi
 
-	echo -n "[Foolslide] Scraping Chapters..."
+	message "Scraping Chapters..."
 
-	fetch "$1" "-" |							\
-	grep '<div class="title"><a href='			\
-	sed -e 's|<div class="title"><a href="||g'	\
-	-e 's|" title=.*||g'						\
-	-e "s/^[[:space:]]*//"						\
-	-e "s/[[:space:]]*$//"					  | \
+	fetch "$1" "-" | \
+		grep '<div class="title"><a href=' | \
+		sed -e 's|<div class="title"><a href="||g' \
+			-e 's|" title=.*||g' \
+			-e "s/^[[:space:]]*//" \
+			-e "s/[[:space:]]*$//" | \
 	reverse_lines >> batch.txt
 
-	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[Foolslide] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+	message "Scraped chapters to batch.txt."
+
+	unset NO_CHECK_CERT
 }

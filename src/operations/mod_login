@@ -11,11 +11,12 @@
 mod_login() {
 	for module in ${MODS[@]}; do
 		if [ "$1" = "$module" ]; then
+			MODULE_NAME=$(eval echo \$${module}_longname)
 			if [ "$( eval echo \$${module}_uselogin )" = "1" ]; then
-				echo -ne "[$module] Username: "
+				echo -ne "[${MODULE_NAME}] Username: "
 				read username
 
-				echo -ne "[$module] Password for $username (will not echo): "
+				echo -ne "[${MODULE_NAME}] Password for $username (will not echo): "
 				read -s password
 
 				login_${module} "$username" "$password"

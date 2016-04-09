@@ -41,7 +41,7 @@ dl_dynsc() {
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
-		echo "[DynastyScans] Already downloaded. Skipping."
+		message "Already downloaded. Skipping."
 		return 0
 	fi
 
@@ -63,7 +63,7 @@ dl_dynsc() {
 	# Load in the array.
 	eval "$PAGETMP"
 
-	echo -n "[DynastyScans] Downloading '$folder' "
+	message "Downloading '$folder' "
 
 	CUR=0
 
@@ -81,7 +81,7 @@ dl_dynsc() {
 }
 
 scrape_dynsc() {
-	echo -n "[DynastyScans] Scraping Chapters..."
+	message "Scraping Chapters..."
 
 	# URLS are local.
 	fetch "$1" "-" | 			\
@@ -92,5 +92,5 @@ scrape_dynsc() {
 		-e "s/[[:space:]]*$//" 	\
 		-e "s|^|http://dynasty-scans.com|g" >> batch.txt
 
-	echo -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b[DynastyScans] Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
+	message "Scraped chapters to batch.txt. You can modify this, or pass it to autobatch."
 }

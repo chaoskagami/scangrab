@@ -174,7 +174,7 @@ booru_tag_crunch() {
 
 		# This is a pool. Ignore the other things.
 		if [[ "${tagarray[i]}" == pool:* ]]; then
-			echo "[Booru] This is apparently a pool."
+			message "This is apparently a pool."
 			is_pool=1
 			TAGCOUNT=1
 			final[1]="$(echo ${tagarray[i]} | sed -e 's|pool:||g')"
@@ -246,7 +246,7 @@ dl_booru_page() {
 			if [ ! $FAILS = 0 ]; then
 				spinner_done "!!!"
 
-				echo -en "[Booru] Server refused us. Waiting a bit... "
+				message "Server refused us. Waiting a bit... "
 				SLEEP=$((10 * FAILS))
 				while [ ! $SLEEP = 0 ]; do
 					sleep 1s

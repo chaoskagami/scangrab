@@ -35,10 +35,10 @@ login_eh() {
 			"CookieDate=1&Privacy=1&b=&bt=&referer=https://forums.e-hentai.org/?act=Login&temporary_https="
 	user="$(fetch "https://forums.e-hentai.org/?act=idx" "-" | grep 'Logged in as' | sed -e 's|.*showuser=||' -e 's|<.*||' -e 's|.*>||g')"
 	if [ ! "$user" = "" ]; then
-		echo -e "\n[E-H] Logged in as: $user"
+		message "Logged in as: $user"
 		exit 0
 	else
-		echo -e "\n[E-H] Login seems to have failed."
+		message "Login seems to have failed."
 		exit 1
 	fi
 }
@@ -85,13 +85,13 @@ check_low_eh() {
 	use_cookies=0
 	if [ -f "$COOKIEJAR" ]; then
 		if [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
-			echo -ne "[E-H] Checking for Ex cookies..."
+			message "Checking for Ex cookies..."
 			grep 'exhentai.org' "$COOKIEJAR" | grep 'ipb_member_id' >/dev/null
 			RES=$?
 			if [ $RES = 0 ]; then
 				echo "yes"
 				use_cookies=1
-				echo -ne "[E-H] Checking for access..."
+				message "Checking for access..."
 
 				TEMP="$(temp f)"
 
@@ -125,9 +125,9 @@ check_low_eh() {
 				grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
 				RES=$?
 				if [ $RES = 0 ]; then
-					echo "[E-H] Warning - uconfig is set in cookie jar. This will cause problems."
+					message "Warning - uconfig is set in cookie jar. This will cause problems."
 					if [ "$COOKIEJAR" = "$(pwd)/cookiejar" ]; then
-						echo -n "[E-H] Attempting to automatically fix the issue..."
+						message "Attempting to automatically fix the issue..."
 						sed -i "/exhentai\.org.*uconfig/d" "$COOKIEJAR"
 						grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
 						RES=$?
@@ -137,13 +137,13 @@ check_low_eh() {
 							echo "failed"
 						fi
 					else
-						echo "[E-H] User specified custom cookie jar. Will not automatically fix."
-						echo "[E-H] Subsequent download may fail, or get stuck in retry loop."
+						message "User specified custom cookie jar. Will not automatically fix."
+						message "Subsequent download may fail, or get stuck in retry loop."
 					fi
 				fi
 			else
 				echo "no"
-				echo -ne "[E-H] Checking for E-H cookies..."
+				message "Checking for E-H cookies..."
 				grep 'e-hentai.org' "$COOKIEJAR" | grep 'ipb_member_id' >/dev/null
 				RES=$?
 				if [ $RES = 0 ]; then
@@ -152,7 +152,7 @@ check_low_eh() {
 					sed 's|e-hentai.org|exhentai.org|g' cookiejar.edit >> cookiejar
 					rm cookiejar.edit
 
-					echo -ne "[E-H] Fixed cookies. Checking for access..."
+					message "Fixed cookies. Checking for access..."
 					use_cookies=1
 
 					TEMP="$(temp f)"
@@ -186,9 +186,9 @@ check_low_eh() {
 					grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
 					RES=$?
 					if [ $RES = 0 ]; then
-						echo "[E-H] Warning - uconfig is set in cookie jar. This will cause problems."
+						message "Warning - uconfig is set in cookie jar. This will cause problems."
 						if [ "$COOKIEJAR" = "$(pwd)/cookiejar" ]; then
-							echo -n "[E-H] Attempting to automatically fix the issue..."
+							message "Attempting to automatically fix the issue..."
 							sed -i "/exhentai\.org.*uconfig/d" "$COOKIEJAR"
 							grep "exhentai\.org.*uconfig" "$COOKIEJAR" >/dev/null 2>&1
 							RES=$?
@@ -198,13 +198,13 @@ check_low_eh() {
 								echo "failed"
 							fi
 						else
-							echo "[E-H] User specified custom cookie jar. Will not automatically fix."
-							echo "[E-H] Subsequent download may fail, or get stuck in retry loop."
+							message "User specified custom cookie jar. Will not automatically fix."
+							message "Subsequent download may fail, or get stuck in retry loop."
 						fi
 					fi
 				else
-					echo "no."
-					echo "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
+					message "no."
+					message "No cookies, and you're attempting to fetch an Ex link. Abort."
 					return 1
 				fi
 			fi
@@ -212,18 +212,18 @@ check_low_eh() {
 			grep 'e-hentai.org' "$COOKIEJAR" | grep 'ipb_member_id' >/dev/null
 			RES=$?
 			if [ $RES = 0 ]; then
-				echo "[E-H] We seem to have cookies...using them."
+				message "We seem to have cookies...using them."
 				LOGGEDIN=1
 				use_cookies=1
 			fi
 		fi
 	elif [ -n "`echo $1 | grep 'exhentai.org/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//'`" ]; then
-		echo "[E-H] No cookies, and you're attempting to fetch an Ex link. Abort."
+		message "No cookies, and you're attempting to fetch an Ex link. Abort."
 		exit 1
 	fi
 
 	if [ $LOGGEDIN = 0 ]; then
-		echo "[E-H] Not logged in. Expect random failures at anoymous quota cap."
+		message "Not logged in. Expect random failures at anoymous quota cap."
 	fi
 
 	check_eh_done=1
@@ -238,7 +238,7 @@ check_ro_eh() {
 	grep "The site is currently in Read Only" "$TMPHT"
 	RO=$?
 	if [ $RO = 0 ]; then
-		echo "[E-H] Site is currently RO for maintenance. Downloads and logins may fail."
+		message "Site is currently RO for maintenance. Downloads and logins may fail."
 		READ_ONLY_MODE=1
 	else
 		READ_ONLY_MODE=0
@@ -305,8 +305,8 @@ ban_eh_wait() {
 			fi
 		done
 
-		echo "[E-H] Banned for $ban_str seconds. :<"
-		echo -n "[E-H] Sleeping..."
+		message "Banned for $ban_str seconds. :<"
+		message "Sleeping..."
 
 		while (( $seconds > 0 )); do
 			seconds=$((seconds - 1))
@@ -314,7 +314,7 @@ ban_eh_wait() {
 			spinner "${seconds}"
 		done
 
-		echo -e "\n[E-H] Resuming..."
+		message "Resuming..."
 	fi
 }
 
@@ -359,10 +359,10 @@ dl_eh() {
 			THIS_COUNT=$(( MAXPAGES * 100 ))
 		fi
 
-		echo "[E-H] Limit check: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
+		message "Limit check: ${LIMIT_AT} / ${LIMIT_OF}, +${LIMIT_REGEN}/min"
 	fi
 
-	echo "[E-H] Fetching index page..."
+	message "Fetching index page..."
 
 	# This is so that we don't get the 'offensive' warning.
 	# XXX - Is this needed for Ex?
@@ -384,7 +384,7 @@ dl_eh() {
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
-		echo "[E-H] Already downloaded."
+		message "Already downloaded."
 		rm "$TEMP"
 		return 0
 	fi
@@ -398,7 +398,7 @@ dl_eh() {
 
 	rm "../$TEMP"
 
-	echo "[E-H] Downloading '$folder'... "
+	message "Downloading '$folder'... "
 
 	doneyet=0
 
@@ -595,7 +595,7 @@ scrape_eh() {
 		PAGE_COUNT=1
 	fi
 
-	echo "[E-h] Pages: $PAGE_COUNT"
+	message "Pages: $PAGE_COUNT"
 
 	TEMP="$(temp f)"
 
@@ -604,7 +604,7 @@ scrape_eh() {
 		while [ ! $FETCH_RESULT = 0 ]; do
 			fetch "${FETCH}${i}" "-" >> "$TEMP"
 
-			echo "[E-H] Grabbing page $((i + 1))..."
+			message "Grabbing page $((i + 1))..."
 		done
 	done
 

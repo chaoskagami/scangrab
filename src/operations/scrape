@@ -12,6 +12,7 @@ scrape() {
 		auto_${module} "$@"
 		RETCHECK=$?
 		if [ $RETCHECK = 1 ]; then
+			MODULE_NAME=$(eval echo \$${module}_longname)
 			scrape_${module} "$@"
 		fi
 	done

@@ -21,7 +21,7 @@ fakku_longname="FAKKU"
 fakku_url="fakku.net/"
 fakku_state=1
 fakku_filt=0
-fakku_note="They've been shuffling things around recently."
+fakku_note="Probably broken."
 
 auto_fakku() {
 	if [ -n "$(echo $1 | grep 'fakku.net/' | sed -e 's/^ *//' -e 's/[[:space:]]*$//')" ]; then
@@ -55,7 +55,7 @@ dl_fakku() {
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
-		echo "[Fakku] Already downloaded. Skipping."
+		message "Already downloaded. Skipping."
 		return 0
 	fi
 
@@ -67,7 +67,7 @@ dl_fakku() {
 
 	# Download loop-de-loop.
 
-	echo -n "[Fakku] Downloading '$folder' "
+	message "Downloading '$folder' "
 
 	CUR=0
 	for image in "${pages[@]}"; do
@@ -86,7 +86,7 @@ dl_fakku() {
 }
 
 scrape_fakku() {
-	echo -n "[Fakku] Scraping Chapters..."
+	message "Scraping Chapters..."
 
 	TEMP="$(temp f)"
 	TEMPR="$(temp f)"

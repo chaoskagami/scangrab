@@ -49,32 +49,32 @@ dl_niconicoseiga() {
 	fullname="$(cat "$TEMP" | grep '<meta property="og:title" content="' | sed -e 's|<meta property="og:title" content="||g' -e "s|\".*||g" | entity_to_char | remove_illegal)"
 
 	if [ ! -f "$TEMP" ]; then
-		echo "[Niconico] No page found, aborting."
+		message "No page found, aborting."
 		return 1
 	fi
 
-	echo "[Niconico] Extracting image list..."
+	message "Extracting image list..."
 
 	TEMP2="$(temp f)"
 
 	cat "$TEMP" | grep 'data-image-id' | sed -e 's|^[[:space:]]*data-image-id="||g' -e 's|"[[:space:]]*$||g' > "$TEMP2"
 
 	if [ "$(cat "$TEMP2")" = "" ]; then
-		echo "[Niconico] No images in page. Did you login?"
+		message "No images in page. Did you login?"
 		return 1
 	fi
 
 	is_done "$folder"
 	R=$?
 	if [ $R = 1 ]; then
-		echo "[Niconico] Already downloaded. Skipping."
+		message "Already downloaded. Skipping."
 		return 0
 	fi
 
 	mkdir -p "$fullname"
 	cd "$fullname"
 
-	echo -n "[Niconico] Downloading '$fullname' (from $name) "
+	message "Downloading '$fullname' (from $name) "
 
 	COUNT=0
 	while read ID; do
@@ -94,9 +94,9 @@ dl_niconicoseiga() {
 scrape_niconicoseiga() {
 	COOKIES=1
 
-	echo "[Niconico] Scraping chapters..."
+	message "Scraping chapters..."
 
 	fetch "$1" "-" | grep 'class="episode"' | sed -e 's|.*<a href="||g' -e 's|?.*||g' -e 's|/watch|http://seiga.nicovideo.jp/watch|g' >> batch.txt
 
-	echo "[Niconico] Done."
+	message "Done."
 }

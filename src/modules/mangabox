@@ -34,7 +34,7 @@ auto_mangabox() {
 
 dl_mangabox() {
 
-	echo "[MangaBox] Getting list of pages..."
+	message "Getting list of pages..."
 
 	TEMP="$(temp f)"
 
@@ -45,7 +45,7 @@ dl_mangabox() {
 	is_done "$fullname"
 	R=$?
 	if [ $R = 1 ]; then
-		echo "[MangaBox] Already downloaded. Skipping."
+		message "Already downloaded. Skipping."
 		return 0
 	fi
 
@@ -55,7 +55,7 @@ dl_mangabox() {
 	mkdir -p "$fullname"
 	cd "$fullname"
 
-	echo -n "[MangaBox] Downloading '$fullname'... "
+	message "Downloading '$fullname'... "
 
 	NUM=0
 	for page in ${list[@]}; do
@@ -96,6 +96,6 @@ dl_mangabox() {
 
 scrape_mangabox() {
 
-	echo "[MangaBox] Not yet supported, sorry."
+	message "Not yet supported, sorry."
 	exit 1
 }

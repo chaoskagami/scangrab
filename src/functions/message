@@ -1,0 +1,3 @@
+function message() {
+	echo -e "[${MODULE_NAME}] $1"
+}
