@@ -24,8 +24,11 @@ BASEDIR=$(pwd)
 
 # The revision.
 if [ -e "${BASEDIR}/.git" ] || [ -e "${BASEDIR}/../.git" ]; then
+	save=$(pwd)
+	cd "${BASEDIR}"
 	eval $(git show | head -n1 | sed -e 's|commit |rev=|')
 	eval $(git branch | grep '*' | sed -e 's|* |branch=|g')
+	cd "$save"
 else
 	rev=unknown
 	branch=unknown
