@@ -11,15 +11,16 @@
 upgrade_self() {
 	if [ "$type" = "repo" ]; then
 		echo "[Upgrade] Attempting to forward repository..."
-		cd $BASEDIR
-		git pull
+		cd "$BASEDIR"
+		git pull || echo "[Upgrade] Failed to pull changes." && exit 1
 
 		# Reinstall executable.
 		echo "[Upgrade] Replacing '$0'"
-		cp "src/scangrab" "$0"
-		sed -i "s|#@OVERRIDE_BASEDIR@|BASEDIR=$(pwd)|g" "$0"
+		cp "src/scangrab" "$0" || echo "[Upgrade] Failed to replace $0" && exit 1
+		sed -i "s|#@OVERRIDE_BASEDIR@|BASEDIR=$(pwd)|g" "$0" || echo "[Upgrade] Failed to fix path." && exit 1
 		exit 0
 	fi
+
 	URL="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/dist/scangrab.$type"
 	LOG="https://raw.githubusercontent.com/chaoskagami/scangrab/$branch/CHANGES-SNAP"
 
