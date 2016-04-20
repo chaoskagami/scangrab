@@ -18,16 +18,16 @@
 # This file is literally the 'load everything' file. It doesn't really
 # do much work on its own. Merge generates it's own method of loading everything.
 
-BASEDIR=$(pwd)
+BASEDIR="$(pwd)"
 
 #@OVERRIDE_BASEDIR@
 
 # The revision.
 if [ -e "${BASEDIR}/.git" ] || [ -e "${BASEDIR}/../.git" ]; then
-	save=$(pwd)
+	save="$(pwd)"
 	cd "${BASEDIR}"
-	eval $(git show | head -n1 | sed -e 's|commit |rev=|')
-	eval $(git branch | grep '*' | sed -e 's|* |branch=|g')
+	rev="$(git show 2>/dev/null | head -n1 | sed -e 's|commit ||')"
+	branch="$(git branch 2>/dev/null | grep '*' | sed -e 's|* ||g')"
 	cd "$save"
 else
 	rev=unknown

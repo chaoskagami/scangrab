@@ -18,6 +18,7 @@ install:
 	mkdir -p $(DESTDIR)$(SHARE)
 	mkdir -p $(DESTDIR)$(BIN)
 	cp -r "$(shell pwd)" "$(DESTDIR)$(SHARE)/scangrab"
+	chmod 755 "$(DESTDIR)$(SHARE)/scangrab"
 	cp "src/scangrab" "$(DESTDIR)$(BIN)/scangrab"
 	sed -i "s|#@OVERRIDE_BASEDIR@|BASEDIR=$(SHARE)/scangrab/src|g" $(DESTDIR)$(BIN)/scangrab
 
